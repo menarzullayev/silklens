@@ -5,6 +5,7 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
+    "create": "Create",
     "loading": "Loading…",
     "search": "Search",
     "comingSoon": "Coming soon",
@@ -14,7 +15,8 @@
     "themeDark": "Dark",
     "themeSystem": "System",
     "signOut": "Sign out",
-    "tenant": "Tenant"
+    "tenant": "Tenant",
+    "errorTitle": "Backend unreachable"
   },
   "nav": {
     "overview": "Overview",
@@ -25,6 +27,7 @@
     "monetization": "Monetization",
     "tenants": "Tenants",
     "branding": "Branding",
+    "featureFlags": "Feature flags",
     "analytics": "Analytics",
     "settings": "Settings"
   },
@@ -40,12 +43,32 @@
   },
   "dashboard": {
     "title": "Overview",
-    "subtitle": "Today’s SilkLens operational snapshot.",
-    "metricUsers24h": "Active users (24h)",
-    "metricUsers7d": "Active users (7d)",
-    "metricHeritageViews": "Heritage views (24h)",
-    "metricPremium": "Premium subscribers",
-    "metricRevenueMtd": "Revenue MTD"
+    "subtitle": "SilkLens operational snapshot.",
+    "metricHeritageTotal": "Total heritage",
+    "metricHeritagePublished": "Published",
+    "metricTenants": "Tenants",
+    "metricAiCalls": "AI calls (24h)",
+    "recentActivity": "Recent activity",
+    "recentActivityHint": "Aggregated activity stream lands once the events pipeline exposes a meta endpoint.",
+    "aiPerformance": "AI model performance",
+    "aiPerformanceHint": "Token usage + cost / latency / fallback frequency lands with the Token Usage tab."
+  },
+  "heritage": {
+    "title": "Heritage",
+    "subtitle": "Monuments, sites, and AI-generated descriptions.",
+    "newEntry": "New heritage entry",
+    "createTitle": "Create heritage",
+    "createSubtitle": "Multi-language name + summary, kind, country, period.",
+    "tabOverview": "Overview",
+    "tabTranslations": "Translations",
+    "tabAliases": "Aliases",
+    "tabRevisions": "Revisions",
+    "tabReviews": "Reviews"
+  },
+  "tenants": {
+    "title": "Tenants",
+    "subtitle": "Provision white-label tenants and set status / plan tier.",
+    "errorTitle": "Could not load tenants"
   },
   "branding": {
     "title": "Branding",
@@ -54,10 +77,36 @@
     "logoUrl": "Logo URL",
     "primaryColor": "Primary color",
     "splashImage": "Splash image URL",
-    "saved": "Branding draft saved locally (no backend yet)."
+    "saved": "Branding saved.",
+    "errorTitle": "Could not load branding"
+  },
+  "settings": {
+    "title": "System settings",
+    "subtitle": "Tenant-scoped configuration grouped by key prefix.",
+    "errorTitle": "Could not load settings"
+  },
+  "featureFlags": {
+    "title": "Feature flags",
+    "subtitle": "Toggle flags, rollout percentages, allowlists.",
+    "errorTitle": "Could not load feature flags"
+  },
+  "aiModels": {
+    "title": "AI models",
+    "subtitle": "Vision, TTS, translation, LLM — provider matrix + fallback chains.",
+    "tabModels": "Models",
+    "tabChains": "Fallback chains",
+    "tabUsage": "Token usage",
+    "errorTitle": "Could not load AI models",
+    "usageHint": "Per-tenant token usage charts land once `ai_token_usage` is queryable from this panel."
+  },
+  "moderation": {
+    "title": "Moderation",
+    "subtitle": "UGC queue with AI-scored triage.",
+    "placeholderTitle": "Moderation API coming next sprint",
+    "placeholderHint": "The backend currently exposes flag/report endpoints; a dedicated admin queue endpoint ships with Wave 4."
   },
   "rbac": {
-    "denied": "You don’t have permission to view this section.",
+    "denied": "You don't have permission to view this section.",
     "deniedSubtitle": "Ask a workspace admin to grant the right scope."
   }
 }

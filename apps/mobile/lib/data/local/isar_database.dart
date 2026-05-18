@@ -2,18 +2,15 @@
 //
 // Master Architecture §8 — offline-first L1/L2 storage lives here. The
 // schemas under `lib/data/local/schemas/` are added to the constructor
-// below; they generate `*.g.dart` files (e.g. `cached_heritage_schema.g.dart`)
+// below; they generate `*.g.dart` files (e.g. `cached_heritage.g.dart`)
 // that expose a `CachedHeritageSchema` constant we register.
-//
-// During the FAZA 1 skeleton we ship just one schema (`CachedHeritage`) so
-// the boot path can be exercised end-to-end without dragging the whole
-// offline-bundle subsystem in.
 
 import "dart:async";
 
 import "package:hooks_riverpod/hooks_riverpod.dart";
 import "package:isar/isar.dart";
 import "package:path_provider/path_provider.dart";
+import "package:silklens/data/local/schemas/cached_branding.dart";
 import "package:silklens/data/local/schemas/cached_heritage.dart";
 
 class IsarDatabase {
@@ -26,6 +23,7 @@ class IsarDatabase {
     final isar = await Isar.open(
       <CollectionSchema<dynamic>>[
         CachedHeritageSchema,
+        CachedBrandingSchema,
       ],
       directory: dir.path,
       name: "silklens",

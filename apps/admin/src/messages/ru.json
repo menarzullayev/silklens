@@ -5,6 +5,7 @@
     "cancel": "Отмена",
     "delete": "Удалить",
     "edit": "Редактировать",
+    "create": "Создать",
     "loading": "Загрузка…",
     "search": "Поиск",
     "comingSoon": "Скоро",
@@ -14,7 +15,8 @@
     "themeDark": "Тёмная",
     "themeSystem": "Системная",
     "signOut": "Выйти",
-    "tenant": "Тенант"
+    "tenant": "Тенант",
+    "errorTitle": "Бэкенд недоступен"
   },
   "nav": {
     "overview": "Обзор",
@@ -25,6 +27,7 @@
     "monetization": "Монетизация",
     "tenants": "Тенанты",
     "branding": "Брендинг",
+    "featureFlags": "Feature flags",
     "analytics": "Аналитика",
     "settings": "Настройки"
   },
@@ -40,24 +43,70 @@
   },
   "dashboard": {
     "title": "Обзор",
-    "subtitle": "Сегодняшний операционный срез SilkLens.",
-    "metricUsers24h": "Активные пользователи (24ч)",
-    "metricUsers7d": "Активные пользователи (7д)",
-    "metricHeritageViews": "Просмотры памятников (24ч)",
-    "metricPremium": "Премиум-подписчики",
-    "metricRevenueMtd": "Выручка за месяц"
+    "subtitle": "Операционный снимок SilkLens.",
+    "metricHeritageTotal": "Всего объектов",
+    "metricHeritagePublished": "Опубликовано",
+    "metricTenants": "Тенанты",
+    "metricAiCalls": "AI-вызовы (24ч)",
+    "recentActivity": "Недавняя активность",
+    "recentActivityHint": "Лента активности появится после публикации мета-эндпоинта.",
+    "aiPerformance": "Производительность моделей",
+    "aiPerformanceHint": "Статистика токенов / задержки / fallback'ов — во вкладке Token Usage."
+  },
+  "heritage": {
+    "title": "Памятники",
+    "subtitle": "Памятники, объекты и AI-описания.",
+    "newEntry": "Новая запись",
+    "createTitle": "Создать объект",
+    "createSubtitle": "Многоязычное имя + описание, тип, страна, период.",
+    "tabOverview": "Обзор",
+    "tabTranslations": "Переводы",
+    "tabAliases": "Алиасы",
+    "tabRevisions": "Ревизии",
+    "tabReviews": "Отзывы"
+  },
+  "tenants": {
+    "title": "Тенанты",
+    "subtitle": "Создание white-label тенантов и управление статусом / тарифом.",
+    "errorTitle": "Не удалось загрузить тенантов"
   },
   "branding": {
     "title": "Брендинг",
-    "subtitle": "Настройте бренд для каждого тенанта — white-label.",
-    "appName": "Название приложения",
-    "logoUrl": "URL логотипа",
+    "subtitle": "Настройка бренда для каждого тенанта — white-label.",
+    "appName": "Название",
+    "logoUrl": "Логотип URL",
     "primaryColor": "Основной цвет",
-    "splashImage": "URL splash-изображения",
-    "saved": "Черновик брендинга сохранён локально (бэкенда пока нет)."
+    "splashImage": "Splash URL",
+    "saved": "Брендинг сохранён.",
+    "errorTitle": "Не удалось загрузить брендинг"
+  },
+  "settings": {
+    "title": "Системные настройки",
+    "subtitle": "Tenant-настройки, сгруппированные по префиксу ключа.",
+    "errorTitle": "Не удалось загрузить настройки"
+  },
+  "featureFlags": {
+    "title": "Feature flags",
+    "subtitle": "Переключатели, проценты раскатки, allowlist'ы.",
+    "errorTitle": "Не удалось загрузить флаги"
+  },
+  "aiModels": {
+    "title": "AI модели",
+    "subtitle": "Vision, TTS, перевод, LLM — матрица провайдеров + fallback.",
+    "tabModels": "Модели",
+    "tabChains": "Fallback цепочки",
+    "tabUsage": "Расход токенов",
+    "errorTitle": "Не удалось загрузить модели",
+    "usageHint": "Графики появятся, когда `ai_token_usage` станет доступен здесь."
+  },
+  "moderation": {
+    "title": "Модерация",
+    "subtitle": "Очередь UGC с AI-оценкой.",
+    "placeholderTitle": "Moderation API в следующем спринте",
+    "placeholderHint": "Бэкенд сейчас предоставляет только flag / report; админская очередь — Wave 4."
   },
   "rbac": {
-    "denied": "У вас нет прав на просмотр этого раздела.",
-    "deniedSubtitle": "Попросите администратора предоставить нужный доступ."
+    "denied": "Недостаточно прав для просмотра.",
+    "deniedSubtitle": "Попросите администратора назначить нужную роль."
   }
 }

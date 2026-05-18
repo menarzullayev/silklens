@@ -1,17 +1,19 @@
 import { getTranslations } from 'next-intl/server';
-import { BarChart3, Eye, Sparkles, UserCheck, Users } from 'lucide-react';
+import { Activity, Box, Building2, Sparkles, Star } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/layout/page-header';
 import { PermissionGuard } from '@/components/rbac/permission-guard';
 import { AccessDenied } from '@/components/rbac/access-denied';
 import { PERMISSIONS } from '@/lib/rbac/permissions';
-import { formatMoney } from '@/lib/utils';
+import { heritageApi, tenantsApi } from '@/lib/api';
+import { ApiError } from '@/lib/api/errors';
 
 interface MetricCardProps {
   readonly label: string;
   readonly value: string;
-  readonly icon: typeof Users;
+  readonly icon: typeof Box;
   readonly trend?: string;
 }
 
@@ -34,17 +36,54 @@ function MetricCard({ label, value, icon: Icon, trend }: MetricCardProps): JSX.E
   );
 }
 
+interface CountResult {
+  readonly value: string;
+  readonly trend?: string;
+}
+
+async function safeHeritageTotal(): Promise<CountResult> {
+  try {
+    const page = await heritageApi.listHeritage({ limit: 1 });
+    return { value: page.total.toLocaleString() };
+  } catch (cause) {
+    return { value: '—', trend: errorTrend(cause) };
+  }
+}
+
+async function safePublishedTotal(): Promise<CountResult> {
+  try {
+    const page = await heritageApi.listHeritage({ limit: 1, status: 'published' });
+    return { value: page.total.toLocaleString() };
+  } catch (cause) {
+    return { value: '—', trend: errorTrend(cause) };
+  }
+}
+
+async function safeTenantTotal(): Promise<CountResult> {
+  try {
+    const page = await tenantsApi.listTenants({ limit: 1 });
+    return { value: page.total.toLocaleString() };
+  } catch (cause) {
+    return { value: '—', trend: errorTrend(cause) };
+  }
+}
+
+function errorTrend(cause: unknown): string {
+  if (cause instanceof ApiError) return `API error (${cause.status})`;
+  return 'API unreachable';
+}
+
 export default async function DashboardOverviewPage(): Promise<JSX.Element> {
   const t = await getTranslations('dashboard');
+  const tCommon = await getTranslations('common');
 
-  // TODO(analytics): replace with `apiFetch('/admin/analytics/overview')`.
-  const metrics = {
-    activeUsers24h: 1284,
-    activeUsers7d: 8930,
-    heritageViews24h: 17_402,
-    premium: 312,
-    revenueMtd: 4382.91,
-  };
+  // Fire counts in parallel. Each promise traps its own errors so a single
+  // backend hiccup doesn't fail the whole page.
+  const [heritageTotal, publishedTotal, tenantTotal] = await Promise.all([
+    safeHeritageTotal(),
+    safePublishedTotal(),
+    safeTenantTotal(),
+  ]);
 
   return (
     <PermissionGuard
@@ -52,32 +91,58 @@ export default async function DashboardOverviewPage(): Promise<JSX.Element> {
       fallback={<AccessDenied />}
     >
       <PageHeader title={t('title')} subtitle={t('subtitle')} />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          label={t('metricUsers24h')}
-          value={metrics.activeUsers24h.toLocaleString()}
-          icon={Users}
+          label={t('metricHeritageTotal')}
+          value={heritageTotal.value}
+          trend={heritageTotal.trend}
+          icon={Box}
         />
         <MetricCard
-          label={t('metricUsers7d')}
-          value={metrics.activeUsers7d.toLocaleString()}
-          icon={UserCheck}
+          label={t('metricHeritagePublished')}
+          value={publishedTotal.value}
+          trend={publishedTotal.trend}
+          icon={Star}
         />
         <MetricCard
-          label={t('metricHeritageViews')}
-          value={metrics.heritageViews24h.toLocaleString()}
-          icon={Eye}
+          label={t('metricTenants')}
+          value={tenantTotal.value}
+          trend={tenantTotal.trend}
+          icon={Building2}
         />
         <MetricCard
-          label={t('metricPremium')}
-          value={metrics.premium.toLocaleString()}
+          label={t('metricAiCalls')}
+          value="—"
+          trend={tCommon('comingSoon')}
           icon={Sparkles}
         />
-        <MetricCard
-          label={t('metricRevenueMtd')}
-          value={formatMoney(metrics.revenueMtd)}
-          icon={BarChart3}
-        />
+      </div>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Activity className="h-4 w-4 text-muted-foreground" aria-hidden />
+              {t('recentActivity')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">
+            <Badge variant="secondary">{tCommon('comingSoon')}</Badge>
+            <p className="mt-2">{t('recentActivityHint')}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Sparkles className="h-4 w-4 text-muted-foreground" aria-hidden />
+              {t('aiPerformance')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">
+            <Badge variant="secondary">{tCommon('comingSoon')}</Badge>
+            <p className="mt-2">{t('aiPerformanceHint')}</p>
+          </CardContent>
+        </Card>
       </div>
     </PermissionGuard>
   );

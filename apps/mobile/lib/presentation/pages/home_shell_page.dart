@@ -1,5 +1,12 @@
-// HomeShellPage hosts the three child tabs (map / camera / profile) and
-// renders the camera-centered Shazam-style bottom bar (Project-Decisions §23).
+// HomeShellPage hosts the bottom-nav tabs. Project-Decisions §23 keeps
+// the camera FAB in the visual center (Shazam-style), with Discover +
+// Saved on the left and Map + Profile on the right.
+//
+// Layout:
+//   Discover   |   Map   | [Camera FAB] |   Saved   |   Profile
+//
+// Tabs are computed off the active GoRouter location so deep-links land
+// on the correct highlight.
 
 import "package:flutter/material.dart";
 import "package:go_router/go_router.dart";
@@ -11,18 +18,14 @@ class HomeShellPage extends StatelessWidget {
 
   final Widget child;
 
-  static const _tabs = <_HomeTab>[
-    _HomeTab(route: AppRoutes.map, icon: Icons.map_outlined, key: "nav.map"),
-    _HomeTab(route: AppRoutes.camera, icon: Icons.camera_alt, key: "nav.camera"),
-    _HomeTab(route: AppRoutes.profile, icon: Icons.person_outline, key: "nav.profile"),
-  ];
-
   int _resolveIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
-    for (int i = 0; i < _tabs.length; i++) {
-      if (location.startsWith(_tabs[i].route)) return i;
-    }
-    return 1; // default = camera (middle)
+    if (location.startsWith(AppRoutes.homeDiscover)) return 0;
+    if (location.startsWith(AppRoutes.homeMap)) return 1;
+    if (location.startsWith(AppRoutes.homeCamera)) return 2;
+    if (location.startsWith(AppRoutes.homeSaved)) return 3;
+    if (location.startsWith(AppRoutes.homeProfile)) return 4;
+    return 0;
   }
 
   @override
@@ -36,7 +39,7 @@ class HomeShellPage extends StatelessWidget {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton.large(
         key: const Key("nav.camera_fab"),
-        onPressed: () => context.go(AppRoutes.camera),
+        onPressed: () => context.go(AppRoutes.homeCamera),
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: theme.colorScheme.onPrimary,
         elevation: 4,
@@ -52,17 +55,33 @@ class HomeShellPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: <Widget>[
               _NavButton(
-                icon: Icons.map_outlined,
+                buttonKey: const Key("nav.discover"),
+                icon: Icons.explore_outlined,
                 selected: currentIndex == 0,
+                label: l10n?.navDiscover ?? "Discover",
+                onPressed: () => context.go(AppRoutes.homeDiscover),
+              ),
+              _NavButton(
+                buttonKey: const Key("nav.map"),
+                icon: Icons.map_outlined,
+                selected: currentIndex == 1,
                 label: l10n?.navMap ?? "Map",
-                onPressed: () => context.go(AppRoutes.map),
+                onPressed: () => context.go(AppRoutes.homeMap),
               ),
               const SizedBox(width: 64), // gap for the camera FAB
               _NavButton(
+                buttonKey: const Key("nav.saved"),
+                icon: Icons.bookmark_outline,
+                selected: currentIndex == 3,
+                label: l10n?.navSaved ?? "Saved",
+                onPressed: () => context.go(AppRoutes.homeSaved),
+              ),
+              _NavButton(
+                buttonKey: const Key("nav.profile"),
                 icon: Icons.person_outline,
-                selected: currentIndex == 2,
+                selected: currentIndex == 4,
                 label: l10n?.navProfile ?? "Profile",
-                onPressed: () => context.go(AppRoutes.profile),
+                onPressed: () => context.go(AppRoutes.homeProfile),
               ),
             ],
           ),
@@ -72,21 +91,16 @@ class HomeShellPage extends StatelessWidget {
   }
 }
 
-class _HomeTab {
-  const _HomeTab({required this.route, required this.icon, required this.key});
-  final String route;
-  final IconData icon;
-  final String key;
-}
-
 class _NavButton extends StatelessWidget {
   const _NavButton({
+    required this.buttonKey,
     required this.icon,
     required this.selected,
     required this.label,
     required this.onPressed,
   });
 
+  final Key buttonKey;
   final IconData icon;
   final bool selected;
   final String label;
@@ -98,18 +112,20 @@ class _NavButton extends StatelessWidget {
         ? Theme.of(context).colorScheme.primary
         : Theme.of(context).colorScheme.onSurfaceVariant;
     return InkWell(
+      key: buttonKey,
       onTap: onPressed,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(icon, color: color),
+            Icon(icon, color: color, size: 22),
             const SizedBox(height: 2),
             Text(
               label,
-              style: TextStyle(color: color, fontSize: 11),
+              style: TextStyle(color: color, fontSize: 10),
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

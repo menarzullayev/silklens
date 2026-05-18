@@ -45,6 +45,9 @@ dependencies:
   # i18n (4 ARB files: uz / en / ru / zh, dynamic per Project-Decisions §8)
   intl: any
 
+  # Markdown rendering (heritage summary_md / description_md)
+  flutter_markdown: ^0.7.4
+
   # Config & ops
   flutter_dotenv: ^5.1.0
   sentry_flutter: ^8.0.0
@@ -55,6 +58,24 @@ dependencies:
   # Utility
   collection: ^1.18.0
   meta: ^1.12.0
+
+  # FAZA 2 / 3 — Camera + AI recognition + audio guide + maps
+  # (per Project-Decisions §23 / Roadmap FAZA 2 + 3). Pins are deliberately
+  # conservative so build_runner stays happy on the existing Dart 3.5 SDK.
+  camera: ^0.11.0
+  image_picker: ^1.0.7
+  permission_handler: ^11.3.0
+  geolocator: ^12.0.0
+  just_audio: ^0.9.40
+  flutter_map: ^7.0.0
+  latlong2: ^0.9.1
+  http_parser: ^4.0.0
+  uuid: ^4.4.0
+  shared_preferences: ^2.2.0
+  # flutter_stripe is optional — pulled in by checkout_page only when an API
+  # key is provided. We keep the dependency declared so the project compiles
+  # against the gated import; the package is harmless when unused.
+  flutter_stripe: ^11.0.0
 
 dev_dependencies:
   flutter_test:

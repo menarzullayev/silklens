@@ -9,8 +9,10 @@
 export const PERMISSIONS = {
   // Heritage / content
   HERITAGE_READ: 'heritage:read',
-  HERITAGE_WRITE: 'heritage:write',
+  HERITAGE_WRITE: 'heritage:create',
+  HERITAGE_UPDATE: 'heritage:update',
   HERITAGE_DELETE: 'heritage:delete',
+  HERITAGE_MODERATE: 'heritage:moderate',
 
   // Users
   USERS_READ: 'users:read',

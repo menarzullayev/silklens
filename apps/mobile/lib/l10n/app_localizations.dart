@@ -29,20 +29,192 @@ class AppLocalizations {
 
   String get appName => _resolve("appName");
   String get appTagline => _resolve("appTagline");
+
   String get onboardingTitle => _resolve("onboardingTitle");
   String get onboardingSubtitle => _resolve("onboardingSubtitle");
   String get onboardingCta => _resolve("onboardingCta");
   String get onboardingSkip => _resolve("onboardingSkip");
+  String get onboardingSlide1Title => _resolve("onboardingSlide1Title");
+  String get onboardingSlide1Body => _resolve("onboardingSlide1Body");
+  String get onboardingSlide2Title => _resolve("onboardingSlide2Title");
+  String get onboardingSlide2Body => _resolve("onboardingSlide2Body");
+  String get onboardingSlide3Title => _resolve("onboardingSlide3Title");
+  String get onboardingSlide3Body => _resolve("onboardingSlide3Body");
+  String get onboardingSignIn => _resolve("onboardingSignIn");
+  String get onboardingNext => _resolve("onboardingNext");
+
   String get navMap => _resolve("navMap");
   String get navCamera => _resolve("navCamera");
   String get navProfile => _resolve("navProfile");
+  String get navDiscover => _resolve("navDiscover");
+  String get navSaved => _resolve("navSaved");
+
   String get cameraPlaceholderTitle => _resolve("cameraPlaceholderTitle");
   String get cameraPlaceholderBody => _resolve("cameraPlaceholderBody");
   String get mapPlaceholderTitle => _resolve("mapPlaceholderTitle");
   String get mapPlaceholderBody => _resolve("mapPlaceholderBody");
+
   String get profileTitle => _resolve("profileTitle");
   String get profileLanguage => _resolve("profileLanguage");
   String get profileTheme => _resolve("profileTheme");
+  String get profileSignOut => _resolve("profileSignOut");
+  String get profileGuestTitle => _resolve("profileGuestTitle");
+  String get profileGuestBody => _resolve("profileGuestBody");
+
+  String get authEmailLabel => _resolve("authEmailLabel");
+  String get authPasswordLabel => _resolve("authPasswordLabel");
+  String get authPasswordConfirmLabel => _resolve("authPasswordConfirmLabel");
+  String get authDisplayNameLabel => _resolve("authDisplayNameLabel");
+  String get authSignInTitle => _resolve("authSignInTitle");
+  String get authSignInSubtitle => _resolve("authSignInSubtitle");
+  String get authSignInCta => _resolve("authSignInCta");
+  String get authSignUpTitle => _resolve("authSignUpTitle");
+  String get authSignUpSubtitle => _resolve("authSignUpSubtitle");
+  String get authSignUpCta => _resolve("authSignUpCta");
+  String get authForgotPasswordTitle => _resolve("authForgotPasswordTitle");
+  String get authForgotPasswordCta => _resolve("authForgotPasswordCta");
+  String get authForgotPasswordBody => _resolve("authForgotPasswordBody");
+  String get authHaveAccountQ => _resolve("authHaveAccountQ");
+  String get authNoAccountQ => _resolve("authNoAccountQ");
+  String get authForgotLink => _resolve("authForgotLink");
+  String get authProvidersDivider => _resolve("authProvidersDivider");
+  String get authProviderGoogle => _resolve("authProviderGoogle");
+  String get authProviderApple => _resolve("authProviderApple");
+  String get authProviderTelegram => _resolve("authProviderTelegram");
+  String get authComingSoon => _resolve("authComingSoon");
+  String get authErrorInvalidEmail => _resolve("authErrorInvalidEmail");
+  String get authErrorPasswordTooShort => _resolve("authErrorPasswordTooShort");
+  String get authErrorPasswordWeak => _resolve("authErrorPasswordWeak");
+  String get authErrorPasswordsDontMatch => _resolve("authErrorPasswordsDontMatch");
+  String get authErrorRequired => _resolve("authErrorRequired");
+  String get authErrorInvalidCredentials =>
+      _resolve("authErrorInvalidCredentials");
+  String get authErrorRateLimited => _resolve("authErrorRateLimited");
+  String get authErrorEmailTaken => _resolve("authErrorEmailTaken");
+  String get authErrorNetwork => _resolve("authErrorNetwork");
+  String get authErrorUnknown => _resolve("authErrorUnknown");
+
+  String get heritageListTitle => _resolve("heritageListTitle");
+  String get heritageSearchHint => _resolve("heritageSearchHint");
+  String get heritageFilterAll => _resolve("heritageFilterAll");
+  String get heritageFilterKind => _resolve("heritageFilterKind");
+  String get heritageFilterCountry => _resolve("heritageFilterCountry");
+  String get heritageEmpty => _resolve("heritageEmpty");
+  String get heritageSearchEmptyTitle => _resolve("heritageSearchEmptyTitle");
+  String get heritageSearchEmptyBody => _resolve("heritageSearchEmptyBody");
+  String get heritageRecentSearches => _resolve("heritageRecentSearches");
+  String get heritageDetailSave => _resolve("heritageDetailSave");
+  String get heritageDetailUnsave => _resolve("heritageDetailUnsave");
+  String get heritageDetailShare => _resolve("heritageDetailShare");
+  String get heritageDetailAiGuide => _resolve("heritageDetailAiGuide");
+  String get heritageDetailAiGuideTooltip =>
+      _resolve("heritageDetailAiGuideTooltip");
+  String get heritageDetailOpenInMap => _resolve("heritageDetailOpenInMap");
+  String get heritageDetailPeriod => _resolve("heritageDetailPeriod");
+  String get heritageDetailCountry => _resolve("heritageDetailCountry");
+  String get heritageDetailUnesco => _resolve("heritageDetailUnesco");
+  String get heritageDetailSummary => _resolve("heritageDetailSummary");
+  String get heritageDetailAbout => _resolve("heritageDetailAbout");
+  String get heritageDetailLocation => _resolve("heritageDetailLocation");
+  String get heritageSavedTitle => _resolve("heritageSavedTitle");
+  String get heritageSavedEmpty => _resolve("heritageSavedEmpty");
+  String get heritageLoadMoreError => _resolve("heritageLoadMoreError");
+
+  String get commonRetry => _resolve("commonRetry");
+  String get commonClose => _resolve("commonClose");
+  String get commonCancel => _resolve("commonCancel");
+  String get commonContinue => _resolve("commonContinue");
+  String get commonOk => _resolve("commonOk");
+
+  // ───── WAVE-3 AGENT-B additions ─────
+  // Camera + recognition
+  String get cameraTorch => _resolve("cameraTorch");
+  String get cameraFlip => _resolve("cameraFlip");
+  String get cameraGallery => _resolve("cameraGallery");
+  String get cameraCapture => _resolve("cameraCapture");
+  String get cameraUnavailable => _resolve("cameraUnavailable");
+  String get recognitionUploading => _resolve("recognitionUploading");
+  String get recognitionRecognising => _resolve("recognitionRecognising");
+  String get recognitionTitle => _resolve("recognitionTitle");
+  String get recognitionConfidence => _resolve("recognitionConfidence");
+  String get recognitionViewDetails => _resolve("recognitionViewDetails");
+  String get recognitionAlternatives => _resolve("recognitionAlternatives");
+  String get recognitionFailed => _resolve("recognitionFailed");
+  // Map
+  String get mapLocateMe => _resolve("mapLocateMe");
+  String get mapOpen => _resolve("mapOpen");
+  String get mapLayerHeritage => _resolve("mapLayerHeritage");
+  String get mapLayerUnesco => _resolve("mapLayerUnesco");
+  String get mapLayerCities => _resolve("mapLayerCities");
+  // Chat
+  String get chatTitle => _resolve("chatTitle");
+  String get chatEmptyTitle => _resolve("chatEmptyTitle");
+  String get chatInputHint => _resolve("chatInputHint");
+  String get chatTtsHint => _resolve("chatTtsHint");
+  String get chatSuggestionWhen => _resolve("chatSuggestionWhen");
+  String get chatSuggestionHotels => _resolve("chatSuggestionHotels");
+  String get chatSuggestionLegends => _resolve("chatSuggestionLegends");
+  // Profile / Social
+  String get profileTabActivity => _resolve("profileTabActivity");
+  String get profileTabSaved => _resolve("profileTabSaved");
+  String get profileTabReviews => _resolve("profileTabReviews");
+  String get profileTabFriends => _resolve("profileTabFriends");
+  String get profileTabSettings => _resolve("profileTabSettings");
+  String get profileActivityEmpty => _resolve("profileActivityEmpty");
+  String get profileSavedEmpty => _resolve("profileSavedEmpty");
+  String get profileReviewsEmpty => _resolve("profileReviewsEmpty");
+  String get profileReviewsNew => _resolve("profileReviewsNew");
+  String get profileFriendsEmpty => _resolve("profileFriendsEmpty");
+  String get profileFriendsInvite => _resolve("profileFriendsInvite");
+  String get profileNotifications => _resolve("profileNotifications");
+  String get profileNotificationsHint => _resolve("profileNotificationsHint");
+  String get profileLogout => _resolve("profileLogout");
+  String get profileFollow => _resolve("profileFollow");
+  String get profileFollowing => _resolve("profileFollowing");
+  String get profileFollowers => _resolve("profileFollowers");
+  String get profileUserNotFound => _resolve("profileUserNotFound");
+  // Review composer
+  String get reviewComposerTitle => _resolve("reviewComposerTitle");
+  String get reviewComposerBodyLabel => _resolve("reviewComposerBodyLabel");
+  String get reviewComposerLanguage => _resolve("reviewComposerLanguage");
+  String get reviewComposerSubmit => _resolve("reviewComposerSubmit");
+  String get reviewDimHistory => _resolve("reviewDimHistory");
+  String get reviewDimPhotos => _resolve("reviewDimPhotos");
+  String get reviewDimAccess => _resolve("reviewDimAccess");
+  String get reviewDimValue => _resolve("reviewDimValue");
+  String get reviewDimAtmosphere => _resolve("reviewDimAtmosphere");
+  String get reviewDimFamilyFriendly => _resolve("reviewDimFamilyFriendly");
+  // Gamification
+  String get gamificationLevel => _resolve("gamificationLevel");
+  String get gamificationNoData => _resolve("gamificationNoData");
+  String get gamificationStreakDays => _resolve("gamificationStreakDays");
+  String get gamificationBadgesTitle => _resolve("gamificationBadgesTitle");
+  String get gamificationBadgesEmpty => _resolve("gamificationBadgesEmpty");
+  String get leaderboardTitle => _resolve("leaderboardTitle");
+  String get leaderboardWeekly => _resolve("leaderboardWeekly");
+  String get leaderboardMonthly => _resolve("leaderboardMonthly");
+  String get leaderboardAllTime => _resolve("leaderboardAllTime");
+  String get leaderboardFriends => _resolve("leaderboardFriends");
+  // Billing
+  String get billingPlansTitle => _resolve("billingPlansTitle");
+  String get billingPlansEmpty => _resolve("billingPlansEmpty");
+  String get billingFreeLabel => _resolve("billingFreeLabel");
+  String get billingPerMonth => _resolve("billingPerMonth");
+  String get billingPerYear => _resolve("billingPerYear");
+  String get billingCurrentPlan => _resolve("billingCurrentPlan");
+  String get billingChoosePlan => _resolve("billingChoosePlan");
+  String get billingCheckoutTitle => _resolve("billingCheckoutTitle");
+  String get billingCheckoutSubtitle => _resolve("billingCheckoutSubtitle");
+  String get billingCheckoutToken => _resolve("billingCheckoutToken");
+  String get billingCheckoutMock => _resolve("billingCheckoutMock");
+  String get billingCheckoutSubmit => _resolve("billingCheckoutSubmit");
+  String get billingManageTitle => _resolve("billingManageTitle");
+  String get billingNoActive => _resolve("billingNoActive");
+  String get billingRenewsOn => _resolve("billingRenewsOn");
+  String get billingCancel => _resolve("billingCancel");
+  String get billingResume => _resolve("billingResume");
+  String get billingInvoicesTitle => _resolve("billingInvoicesTitle");
+  String get billingInvoicesEmpty => _resolve("billingInvoicesEmpty");
 
   String _resolve(String key) {
     final bundle = _bundles[locale.languageCode] ?? _bundles["en"]!;
@@ -62,9 +234,22 @@ class AppLocalizations {
           "Point at any monument to instantly learn its story.",
       "onboardingCta": "Start exploring",
       "onboardingSkip": "Skip",
+      "onboardingSlide1Title": "Recognize heritage in seconds",
+      "onboardingSlide1Body":
+          "Point your camera at any monument and our AI tells you what you are looking at.",
+      "onboardingSlide2Title": "Listen to the story",
+      "onboardingSlide2Body":
+          "Personalized audio guides — choose your language and your favorite region.",
+      "onboardingSlide3Title": "Build your atlas",
+      "onboardingSlide3Body":
+          "Save places, share reviews, and earn badges as you explore the Silk Road.",
+      "onboardingSignIn": "Sign in",
+      "onboardingNext": "Next",
       "navMap": "Map",
       "navCamera": "Camera",
       "navProfile": "Profile",
+      "navDiscover": "Discover",
+      "navSaved": "Saved",
       "cameraPlaceholderTitle": "Camera",
       "cameraPlaceholderBody": "Vision pipeline ships in FAZA 2 — Hafta 3.",
       "mapPlaceholderTitle": "Map",
@@ -73,6 +258,155 @@ class AppLocalizations {
       "profileTitle": "Profile",
       "profileLanguage": "Language",
       "profileTheme": "Theme",
+      "profileSignOut": "Sign out",
+      "profileGuestTitle": "Guest",
+      "profileGuestBody":
+          "Sign in to sync your saved heritage across devices.",
+      "authEmailLabel": "Email",
+      "authPasswordLabel": "Password",
+      "authPasswordConfirmLabel": "Confirm password",
+      "authDisplayNameLabel": "Display name",
+      "authSignInTitle": "Welcome back",
+      "authSignInSubtitle": "Sign in to continue exploring.",
+      "authSignInCta": "Sign in",
+      "authSignUpTitle": "Create your account",
+      "authSignUpSubtitle": "Save heritage, share reviews, unlock badges.",
+      "authSignUpCta": "Create account",
+      "authForgotPasswordTitle": "Forgot password",
+      "authForgotPasswordCta": "Send reset link",
+      "authForgotPasswordBody":
+          "Password recovery is coming soon — we will email you instructions.",
+      "authHaveAccountQ": "Already have an account?",
+      "authNoAccountQ": "Don’t have an account?",
+      "authForgotLink": "Forgot password?",
+      "authProvidersDivider": "Or continue with",
+      "authProviderGoogle": "Continue with Google",
+      "authProviderApple": "Continue with Apple",
+      "authProviderTelegram": "Continue with Telegram",
+      "authComingSoon": "Coming soon",
+      "authErrorInvalidEmail": "Enter a valid email address.",
+      "authErrorPasswordTooShort": "Password must be at least 12 characters.",
+      "authErrorPasswordWeak":
+          "Password must contain upper- and lower-case letters and at least one digit.",
+      "authErrorPasswordsDontMatch": "Passwords don’t match.",
+      "authErrorRequired": "This field is required.",
+      "authErrorInvalidCredentials": "Email or password is incorrect.",
+      "authErrorRateLimited": "Too many attempts. Please try again later.",
+      "authErrorEmailTaken": "That email is already registered.",
+      "authErrorNetwork": "Network error. Check your connection.",
+      "authErrorUnknown": "Something went wrong. Please try again.",
+      "heritageListTitle": "Discover",
+      "heritageSearchHint": "Search heritage, cities, eras...",
+      "heritageFilterAll": "All",
+      "heritageFilterKind": "Kind",
+      "heritageFilterCountry": "Country",
+      "heritageEmpty": "No heritage matches your filters yet.",
+      "heritageSearchEmptyTitle": "Nothing here yet",
+      "heritageSearchEmptyBody":
+          "Try a different keyword or browse all heritage.",
+      "heritageRecentSearches": "Recent searches",
+      "heritageDetailSave": "Save",
+      "heritageDetailUnsave": "Saved",
+      "heritageDetailShare": "Share",
+      "heritageDetailAiGuide": "AI guide",
+      "heritageDetailAiGuideTooltip": "Coming in v2 build",
+      "heritageDetailOpenInMap": "Open in map",
+      "heritageDetailPeriod": "Period",
+      "heritageDetailCountry": "Country",
+      "heritageDetailUnesco": "UNESCO inscribed",
+      "heritageDetailSummary": "Summary",
+      "heritageDetailAbout": "About",
+      "heritageDetailLocation": "Location",
+      "heritageSavedTitle": "Saved",
+      "heritageSavedEmpty":
+          "Nothing saved yet. Tap save on any heritage detail page.",
+      "heritageLoadMoreError": "Couldn’t load more — tap to retry.",
+      "commonRetry": "Retry",
+      "commonClose": "Close",
+      "commonCancel": "Cancel",
+      "commonContinue": "Continue",
+      "commonOk": "OK",
+      "cameraTorch": "Torch",
+      "cameraFlip": "Flip camera",
+      "cameraGallery": "Pick from gallery",
+      "cameraCapture": "Capture",
+      "cameraUnavailable": "Camera unavailable",
+      "recognitionUploading": "Uploading…",
+      "recognitionRecognising": "Recognising…",
+      "recognitionTitle": "Recognised",
+      "recognitionConfidence": "Confidence",
+      "recognitionViewDetails": "View details",
+      "recognitionAlternatives": "Other matches",
+      "recognitionFailed": "Recognition failed",
+      "mapLocateMe": "Locate me",
+      "mapOpen": "Open",
+      "mapLayerHeritage": "Heritage",
+      "mapLayerUnesco": "UNESCO",
+      "mapLayerCities": "Cities",
+      "chatTitle": "Ask SilkLens",
+      "chatEmptyTitle": "Ask anything about the Silk Road",
+      "chatInputHint": "Type a message…",
+      "chatTtsHint": "Play",
+      "chatSuggestionWhen": "When was this monument built?",
+      "chatSuggestionHotels": "What are the best hotels nearby?",
+      "chatSuggestionLegends": "Tell me a legend about this place.",
+      "profileTabActivity": "Activity",
+      "profileTabSaved": "Saved",
+      "profileTabReviews": "Reviews",
+      "profileTabFriends": "Friends",
+      "profileTabSettings": "Settings",
+      "profileActivityEmpty": "No activity yet",
+      "profileSavedEmpty": "No saved heritage yet",
+      "profileReviewsEmpty": "Your reviews will appear here",
+      "profileReviewsNew": "New review",
+      "profileFriendsEmpty": "Invite friends to join SilkLens",
+      "profileFriendsInvite": "Invite",
+      "profileNotifications": "Notifications",
+      "profileNotificationsHint": "Configure push & email",
+      "profileLogout": "Log out",
+      "profileFollow": "Follow",
+      "profileFollowing": "Following",
+      "profileFollowers": "Followers",
+      "profileUserNotFound": "User not found",
+      "reviewComposerTitle": "Write a review",
+      "reviewComposerBodyLabel": "Your review",
+      "reviewComposerLanguage": "Language",
+      "reviewComposerSubmit": "Submit",
+      "reviewDimHistory": "History",
+      "reviewDimPhotos": "Photos",
+      "reviewDimAccess": "Access",
+      "reviewDimValue": "Value",
+      "reviewDimAtmosphere": "Atmosphere",
+      "reviewDimFamilyFriendly": "Family-friendly",
+      "gamificationLevel": "Level",
+      "gamificationNoData": "No data",
+      "gamificationStreakDays": "day streak",
+      "gamificationBadgesTitle": "Badges",
+      "gamificationBadgesEmpty": "No badges yet",
+      "leaderboardTitle": "Leaderboard",
+      "leaderboardWeekly": "Weekly",
+      "leaderboardMonthly": "Monthly",
+      "leaderboardAllTime": "All-time",
+      "leaderboardFriends": "Friends",
+      "billingPlansTitle": "Choose a plan",
+      "billingPlansEmpty": "No plans available",
+      "billingFreeLabel": "Free",
+      "billingPerMonth": "/month",
+      "billingPerYear": "/year",
+      "billingCurrentPlan": "Current",
+      "billingChoosePlan": "Choose",
+      "billingCheckoutTitle": "Checkout",
+      "billingCheckoutSubtitle": "Enter your payment method to subscribe",
+      "billingCheckoutToken": "Payment token",
+      "billingCheckoutMock": "Mock payment (development only)",
+      "billingCheckoutSubmit": "Subscribe",
+      "billingManageTitle": "Manage subscription",
+      "billingNoActive": "No active subscription",
+      "billingRenewsOn": "Renews on",
+      "billingCancel": "Cancel",
+      "billingResume": "Resume",
+      "billingInvoicesTitle": "Invoices",
+      "billingInvoicesEmpty": "No invoices",
     },
     "uz": <String, String>{
       "appName": "SilkLens",
@@ -82,9 +416,22 @@ class AppLocalizations {
           "Istalgan obidaga moslang — uning hikoyasi darhol ochiladi.",
       "onboardingCta": "Kashf etishni boshlash",
       "onboardingSkip": "O‘tkazib yuborish",
+      "onboardingSlide1Title": "Merosni soniyalarda tan oling",
+      "onboardingSlide1Body":
+          "Kamerangizni istalgan obidaga moslang — sun’iy intellekt uning kim ekanligini aytib beradi.",
+      "onboardingSlide2Title": "Hikoyani tinglang",
+      "onboardingSlide2Body":
+          "Shaxsiy audio gid — tilingiz va sevimli viloyatingizni tanlang.",
+      "onboardingSlide3Title": "O‘z atlasingizni yarating",
+      "onboardingSlide3Body":
+          "Joylarni saqlang, sharhlar yozing, Ipak yo‘ylab nishonlar to‘plang.",
+      "onboardingSignIn": "Kirish",
+      "onboardingNext": "Davom etish",
       "navMap": "Xarita",
       "navCamera": "Kamera",
       "navProfile": "Profil",
+      "navDiscover": "Kashf et",
+      "navSaved": "Saqlandi",
       "cameraPlaceholderTitle": "Kamera",
       "cameraPlaceholderBody": "Vision pipeline FAZA 2 — Hafta 3’da chiqadi.",
       "mapPlaceholderTitle": "Xarita",
@@ -93,6 +440,77 @@ class AppLocalizations {
       "profileTitle": "Profil",
       "profileLanguage": "Til",
       "profileTheme": "Mavzu",
+      "profileSignOut": "Chiqish",
+      "profileGuestTitle": "Mehmon",
+      "profileGuestBody":
+          "Saqlangan obidalarni qurilmalar aro sinxronlash uchun tizimga kiring.",
+      "authEmailLabel": "Email",
+      "authPasswordLabel": "Parol",
+      "authPasswordConfirmLabel": "Parolni tasdiqlang",
+      "authDisplayNameLabel": "Ko‘rsatiladigan ism",
+      "authSignInTitle": "Xush kelibsiz",
+      "authSignInSubtitle": "Kashfiyotni davom ettirish uchun tizimga kiring.",
+      "authSignInCta": "Kirish",
+      "authSignUpTitle": "Hisob yarating",
+      "authSignUpSubtitle":
+          "Obidalarni saqlang, sharhlar yozing, nishonlarga ega bo‘ling.",
+      "authSignUpCta": "Hisob yaratish",
+      "authForgotPasswordTitle": "Parolni tikladim",
+      "authForgotPasswordCta": "Tiklash havolasi yuborish",
+      "authForgotPasswordBody":
+          "Parolni tiklash funksiyasi yaqinda — emailingizga yo‘riqnoma yuboramiz.",
+      "authHaveAccountQ": "Hisobingiz bormi?",
+      "authNoAccountQ": "Hisobingiz yo‘qmi?",
+      "authForgotLink": "Parolni unutdingizmi?",
+      "authProvidersDivider": "Yoki orqali kiring",
+      "authProviderGoogle": "Google bilan davom etish",
+      "authProviderApple": "Apple bilan davom etish",
+      "authProviderTelegram": "Telegram bilan davom etish",
+      "authComingSoon": "Yaqinda",
+      "authErrorInvalidEmail": "To‘g‘ri email kiriting.",
+      "authErrorPasswordTooShort":
+          "Parol kamida 12 belgidan iborat bo‘lishi kerak.",
+      "authErrorPasswordWeak":
+          "Parolda katta va kichik harf, kamida bitta raqam bo‘lishi kerak.",
+      "authErrorPasswordsDontMatch": "Parollar mos kelmaydi.",
+      "authErrorRequired": "Ushbu maydon majburiy.",
+      "authErrorInvalidCredentials": "Email yoki parol noto‘g‘ri.",
+      "authErrorRateLimited":
+          "Juda ko‘p urinish. Birozdan keyin qayta urinib ko‘ring.",
+      "authErrorEmailTaken": "Bunday email allaqachon ro‘yxatdan o‘tgan.",
+      "authErrorNetwork": "Tarmoq xatosi. Ulanishni tekshiring.",
+      "authErrorUnknown": "Nimadir xato ketdi. Qayta urinib ko‘ring.",
+      "heritageListTitle": "Kashf et",
+      "heritageSearchHint": "Obida, shahar yoki davrni qidiring...",
+      "heritageFilterAll": "Hammasi",
+      "heritageFilterKind": "Turi",
+      "heritageFilterCountry": "Davlat",
+      "heritageEmpty": "Filtrlarga mos obida topilmadi.",
+      "heritageSearchEmptyTitle": "Bu yerda hech narsa yo‘q",
+      "heritageSearchEmptyBody":
+          "Boshqa kalit so‘zni sinab ko‘ring yoki barcha obidalarga qarang.",
+      "heritageRecentSearches": "So‘nggi qidiruvlar",
+      "heritageDetailSave": "Saqlash",
+      "heritageDetailUnsave": "Saqlandi",
+      "heritageDetailShare": "Ulashish",
+      "heritageDetailAiGuide": "AI gid",
+      "heritageDetailAiGuideTooltip": "V2 versiyasida",
+      "heritageDetailOpenInMap": "Xaritada ochish",
+      "heritageDetailPeriod": "Davr",
+      "heritageDetailCountry": "Davlat",
+      "heritageDetailUnesco": "UNESCO ro‘yxatida",
+      "heritageDetailSummary": "Qisqa ma’lumot",
+      "heritageDetailAbout": "Haqida",
+      "heritageDetailLocation": "Joylashuvi",
+      "heritageSavedTitle": "Saqlangan",
+      "heritageSavedEmpty":
+          "Hali hech narsa saqlanmagan. Obida sahifasida “Saqlash”ni bosing.",
+      "heritageLoadMoreError": "Yuklab bo‘lmadi — qayta urinish uchun bosing.",
+      "commonRetry": "Qayta urinish",
+      "commonClose": "Yopish",
+      "commonCancel": "Bekor qilish",
+      "commonContinue": "Davom etish",
+      "commonOk": "OK",
     },
     "ru": <String, String>{
       "appName": "SilkLens",
@@ -102,9 +520,22 @@ class AppLocalizations {
           "Наведите камеру на памятник — узнайте его историю мгновенно.",
       "onboardingCta": "Начать исследование",
       "onboardingSkip": "Пропустить",
+      "onboardingSlide1Title": "Распознавайте наследие за секунды",
+      "onboardingSlide1Body":
+          "Наведите камеру на любой памятник — ИИ расскажет, что это.",
+      "onboardingSlide2Title": "Слушайте историю",
+      "onboardingSlide2Body":
+          "Персональный аудио-гид — выберите язык и любимый регион.",
+      "onboardingSlide3Title": "Создайте свой атлас",
+      "onboardingSlide3Body":
+          "Сохраняйте места, делитесь отзывами и зарабатывайте значки.",
+      "onboardingSignIn": "Войти",
+      "onboardingNext": "Далее",
       "navMap": "Карта",
       "navCamera": "Камера",
       "navProfile": "Профиль",
+      "navDiscover": "Поиск",
+      "navSaved": "Сохранённое",
       "cameraPlaceholderTitle": "Камера",
       "cameraPlaceholderBody":
           "Распознавание появится в FAZA 2 — неделя 3.",
@@ -114,6 +545,76 @@ class AppLocalizations {
       "profileTitle": "Профиль",
       "profileLanguage": "Язык",
       "profileTheme": "Тема",
+      "profileSignOut": "Выйти",
+      "profileGuestTitle": "Гость",
+      "profileGuestBody":
+          "Войдите, чтобы синхронизировать сохранённые объекты между устройствами.",
+      "authEmailLabel": "Email",
+      "authPasswordLabel": "Пароль",
+      "authPasswordConfirmLabel": "Подтвердите пароль",
+      "authDisplayNameLabel": "Отображаемое имя",
+      "authSignInTitle": "С возвращением",
+      "authSignInSubtitle": "Войдите, чтобы продолжить исследование.",
+      "authSignInCta": "Войти",
+      "authSignUpTitle": "Создать аккаунт",
+      "authSignUpSubtitle":
+          "Сохраняйте объекты, делитесь отзывами, получайте значки.",
+      "authSignUpCta": "Создать аккаунт",
+      "authForgotPasswordTitle": "Забыли пароль",
+      "authForgotPasswordCta": "Отправить ссылку для сброса",
+      "authForgotPasswordBody":
+          "Восстановление пароля скоро — мы вышлем инструкцию на email.",
+      "authHaveAccountQ": "Уже есть аккаунт?",
+      "authNoAccountQ": "Нет аккаунта?",
+      "authForgotLink": "Забыли пароль?",
+      "authProvidersDivider": "Или продолжите через",
+      "authProviderGoogle": "Войти через Google",
+      "authProviderApple": "Войти через Apple",
+      "authProviderTelegram": "Войти через Telegram",
+      "authComingSoon": "Скоро",
+      "authErrorInvalidEmail": "Введите корректный email.",
+      "authErrorPasswordTooShort":
+          "Пароль должен быть не короче 12 символов.",
+      "authErrorPasswordWeak":
+          "Пароль должен содержать заглавные и строчные буквы и хотя бы одну цифру.",
+      "authErrorPasswordsDontMatch": "Пароли не совпадают.",
+      "authErrorRequired": "Обязательное поле.",
+      "authErrorInvalidCredentials": "Неверный email или пароль.",
+      "authErrorRateLimited": "Слишком много попыток. Попробуйте позже.",
+      "authErrorEmailTaken": "Этот email уже зарегистрирован.",
+      "authErrorNetwork": "Ошибка сети. Проверьте подключение.",
+      "authErrorUnknown": "Что-то пошло не так. Попробуйте снова.",
+      "heritageListTitle": "Поиск",
+      "heritageSearchHint": "Памятники, города, эпохи...",
+      "heritageFilterAll": "Все",
+      "heritageFilterKind": "Тип",
+      "heritageFilterCountry": "Страна",
+      "heritageEmpty": "Не найдено объектов по вашим фильтрам.",
+      "heritageSearchEmptyTitle": "Пусто",
+      "heritageSearchEmptyBody":
+          "Попробуйте другой запрос или посмотрите все объекты.",
+      "heritageRecentSearches": "Недавние запросы",
+      "heritageDetailSave": "Сохранить",
+      "heritageDetailUnsave": "Сохранено",
+      "heritageDetailShare": "Поделиться",
+      "heritageDetailAiGuide": "AI-гид",
+      "heritageDetailAiGuideTooltip": "Скоро в v2",
+      "heritageDetailOpenInMap": "Открыть на карте",
+      "heritageDetailPeriod": "Период",
+      "heritageDetailCountry": "Страна",
+      "heritageDetailUnesco": "Объект ЮНЕСКО",
+      "heritageDetailSummary": "Кратко",
+      "heritageDetailAbout": "О месте",
+      "heritageDetailLocation": "Местоположение",
+      "heritageSavedTitle": "Сохранённое",
+      "heritageSavedEmpty":
+          "Пока ничего не сохранено. Нажмите “Сохранить” на странице объекта.",
+      "heritageLoadMoreError": "Не удалось загрузить — нажмите для повтора.",
+      "commonRetry": "Повторить",
+      "commonClose": "Закрыть",
+      "commonCancel": "Отмена",
+      "commonContinue": "Продолжить",
+      "commonOk": "OK",
     },
     "zh": <String, String>{
       "appName": "SilkLens",
@@ -122,9 +623,19 @@ class AppLocalizations {
       "onboardingSubtitle": "对准任何古迹,立刻了解它的故事。",
       "onboardingCta": "开始探索",
       "onboardingSkip": "跳过",
+      "onboardingSlide1Title": "数秒内识别遗产",
+      "onboardingSlide1Body": "把相机对准任何古迹,AI 立刻告诉你它是什么。",
+      "onboardingSlide2Title": "聆听故事",
+      "onboardingSlide2Body": "个性化语音导览 — 选择语言和喜爱的地区。",
+      "onboardingSlide3Title": "构建你的图集",
+      "onboardingSlide3Body": "收藏地点,分享评论,沿丝路赢取徽章。",
+      "onboardingSignIn": "登录",
+      "onboardingNext": "下一步",
       "navMap": "地图",
       "navCamera": "相机",
       "navProfile": "个人资料",
+      "navDiscover": "发现",
+      "navSaved": "已保存",
       "cameraPlaceholderTitle": "相机",
       "cameraPlaceholderBody": "视觉识别将在 FAZA 2 — 第3周 发布。",
       "mapPlaceholderTitle": "地图",
@@ -132,6 +643,69 @@ class AppLocalizations {
       "profileTitle": "个人资料",
       "profileLanguage": "语言",
       "profileTheme": "主题",
+      "profileSignOut": "退出登录",
+      "profileGuestTitle": "访客",
+      "profileGuestBody": "登录以在多设备间同步已保存的遗产。",
+      "authEmailLabel": "邮箱",
+      "authPasswordLabel": "密码",
+      "authPasswordConfirmLabel": "确认密码",
+      "authDisplayNameLabel": "显示名称",
+      "authSignInTitle": "欢迎回来",
+      "authSignInSubtitle": "登录以继续探索。",
+      "authSignInCta": "登录",
+      "authSignUpTitle": "创建账户",
+      "authSignUpSubtitle": "保存遗产、分享评论、解锁徽章。",
+      "authSignUpCta": "创建账户",
+      "authForgotPasswordTitle": "忘记密码",
+      "authForgotPasswordCta": "发送重置链接",
+      "authForgotPasswordBody": "密码恢复即将上线 — 我们将通过邮件发送指引。",
+      "authHaveAccountQ": "已有账户?",
+      "authNoAccountQ": "还没有账户?",
+      "authForgotLink": "忘记密码?",
+      "authProvidersDivider": "或继续使用",
+      "authProviderGoogle": "使用 Google 继续",
+      "authProviderApple": "使用 Apple 继续",
+      "authProviderTelegram": "使用 Telegram 继续",
+      "authComingSoon": "即将推出",
+      "authErrorInvalidEmail": "请输入有效邮箱地址。",
+      "authErrorPasswordTooShort": "密码至少 12 位。",
+      "authErrorPasswordWeak": "密码须包含大小写字母与至少一个数字。",
+      "authErrorPasswordsDontMatch": "两次密码不一致。",
+      "authErrorRequired": "此项为必填。",
+      "authErrorInvalidCredentials": "邮箱或密码错误。",
+      "authErrorRateLimited": "尝试次数过多,请稍后再试。",
+      "authErrorEmailTaken": "该邮箱已注册。",
+      "authErrorNetwork": "网络错误,请检查连接。",
+      "authErrorUnknown": "出错了,请重试。",
+      "heritageListTitle": "发现",
+      "heritageSearchHint": "搜索遗产、城市、年代…",
+      "heritageFilterAll": "全部",
+      "heritageFilterKind": "类型",
+      "heritageFilterCountry": "国家",
+      "heritageEmpty": "暂无匹配筛选的遗产。",
+      "heritageSearchEmptyTitle": "暂无结果",
+      "heritageSearchEmptyBody": "试试其他关键词,或浏览全部遗产。",
+      "heritageRecentSearches": "最近搜索",
+      "heritageDetailSave": "保存",
+      "heritageDetailUnsave": "已保存",
+      "heritageDetailShare": "分享",
+      "heritageDetailAiGuide": "AI 导览",
+      "heritageDetailAiGuideTooltip": "v2 版本上线",
+      "heritageDetailOpenInMap": "在地图打开",
+      "heritageDetailPeriod": "时期",
+      "heritageDetailCountry": "国家",
+      "heritageDetailUnesco": "联合国教科文组织登录",
+      "heritageDetailSummary": "概述",
+      "heritageDetailAbout": "关于",
+      "heritageDetailLocation": "位置",
+      "heritageSavedTitle": "已保存",
+      "heritageSavedEmpty": "尚未保存任何内容。在详情页点击“保存”。",
+      "heritageLoadMoreError": "加载失败 — 点击重试。",
+      "commonRetry": "重试",
+      "commonClose": "关闭",
+      "commonCancel": "取消",
+      "commonContinue": "继续",
+      "commonOk": "确定",
     },
   };
 }
@@ -141,7 +715,8 @@ class _AppLocalizationsDelegate
   const _AppLocalizationsDelegate();
 
   @override
-  bool isSupported(Locale locale) => <String>{"en", "uz", "ru", "zh"}.contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>{"en", "uz", "ru", "zh"}.contains(locale.languageCode);
 
   @override
   Future<AppLocalizations> load(Locale locale) =>

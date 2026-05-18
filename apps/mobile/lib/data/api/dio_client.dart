@@ -16,6 +16,7 @@ import "package:silklens/data/api/interceptors/telemetry_interceptor.dart";
 Dio buildDio({
   required AppEnvironment env,
   required SecureTokenStorage tokenStorage,
+  OnSessionLost? onSessionLost,
 }) {
   final dio = Dio(
     BaseOptions(
@@ -32,7 +33,11 @@ Dio buildDio({
   );
 
   dio.interceptors.addAll(<Interceptor>[
-    AuthInterceptor(tokenStorage: tokenStorage),
+    AuthInterceptor(
+      tokenStorage: tokenStorage,
+      refreshBaseUrl: env.apiBaseUrl,
+      onSessionLost: onSessionLost,
+    ),
     TelemetryInterceptor(),
     ErrorInterceptor(),
     if (kDebugMode)

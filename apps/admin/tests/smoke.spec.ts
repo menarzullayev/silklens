@@ -10,7 +10,7 @@ test.describe('admin panel — smoke', () => {
     // for non-uz locales; cover both.
     const heading = page.getByRole('heading', { level: 1 });
     await expect(heading).toBeVisible();
-    await expect(heading).toHaveText(/Kirish|Sign in/);
+    await expect(heading).toHaveText(/Kirish|Sign in|Войти|登录/);
 
     // The credentials form must be present.
     await expect(page.locator('input[type="email"]')).toBeVisible();

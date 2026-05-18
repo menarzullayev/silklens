@@ -1,11 +1,14 @@
 // Design tokens — Project-Decisions §21 design-token architecture.
 //
-// At FAZA 1 these are hardcoded placeholders. The admin panel (FAZA 1
-// Hafta 2) will push these via tenant_branding endpoint and they will
-// be hydrated into [ThemeTokens] by `theme_provider.dart`.
+// The mobile app receives tokens from the admin panel via `/v1/branding`
+// (jsonb i18n app_name + primary_color + accent_color + theme_mode_default
+// + font_family + extra). `ThemeTokens` is the in-memory shape;
+// [fromBranding] builds it from a [Branding] entity, falling back to the
+// hardcoded SilkLens defaults if a field is null.
 
 import "package:flutter/material.dart";
 import "package:meta/meta.dart";
+import "package:silklens/domain/branding/entities/branding.dart";
 
 @immutable
 class ThemeTokens {
@@ -34,6 +37,32 @@ class ThemeTokens {
     fontFamily: "Roboto",
     nationalAccents: true,
   );
+
+  /// Build tokens from the [Branding] payload. Fields that are null on the
+  /// payload retain their defaults from [silkLensDefault].
+  factory ThemeTokens.fromBranding(Branding branding) {
+    Color parse(String? hex, Color fallback) {
+      if (hex == null || hex.isEmpty) return fallback;
+      var clean = hex.replaceFirst("#", "");
+      if (clean.length == 6) clean = "FF$clean";
+      final value = int.tryParse(clean, radix: 16);
+      if (value == null) return fallback;
+      return Color(value);
+    }
+
+    final extraAccents = branding.extra["national_accents"];
+    final accents = extraAccents is bool ? extraAccents : false;
+
+    return ThemeTokens(
+      primary: parse(branding.primaryColorHex, silkLensDefault.primary),
+      // Use the same color twice when no explicit secondary is provided —
+      // the seed-based ColorScheme will derive a reasonable harmonized hue.
+      secondary: parse(branding.primaryColorHex, silkLensDefault.secondary),
+      accent: parse(branding.accentColorHex, silkLensDefault.accent),
+      fontFamily: branding.fontFamily ?? silkLensDefault.fontFamily,
+      nationalAccents: accents,
+    );
+  }
 
   final Color primary;
   final Color secondary;

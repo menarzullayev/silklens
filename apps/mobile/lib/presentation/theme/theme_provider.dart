@@ -1,13 +1,15 @@
 // Dynamic theme provider (Project-Decisions §21).
 //
 // `activeThemePackProvider` exposes `(light, dark, mode)` so MaterialApp can
-// consume all three at once. The pack is rebuilt whenever tokens change —
-// today the source is a local placeholder; in FAZA 2 it will be the tenant
-// branding endpoint (`/v1/tenant/branding`).
+// consume all three at once. The pack is rebuilt whenever:
+//   * the user picks a different variant via the profile sheet, or
+//   * the branding fetch resolves with a fresh palette.
 
 import "package:flutter/material.dart";
 import "package:hooks_riverpod/hooks_riverpod.dart";
 import "package:meta/meta.dart";
+import "package:silklens/domain/branding/entities/branding.dart";
+import "package:silklens/presentation/providers/branding_provider.dart";
 import "package:silklens/presentation/theme/theme_tokens.dart";
 
 @immutable
@@ -38,38 +40,55 @@ final NotifierProvider<ThemeController, ThemeVariant> themeControllerProvider =
   name: "themeControllerProvider",
 );
 
-/// Tokens are pulled from admin remote config in production. For now we
-/// derive them from the controller's variant.
-final Provider<ThemeTokens> themeTokensProvider = Provider<ThemeTokens>((Ref ref) {
-  final variant = ref.watch(themeControllerProvider);
-  return switch (variant) {
-    ThemeVariant.milliy => ThemeTokens.milliy,
-    _ => ThemeTokens.silkLensDefault,
-  };
-}, name: "themeTokensProvider");
+/// Tokens come from the active branding (admin remote config). If the user
+/// picks the "milliy" theme variant explicitly, that always wins.
+final Provider<ThemeTokens> themeTokensProvider = Provider<ThemeTokens>(
+  (Ref ref) {
+    final variant = ref.watch(themeControllerProvider);
+    if (variant == ThemeVariant.milliy) return ThemeTokens.milliy;
+    final branding = ref.watch(brandingValueProvider);
+    return ThemeTokens.fromBranding(branding);
+  },
+  name: "themeTokensProvider",
+);
 
-final Provider<ThemePack> activeThemePackProvider = Provider<ThemePack>((Ref ref) {
-  final variant = ref.watch(themeControllerProvider);
-  final tokens = ref.watch(themeTokensProvider);
+final Provider<ThemePack> activeThemePackProvider = Provider<ThemePack>(
+  (Ref ref) {
+    final variant = ref.watch(themeControllerProvider);
+    final tokens = ref.watch(themeTokensProvider);
+    final branding = ref.watch(brandingValueProvider);
 
-  final light = _buildTheme(tokens, brightness: Brightness.light, highContrast: false);
-  final dark = _buildTheme(tokens, brightness: Brightness.dark, highContrast: false);
+    final light = _buildTheme(tokens, brightness: Brightness.light, highContrast: false);
+    final dark = _buildTheme(tokens, brightness: Brightness.dark, highContrast: false);
 
-  final mode = switch (variant) {
-    ThemeVariant.light => ThemeMode.light,
-    ThemeVariant.dark => ThemeMode.dark,
-    ThemeVariant.milliy => ThemeMode.light,
-    ThemeVariant.highContrast => ThemeMode.light,
-    ThemeVariant.system => ThemeMode.system,
-  };
+    final mode = switch (variant) {
+      ThemeVariant.light => ThemeMode.light,
+      ThemeVariant.dark => ThemeMode.dark,
+      ThemeVariant.milliy => ThemeMode.light,
+      ThemeVariant.highContrast => ThemeMode.light,
+      ThemeVariant.system => _modeFromBranding(branding),
+    };
 
-  if (variant == ThemeVariant.highContrast) {
-    final hc = _buildTheme(tokens, brightness: Brightness.light, highContrast: true);
-    return ThemePack(light: hc, dark: hc, mode: ThemeMode.light);
+    if (variant == ThemeVariant.highContrast) {
+      final hc = _buildTheme(tokens, brightness: Brightness.light, highContrast: true);
+      return ThemePack(light: hc, dark: hc, mode: ThemeMode.light);
+    }
+
+    return ThemePack(light: light, dark: dark, mode: mode);
+  },
+  name: "activeThemePackProvider",
+);
+
+ThemeMode _modeFromBranding(Branding b) {
+  switch (b.themeModeDefault) {
+    case "light":
+      return ThemeMode.light;
+    case "dark":
+      return ThemeMode.dark;
+    default:
+      return ThemeMode.system;
   }
-
-  return ThemePack(light: light, dark: dark, mode: mode);
-}, name: "activeThemePackProvider");
+}
 
 ThemeData _buildTheme(
   ThemeTokens tokens, {
@@ -104,6 +123,7 @@ ThemeData _buildTheme(
       primary: Colors.black,
       onPrimary: Colors.white,
     ),
-    textTheme: base.textTheme.apply(bodyColor: Colors.black, displayColor: Colors.black),
+    textTheme:
+        base.textTheme.apply(bodyColor: Colors.black, displayColor: Colors.black),
   );
 }

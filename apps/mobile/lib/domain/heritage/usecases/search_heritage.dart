@@ -10,10 +10,20 @@ class SearchHeritage {
 
   final HeritageRepository _repository;
 
-  Future<Result<List<Heritage>>> call({
+  Future<Result<HeritagePage>> call({
     String? query,
-    int page = 1,
-    int pageSize = 20,
+    String? kindSlug,
+    String? countryCode,
+    int limit = 20,
+    int offset = 0,
   }) =>
-      _repository.search(query: query, page: page, pageSize: pageSize);
+      _repository.list(
+        HeritageFilters(
+          search: query,
+          kindSlug: kindSlug,
+          countryCode: countryCode,
+          limit: limit,
+          offset: offset,
+        ),
+      );
 }

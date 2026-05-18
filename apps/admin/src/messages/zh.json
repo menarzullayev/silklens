@@ -1,10 +1,11 @@
 {
   "common": {
-    "appName": "SilkLens 管理后台",
+    "appName": "SilkLens 管理",
     "save": "保存",
     "cancel": "取消",
     "delete": "删除",
     "edit": "编辑",
+    "create": "创建",
     "loading": "加载中…",
     "search": "搜索",
     "comingSoon": "即将推出",
@@ -13,51 +14,99 @@
     "themeLight": "浅色",
     "themeDark": "深色",
     "themeSystem": "系统",
-    "signOut": "退出",
-    "tenant": "租户"
+    "signOut": "登出",
+    "tenant": "租户",
+    "errorTitle": "无法连接后端"
   },
   "nav": {
     "overview": "概览",
-    "heritage": "文化遗产",
+    "heritage": "遗产",
     "users": "用户",
     "moderation": "审核",
     "aiModels": "AI 模型",
     "monetization": "营收",
     "tenants": "租户",
     "branding": "品牌",
+    "featureFlags": "功能开关",
     "analytics": "分析",
     "settings": "设置"
   },
   "auth": {
     "loginTitle": "登录",
-    "loginSubtitle": "访问 SilkLens 控制面板。",
+    "loginSubtitle": "进入 SilkLens 控制台。",
     "email": "邮箱",
     "password": "密码",
     "signIn": "登录",
-    "signInWithGoogle": "使用 Google 继续",
-    "signInWithApple": "使用 Apple 继续",
-    "signInWithTelegram": "使用 Telegram 继续"
+    "signInWithGoogle": "使用 Google 登录",
+    "signInWithApple": "使用 Apple 登录",
+    "signInWithTelegram": "使用 Telegram 登录"
   },
   "dashboard": {
     "title": "概览",
-    "subtitle": "SilkLens 今日运营概况。",
-    "metricUsers24h": "活跃用户（24小时）",
-    "metricUsers7d": "活跃用户（7天）",
-    "metricHeritageViews": "遗产浏览量（24小时）",
-    "metricPremium": "高级订阅用户",
-    "metricRevenueMtd": "本月营收"
+    "subtitle": "SilkLens 运行快照。",
+    "metricHeritageTotal": "遗产总数",
+    "metricHeritagePublished": "已发布",
+    "metricTenants": "租户数",
+    "metricAiCalls": "AI 调用 (24h)",
+    "recentActivity": "近期活动",
+    "recentActivityHint": "活动流将在 events pipeline 接口上线后启用。",
+    "aiPerformance": "AI 模型性能",
+    "aiPerformanceHint": "令牌使用 / 延迟 / fallback 统计将在 Token Usage 标签上线。"
+  },
+  "heritage": {
+    "title": "遗产",
+    "subtitle": "纪念碑、遗址与 AI 描述。",
+    "newEntry": "新增遗产",
+    "createTitle": "创建遗产",
+    "createSubtitle": "多语言名称 + 摘要、类型、国家、年代。",
+    "tabOverview": "概览",
+    "tabTranslations": "翻译",
+    "tabAliases": "别名",
+    "tabRevisions": "修订",
+    "tabReviews": "评价"
+  },
+  "tenants": {
+    "title": "租户",
+    "subtitle": "配置白标租户、状态与套餐。",
+    "errorTitle": "无法加载租户"
   },
   "branding": {
     "title": "品牌",
-    "subtitle": "按租户自定义品牌 —— white-label。",
-    "appName": "应用名称",
+    "subtitle": "为每个租户自定义品牌 — 白标。",
+    "appName": "应用名",
     "logoUrl": "Logo URL",
-    "primaryColor": "主色调",
-    "splashImage": "启动画面 URL",
-    "saved": "品牌草稿已本地保存（后端尚未就绪）。"
+    "primaryColor": "主色",
+    "splashImage": "启动图 URL",
+    "saved": "品牌已保存。",
+    "errorTitle": "无法加载品牌"
+  },
+  "settings": {
+    "title": "系统设置",
+    "subtitle": "按 key 前缀分组的租户配置。",
+    "errorTitle": "无法加载设置"
+  },
+  "featureFlags": {
+    "title": "功能开关",
+    "subtitle": "切换、灰度百分比、allowlist。",
+    "errorTitle": "无法加载开关"
+  },
+  "aiModels": {
+    "title": "AI 模型",
+    "subtitle": "Vision、TTS、翻译、LLM — 提供方矩阵 + fallback。",
+    "tabModels": "模型",
+    "tabChains": "Fallback 链",
+    "tabUsage": "令牌用量",
+    "errorTitle": "无法加载模型",
+    "usageHint": "当 `ai_token_usage` 可查询时显示令牌使用图表。"
+  },
+  "moderation": {
+    "title": "审核",
+    "subtitle": "带 AI 评分的 UGC 队列。",
+    "placeholderTitle": "审核 API 将在下一冲刺上线",
+    "placeholderHint": "后端目前只提供 flag / report；专用管理队列将随 Wave 4 推出。"
   },
   "rbac": {
-    "denied": "您没有查看该模块的权限。",
-    "deniedSubtitle": "请联系管理员授予对应权限。"
+    "denied": "您没有查看此区域的权限。",
+    "deniedSubtitle": "请管理员授予相应作用域。"
   }
 }

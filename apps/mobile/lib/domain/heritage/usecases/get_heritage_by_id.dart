@@ -7,5 +7,5 @@ class GetHeritageById {
 
   final HeritageRepository _repository;
 
-  Future<Result<Heritage>> call(String id) => _repository.getById(id);
+  Future<Result<Heritage>> call(String pubId) => _repository.getByPubId(pubId);
 }

@@ -9,6 +9,7 @@ import {
   Building2,
   Cog,
   CreditCard,
+  Flag,
   Image as ImageIcon,
   LayoutDashboard,
   ScanFace,
@@ -36,6 +37,7 @@ const NAV_LINKS: readonly NavLink[] = [
   { href: '/monetization', labelKey: 'monetization', icon: CreditCard, permission: PERMISSIONS.MONETIZATION_READ },
   { href: '/tenants', labelKey: 'tenants', icon: Building2, permission: PERMISSIONS.TENANTS_MANAGE },
   { href: '/branding', labelKey: 'branding', icon: ImageIcon, permission: PERMISSIONS.BRANDING_MANAGE },
+  { href: '/feature-flags', labelKey: 'featureFlags', icon: Flag, permission: PERMISSIONS.SETTINGS_MANAGE },
   { href: '/analytics', labelKey: 'analytics', icon: BarChart3, permission: PERMISSIONS.ANALYTICS_READ },
   { href: '/settings', labelKey: 'settings', icon: Cog, permission: PERMISSIONS.SETTINGS_MANAGE },
 ];
@@ -55,6 +57,7 @@ interface IntlMessages {
     | 'monetization'
     | 'tenants'
     | 'branding'
+    | 'featureFlags'
     | 'analytics'
     | 'settings',
     string

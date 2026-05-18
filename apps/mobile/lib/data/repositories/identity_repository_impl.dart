@@ -1,61 +1,51 @@
-// Placeholder identity repository. Returns ValidationFailure for all writes
-// until the backend `/v1/auth/*` endpoints land (FAZA 2). Keeping the wiring
-// in the tree means UI code can already call use cases against a real
-// provider without conditionals.
+// Backwards-compat shim. The canonical implementation is
+// [AuthRepositoryImpl]; this class wraps it so the legacy
+// [IdentityRepository] interface keeps working until callers migrate.
 
 import "package:hooks_riverpod/hooks_riverpod.dart";
-import "package:silklens/core/error/failures.dart";
-import "package:silklens/core/storage/secure_token_storage.dart";
 import "package:silklens/core/utils/result.dart";
+import "package:silklens/data/repositories/auth_repository_impl.dart"
+    show authRepositoryProvider;
 import "package:silklens/domain/identity/entities/auth_session.dart";
+import "package:silklens/domain/identity/repositories/auth_repository.dart";
 import "package:silklens/domain/identity/repositories/identity_repository.dart";
 
 class IdentityRepositoryImpl implements IdentityRepository {
-  IdentityRepositoryImpl({required SecureTokenStorage tokenStorage})
-      : _tokenStorage = tokenStorage;
+  IdentityRepositoryImpl({required AuthRepository auth}) : _auth = auth;
 
-  // ignore: unused_field — kept for forthcoming refresh + logout flows.
-  final SecureTokenStorage _tokenStorage;
+  final AuthRepository _auth;
 
   @override
-  Future<AuthSession?> currentSession() async => null;
+  Future<AuthSession?> currentSession() => _auth.currentSession();
 
   @override
   Future<Result<AuthSession>> loginWithEmail({
     required String email,
     required String password,
-  }) async =>
-      const FailureResult<AuthSession>(
-        ValidationFailure("Identity service not wired yet — FAZA 2 deliverable."),
-      );
+  }) =>
+      _auth.signIn(email: email, password: password);
 
   @override
   Future<Result<AuthSession>> register({
     required String email,
     required String password,
     String? displayName,
-  }) async =>
-      const FailureResult<AuthSession>(
-        ValidationFailure("Identity service not wired yet — FAZA 2 deliverable."),
+  }) =>
+      _auth.signUp(
+        email: email,
+        password: password,
+        displayName: displayName,
       );
 
   @override
-  Future<Result<AuthSession>> refresh() async =>
-      const FailureResult<AuthSession>(
-        AuthFailure("No session to refresh."),
-      );
+  Future<Result<AuthSession>> refresh() => _auth.refresh();
 
   @override
-  Future<Result<void>> logout() async {
-    await _tokenStorage.clear();
-    return const Success<void>(null);
-  }
+  Future<Result<void>> logout() => _auth.signOut();
 }
 
 final Provider<IdentityRepository> identityRepositoryProvider =
     Provider<IdentityRepository>(
-  (Ref ref) => IdentityRepositoryImpl(
-    tokenStorage: ref.watch(secureTokenStorageProvider),
-  ),
+  (Ref ref) => IdentityRepositoryImpl(auth: ref.watch(authRepositoryProvider)),
   name: "identityRepositoryProvider",
 );
