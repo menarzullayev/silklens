@@ -8,18 +8,24 @@ Three fixture tiers:
    on the ``db_session`` fixture or marking ``@pytest.mark.integration``.
 3. **e2e** — full ASGI app round-trip with httpx AsyncClient.
 
-Integration tests assume the dev Docker stack is up (``make dev``).
+Integration tests assume the dev Docker stack is up (``make dev``). The
+``_apply_migrations`` session fixture ensures the test DB schema is up to date
+once per pytest run; it's autouse so individual tests don't need to remember.
 """
 
 from __future__ import annotations
 
 import os
 from collections.abc import AsyncIterator
+from pathlib import Path
 
 import pytest
 import pytest_asyncio
+from alembic.config import Config
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from alembic import command
 
 # Force test environment before settings cache materializes.
 os.environ.setdefault("SILKLENS_ENV", "test")
@@ -37,6 +43,23 @@ from src.core.settings import get_settings
 def settings():
     get_settings.cache_clear()  # type: ignore[attr-defined]
     return get_settings()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _apply_migrations(settings):
+    """Bring the test DB schema up to head once per session.
+
+    Skips quietly if Docker isn't reachable so unit-only test runs still work.
+    """
+    try:
+        cfg = Config(str(Path(__file__).resolve().parent.parent / "alembic.ini"))
+        cfg.set_main_option(
+            "script_location", str(Path(__file__).resolve().parent.parent / "alembic")
+        )
+        cfg.set_main_option("sqlalchemy.url", settings.database_url_sync)
+        command.upgrade(cfg, "head")
+    except Exception as exc:
+        pytest.skip(f"Migrations could not be applied (is the dev DB running?): {exc}")
 
 
 @pytest_asyncio.fixture
