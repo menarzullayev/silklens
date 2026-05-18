@@ -1,6 +1,6 @@
 # SilkLens — Progress Tracker
 
-> **Tags:** `v0.1.0-alpha` (FAZA 1-3) · **`v0.2.0-beta`** (FAZA 4-5) · **Last commit:** `20954bb` · **Refreshed:** 2026-05-18
+> **Tags:** `v0.1.0-alpha` (FAZA 1-3) · `v0.2.0-beta` (FAZA 4-5) · **`v0.3.0-beta`** (FAZA 6-7) · **Last commit:** `94b4963` · **Refreshed:** 2026-05-18
 
 ## Kuzatuv joylari
 

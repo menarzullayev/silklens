@@ -55,7 +55,9 @@ ai = [
 ]
 billing = [
     "stripe>=11.0",
-    "paypalserversdk>=1.0",
+    # paypalserversdk not on PyPI yet; PayPal provider soft-fails to Mock
+    # when SDK absent. Real PayPal integration uses paypalrestsdk or
+    # requests-based REST calls added in FAZA 6 real integration sprint.
 ]
 dev = [
     "pytest>=8.3.0",
