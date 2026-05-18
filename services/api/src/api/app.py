@@ -7,7 +7,7 @@ the deployment / Docker Compose stack is verifiable end-to-end.
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -17,20 +17,26 @@ from src import __version__
 from src.api.routers import (
     admin,
     ai,
+    ar,
     auth,
     billing,
     compliance,
+    enterprise_sla,
+    finetuning,
+    fundraising,
     gamification,
     health,
     heritage,
     media,
     mfa,
     notifications,
+    partnerships,
     public_meta,
     reseller,
     reviews,
     search,
     social,
+    virtual_tours,
 )
 from src.core.database import dispose_engine, get_engine
 from src.core.logging import configure_logging, get_logger
@@ -44,7 +50,7 @@ from src.middleware.trace import TraceContextMiddleware
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     configure_logging()
     log = get_logger("silklens.lifespan")
     settings = get_settings()
@@ -137,6 +143,7 @@ def create_app() -> FastAPI:
     app.include_router(media.router)
     app.include_router(social.router)
     app.include_router(reviews.router)
+    app.include_router(ar.router)
     app.include_router(gamification.router)
     app.include_router(billing.router)
     app.include_router(notifications.router)
@@ -145,5 +152,10 @@ def create_app() -> FastAPI:
     app.include_router(compliance.router)
     app.include_router(search.router)
     app.include_router(reseller.router)
+    app.include_router(partnerships.router)
+    app.include_router(virtual_tours.router)
+    app.include_router(finetuning.router)
+    app.include_router(enterprise_sla.router)
+    app.include_router(fundraising.router)
 
     return app

@@ -61,7 +61,7 @@ def _apply_migrations(settings):
             "script_location", str(Path(__file__).resolve().parent.parent / "alembic")
         )
         cfg.set_main_option("sqlalchemy.url", settings.database_url_sync)
-        command.upgrade(cfg, "head")
+        command.upgrade(cfg, "heads")
     except Exception as exc:
         pytest.skip(f"Migrations could not be applied (is the dev DB running?): {exc}")
 
