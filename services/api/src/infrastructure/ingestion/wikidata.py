@@ -188,7 +188,12 @@ def parse_sparql_response(
             if point:
                 lat, lng = point
         inception_year = _parse_year(row.get("inception", {}).get("value"))
-        image_url = row.get("image", {}).get("value") or None
+        # SEC-W56-005 fix: allowlist image URLs to Wikimedia Commons only.
+        # Wikidata P18 values are crowd-edited; an arbitrary URL here would
+        # become an SSRF vector if a downstream pipeline fetches it.
+        _raw_img = row.get("image", {}).get("value") or None
+        _allowed = ("https://commons.wikimedia.org/", "https://upload.wikimedia.org/")
+        image_url = _raw_img if _raw_img and _raw_img.startswith(_allowed) else None
         instances_raw = row.get("instances", {}).get("value", "")
         instance_qids = tuple(_qid_from_uri(u) for u in instances_raw.split("|") if u)
 

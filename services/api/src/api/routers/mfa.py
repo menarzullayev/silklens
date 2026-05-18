@@ -30,6 +30,7 @@ from src.middleware.auth import (
     CurrentUserDep,
     require_recent_mfa,
 )
+from src.middleware.ratelimit import rate_limit
 
 router = APIRouter(prefix="/v1", tags=["mfa"])
 
@@ -311,6 +312,9 @@ async def disable_method(
     "/auth/mfa/challenge",
     response_model=ChallengeResponse,
     status_code=status.HTTP_201_CREATED,
+    # HIGH-1 fix: rate-limit per-IP to prevent TOTP brute-force enumeration.
+    # 5 challenges/min per IP gives legitimate users plenty of headroom.
+    dependencies=[Depends(rate_limit("5/minute", per="ip", scope="mfa:challenge"))],
 )
 async def initiate_challenge(
     payload: ChallengeRequest,
@@ -367,7 +371,12 @@ async def initiate_challenge(
     )
 
 
-@router.post("/auth/mfa/verify", response_model=VerifyResponse)
+@router.post(
+    "/auth/mfa/verify",
+    response_model=VerifyResponse,
+    # HIGH-1 fix: 5/min per IP, same as the challenge endpoint.
+    dependencies=[Depends(rate_limit("5/minute", per="ip", scope="mfa:verify"))],
+)
 async def verify_challenge(
     payload: VerifyRequest,
     db: SessionDep,
@@ -451,11 +460,17 @@ async def verify_challenge(
     # for non-MFA-enrolled accounts, or they completed the
     # login → mfa_required → verify dance which is meant to layer on top of
     # the password proof.
-    issuer = JwtTokenIssuer()
-    # Use the session_id field as a fresh UUID — this token is a short-lived
-    # step-up token, NOT a session token. The architecture's step-up section
-    # is explicit: 5-min lifetime, never refreshable (§8.5).
-    token, _exp = issuer.issue_access(user=user, session_id=user.id, mfa=True)
+    # SEC-W56-003 fix:
+    # (a) Use a fresh phantom UUID for session_id — never collides with real
+    #     session rows so revocation keyed on sid can't target this token.
+    # (b) Honour mfa_step_up_freshness_seconds (default 300s / 5 min) rather
+    #     than the full jwt_access_token_ttl_seconds (900s / 15 min).
+    from uuid import uuid4
+
+    settings = get_settings()
+    issuer = JwtTokenIssuer(access_ttl=settings.mfa_step_up_freshness_seconds)
+    phantom_session_id = uuid4()
+    token, _exp = issuer.issue_access(user=user, session_id=phantom_session_id, mfa=True)
     return VerifyResponse(access_token=token, mfa=True)
 
 

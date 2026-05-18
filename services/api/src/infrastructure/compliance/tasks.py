@@ -107,7 +107,8 @@ async def export_user_data(
     if own_session and ctx is not None:
         async with ctx as db:
             return await _run(db)
-    assert session is not None
+    if session is None:
+        raise RuntimeError("session must be provided when own_session=False")
     return await _run(session)
 
 
@@ -144,7 +145,8 @@ async def anonymize_user(
     if own_session and ctx is not None:
         async with ctx as db:
             return await _run(db)
-    assert session is not None
+    if session is None:
+        raise RuntimeError("session must be provided when own_session=False")
     return await _run(session)
 
 

@@ -27,7 +27,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_session
@@ -171,6 +171,14 @@ class CookieConsentOut(BaseModel):
 class AdminProcessIn(BaseModel):
     payload_url: str | None = Field(default=None, max_length=1024)
     decision_note: str | None = Field(default=None, max_length=2048)
+
+    @field_validator("payload_url")
+    @classmethod
+    def _require_https(cls, v: str | None) -> str | None:
+        """SEC-W56-006: only https:// URLs stored — prevents file:// / javascript: XSS."""
+        if v is not None and not v.startswith("https://"):
+            raise ValueError("payload_url must use the https:// scheme")
+        return v
 
 
 # --- Routes: public legal ---------------------------------------------

@@ -216,9 +216,15 @@ class PaymePaymentProvider:
         # Payme convention: the username may be literal "Paycom" or the
         # merchant_id itself. Accept either, then verify the secret matches.
         login, _, password = decoded.partition(":")
-        if password != self._secret_key:
+        # SEC-W56-001: constant-time comparison defeats timing-oracle attacks on
+        # the webhook secret; Python string inequality short-circuits on first
+        # differing byte, leaking information via response latency.
+        import hmac as _hmac
+
+        if not _hmac.compare_digest(password.encode(), self._secret_key.encode()):
             raise InvalidWebhookSignature("bad_secret")
-        if login not in {"Paycom", self._merchant_id}:
+        accepted_logins = {b"Paycom", self._merchant_id.encode()}
+        if not any(_hmac.compare_digest(login.encode(), a) for a in accepted_logins):
             raise InvalidWebhookSignature("bad_login")
 
         # JSON-RPC envelope: {jsonrpc, id, method, params}
