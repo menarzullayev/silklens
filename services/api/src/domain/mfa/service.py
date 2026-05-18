@@ -25,6 +25,7 @@ from src.domain.mfa.errors import (
     MfaAlreadyEnrolled,
     MfaChallengeExpired,
     MfaChallengeNotFound,
+    MfaError,
     MfaInvalidCode,
     MfaNotEnrolled,
 )
@@ -157,7 +158,11 @@ class MfaService:
             user_ctx.user_id, user_ctx.residency_region, at=now
         )
         refreshed = await self._repo.get_method(mfa_id, user_ctx.residency_region)
-        assert refreshed is not None
+        # SEC-W5 / H-3: replace bare `assert` (stripped with `python -O`) with
+        # an explicit raise so the failure surfaces cleanly even under
+        # optimised bytecode.
+        if refreshed is None:
+            raise MfaError(f"mfa method {mfa_id} disappeared after activation")
         return refreshed
 
     async def verify_totp(
@@ -287,7 +292,11 @@ class MfaService:
             user_ctx.user_id, user_ctx.residency_region, at=now
         )
         refreshed = await self._repo.get_method(mfa_id, user_ctx.residency_region)
-        assert refreshed is not None
+        # SEC-W5 / H-3: replace bare `assert` (stripped with `python -O`) with
+        # an explicit raise so the failure surfaces cleanly even under
+        # optimised bytecode.
+        if refreshed is None:
+            raise MfaError(f"mfa method {mfa_id} disappeared after activation")
         return refreshed
 
     async def verify_webauthn(

@@ -31,6 +31,8 @@ back off.
 
 from __future__ import annotations
 
+import ipaddress
+import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Final
@@ -53,6 +55,42 @@ log = get_logger("silklens.ratelimit")
 DEFAULT_LIMIT: Final[str] = "200/minute"
 
 
+def _peer_ip_is_trusted(peer: str | None, trusted_cidrs: list[str]) -> bool:
+    """Return True if ``peer`` is inside any of the configured trusted CIDRs.
+
+    Used to decide whether to honour the ``X-Forwarded-For`` header. Without
+    this check an attacker on the open internet can spoof XFF and rotate
+    fake IPs to bypass per-IP rate limits (SEC-W5-003 / H-1).
+    """
+    if not peer or not trusted_cidrs:
+        return False
+    try:
+        peer_ip = ipaddress.ip_address(peer)
+    except ValueError:
+        return False
+    for entry in trusted_cidrs:
+        try:
+            if peer_ip in ipaddress.ip_network(entry, strict=False):
+                return True
+        except ValueError:
+            continue
+    return False
+
+
+def _client_ip(request: Request) -> str:
+    """Resolve the *true* client IP, honouring X-Forwarded-For only when the
+    immediate peer is in the trusted-proxy allowlist."""
+    settings = get_settings()
+    peer = request.client.host if request.client else None
+    if _peer_ip_is_trusted(peer, settings.trusted_proxy_cidrs):
+        fwd = request.headers.get("x-forwarded-for")
+        if fwd:
+            # XFF is a comma-separated chain "client, proxy1, proxy2"; the
+            # left-most token is the originating client.
+            return fwd.split(",")[0].strip()
+    return peer or "unknown"
+
+
 def _identity_key(request: Request) -> str:
     """Composite key: user-id when authenticated, else IP.
 
@@ -67,23 +105,12 @@ def _identity_key(request: Request) -> str:
         user_id = getattr(auth, "user_id", None)
         if isinstance(user_id, UUID):
             return f"user:{user_id}"
-    # X-Forwarded-For takes precedence so the API can sit behind a proxy.
-    fwd = request.headers.get("x-forwarded-for")
-    if fwd:
-        return f"ip:{fwd.split(',')[0].strip()}"
-    if request.client and request.client.host:
-        return f"ip:{request.client.host}"
-    return "ip:unknown"
+    return f"ip:{_client_ip(request)}"
 
 
 def _ip_key(request: Request) -> str:
     """Force per-IP keying regardless of bearer presence (used on login)."""
-    fwd = request.headers.get("x-forwarded-for")
-    if fwd:
-        return f"ip:{fwd.split(',')[0].strip()}"
-    if request.client and request.client.host:
-        return f"ip:{request.client.host}"
-    return "ip:unknown"
+    return f"ip:{_client_ip(request)}"
 
 
 def _user_key(request: Request) -> str:
@@ -228,8 +255,6 @@ class RateLimiter:
             reset_at, _remaining = self._strategy.get_window_stats(item, scope, key)
         except Exception:  # pragma: no cover
             return item.get_expiry()
-        import time
-
         return max(1, int(reset_at - time.time()))
 
     # --- Exception handler ---------------------------------------------

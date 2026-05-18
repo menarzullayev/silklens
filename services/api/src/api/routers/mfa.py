@@ -321,6 +321,9 @@ async def initiate_challenge(
     Used post-password to start step-up. The /verify endpoint exchanges the
     challenge_id + code for elevated tokens.
     """
+    # SEC-W5 / H-2: do NOT leak account existence via 404 here. Return a
+    # synthetic challenge for unknown user_id (the /verify endpoint will then
+    # 401 because no real challenge row will match the random ID).
     service = _service(db)
     users = SqlUserRepository(db)
     user = None
@@ -333,10 +336,21 @@ async def initiate_challenge(
         user = await users.get_by_id(payload.user_id, region)
         if user is not None:
             break
+    settings = get_settings()
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"code": "identity.user_not_found", "message": "user not found"},
+        # Return a plausible-looking response so timing + status don't reveal
+        # whether the account exists. /verify will reject the synthetic id.
+        from uuid import uuid4 as _uuid4
+
+        method_str = payload.method
+        try:
+            MfaMethodKind(method_str)
+        except ValueError:
+            method_str = "totp"
+        return ChallengeResponse(
+            challenge_id=_uuid4(),
+            method=method_str,
+            expires_in=settings.mfa_challenge_ttl_seconds,
         )
     user_ctx = MfaUserContext(
         user_id=user.id,
@@ -346,7 +360,6 @@ async def initiate_challenge(
     )
     method = MfaMethodKind(payload.method)
     challenge = await service.initiate_challenge(user_ctx, method=method)
-    settings = get_settings()
     return ChallengeResponse(
         challenge_id=challenge.id,
         method=method.value,

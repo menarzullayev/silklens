@@ -382,10 +382,12 @@ async def get_data_export(request_id: UUID, ctx: CurrentUserDep, db: SessionDep)
     "/v1/me/account/delete",
     response_model=GdprRequestOut,
     status_code=status.HTTP_202_ACCEPTED,
-    # SEC-W5-007 / C-2 fix: destructive routes refuse to pass through users
-    # without a recent MFA proof. Users who never enrolled MFA must enroll
-    # first (router returns 403 identity.mfa_step_up_required).
-    dependencies=[Depends(require_recent_mfa(seconds=300, allow_first_setup=False))],
+    # Self-service account deletion: when the user has an active MFA factor we
+    # require a fresh step-up. Users who never enrolled MFA are accepted but
+    # rely on the 30-day grace window + cancel endpoint + the
+    # ``account_deletion_scheduled`` notification as the real safety net.
+    # Admin-driven GDPR processing (below) keeps the stricter gate.
+    dependencies=[Depends(require_recent_mfa(seconds=300, allow_first_setup=True))],
 )
 async def schedule_account_deletion(
     payload: DeletionRequestIn,

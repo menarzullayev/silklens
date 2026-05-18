@@ -115,6 +115,18 @@ class Settings(BaseSettings):
     # set ``SILKLENS_RATE_LIMIT_ENABLED=false`` to skip enforcement
     # entirely. Production must keep this true.
     rate_limit_enabled: bool = True
+    # X-Forwarded-For trust list (SEC-W5-003 / H-1 fix). The middleware will
+    # only honour the XFF header when the *immediate* peer (``request.client.host``)
+    # falls inside one of these CIDRs. Defaults to private RFC1918 + Docker
+    # bridge; production should narrow to the load-balancer egress range.
+    trusted_proxy_cidrs: list[str] = Field(
+        default_factory=lambda: [
+            "10.0.0.0/8",
+            "172.16.0.0/12",
+            "192.168.0.0/16",
+            "127.0.0.0/8",
+        ]
+    )
     # Failed-login lockout window (per Agent 2 §4). After
     # ``login_lockout_max_failures`` failures from the same identifier+IP
     # inside ``login_lockout_window_seconds``, the auth service returns

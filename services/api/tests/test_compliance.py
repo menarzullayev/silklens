@@ -439,9 +439,17 @@ async def test_public_cookie_consent_records_choice(http: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_admin_process_request_marks_completed(
+async def test_admin_process_request_requires_step_up_mfa(
     http: AsyncClient, db_session: AsyncSession
 ) -> None:
+    """Per Wave-7 review (SEC-W5-007 / C-2): the destructive admin GDPR
+    approve endpoint requires the admin to have enrolled MFA AND to have
+    a recent MFA proof. Without those, return 403 mfa_step_up_required.
+
+    The happy path (admin with fresh MFA) is exercised in test_mfa.py via
+    test_step_up_required_for_account_delete_when_mfa_active and friends.
+    Here we only verify the gate rejects MFA-less admins.
+    """
     user_auth = await _register(http)
     user_headers = {"Authorization": f"Bearer {user_auth['tokens']['access_token']}"}
     created = await http.post("/v1/me/data-export", headers=user_headers)
@@ -453,10 +461,8 @@ async def test_admin_process_request_marks_completed(
         json={"payload_url": "s3://silklens/exports/demo.json", "decision_note": "ok"},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
-    assert response.status_code == 200, response.text
-    body = response.json()
-    assert body["status"] == "completed"
-    assert body["payload_url"] == "s3://silklens/exports/demo.json"
+    assert response.status_code == 403, response.text
+    assert response.json()["detail"]["code"] == "identity.mfa_step_up_required"
 
 
 # --- consent emits event ----------------------------------------------------

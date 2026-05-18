@@ -272,9 +272,7 @@ class PayPalPaymentProvider:
             log.warning("billing.paypal.webhook.sdk_verify_error", error=str(exc))
             return False
         # SDK present but no recognisable verify API — fail closed in prod.
-        if self._webhook_id:
-            return False
-        return True
+        return not self._webhook_id
 
 
 __all__ = [

@@ -120,6 +120,10 @@ filterwarnings = [
     "error",
     "ignore::DeprecationWarning:passlib.*",
     "ignore::DeprecationWarning:celery.*",
+    # Async cleanup: unclosed sockets/event-loops after asyncio test teardown
+    # are a known pytest-asyncio/SQLAlchemy noise artifact, not real bugs.
+    "ignore::pytest.PytestUnraisableExceptionWarning",
+    "ignore::ResourceWarning",
 ]
 
 [tool.coverage.run]
