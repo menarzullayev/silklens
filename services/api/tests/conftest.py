@@ -1,0 +1,67 @@
+"""Shared pytest fixtures.
+
+Three fixture tiers:
+
+1. **unit** — pure-Python, no DB, no network. Default.
+2. **integration** — real Postgres (the ``silklens_test`` database created by
+   ``infra/docker/postgres/init.sql``), Redis, MinIO. Tests opt in by depending
+   on the ``db_session`` fixture or marking ``@pytest.mark.integration``.
+3. **e2e** — full ASGI app round-trip with httpx AsyncClient.
+
+Integration tests assume the dev Docker stack is up (``make dev``).
+"""
+
+from __future__ import annotations
+
+import os
+from collections.abc import AsyncIterator
+
+import pytest
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+# Force test environment before settings cache materializes.
+os.environ.setdefault("SILKLENS_ENV", "test")
+os.environ.setdefault(
+    "SILKLENS_DATABASE_URL",
+    "postgresql+psycopg://silklens:silklens_dev@localhost:5434/silklens_test",
+)
+
+from src.api.app import create_app
+from src.core.database import dispose_engine
+from src.core.settings import get_settings
+
+
+@pytest.fixture(scope="session")
+def settings():
+    get_settings.cache_clear()  # type: ignore[attr-defined]
+    return get_settings()
+
+
+@pytest_asyncio.fixture
+async def app():
+    instance = create_app()
+    yield instance
+    await dispose_engine()
+
+
+@pytest_asyncio.fixture
+async def http(app) -> AsyncIterator[AsyncClient]:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+        yield client
+
+
+@pytest_asyncio.fixture
+async def db_session(settings) -> AsyncIterator[AsyncSession]:
+    """Integration-grade session against the silklens_test DB.
+
+    Tests using this fixture should be marked ``@pytest.mark.integration``
+    so they're skipped when Docker isn't available.
+    """
+    engine = create_async_engine(settings.database_url_async, pool_pre_ping=True)
+    factory = async_sessionmaker(bind=engine, expire_on_commit=False)
+    async with factory() as session:
+        yield session
+    await engine.dispose()
