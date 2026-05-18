@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src import __version__
-from src.api.routers import health
+from src.api.routers import auth, health
 from src.core.database import dispose_engine
 from src.core.logging import configure_logging, get_logger
 from src.core.settings import get_settings
@@ -52,5 +52,6 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health.router)
+    app.include_router(auth.router)
 
     return app
