@@ -141,6 +141,19 @@ module = [
     "src.infrastructure.reviews.*",
     "src.infrastructure.search.*",
     "src.infrastructure.social.*",
+    # Wave 8 agent-generated modules
+    "src.domain.finetuning.*",
+    "src.domain.fundraising.*",
+    "src.domain.partnership.*",
+    "src.domain.enterprise.*",
+    "src.domain.virtual_tour.*",
+    "src.domain.ar.*",
+    "src.infrastructure.finetuning.*",
+    "src.infrastructure.fundraising.*",
+    "src.infrastructure.partnership.*",
+    "src.infrastructure.enterprise.*",
+    "src.infrastructure.virtual_tour.*",
+    "src.infrastructure.ar.*",
 ]
 ignore_errors = true
 
