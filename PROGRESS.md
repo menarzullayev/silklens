@@ -1,6 +1,6 @@
 # SilkLens — Progress Tracker
 
-> **Tag:** `v0.1.0-alpha` (FAZA 1-3 tag) · **Last commit:** `20954bb` · **Refreshed:** 2026-05-18
+> **Tags:** `v0.1.0-alpha` (FAZA 1-3) · **`v0.2.0-beta`** (FAZA 4-5) · **Last commit:** `20954bb` · **Refreshed:** 2026-05-18
 
 ## Kuzatuv joylari
 
@@ -163,8 +163,8 @@ git push --no-verify  # emergency bypass
 | Flutter screens | 24 wired |
 | Admin pages | 8 wired |
 | Heritage entries | ~200 (UZ 5 UNESCO + CA 95) |
-| Commits (main) | 35+ |
-| Active tags | `v0.1.0-alpha` |
+| Commits (main) | 38+ |
+| Active tags | `v0.1.0-alpha` + `v0.2.0-beta` |
 
 ---
 
