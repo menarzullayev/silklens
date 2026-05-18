@@ -1,6 +1,6 @@
 # SilkLens — Session Handoff
 
-> **Last updated:** 2026-05-18 · Last commit: `0a045bd`
+> **Last updated:** 2026-05-18 · Last commit: pending (auth middleware + heritage CRUD)
 > Keep this file current at the end of every session. It is the entry point for the next agent or developer to pick up without re-reading the entire transcript.
 
 ---
@@ -8,16 +8,27 @@
 ## Where we are right now
 
 **Active FAZA:** FAZA 1 — Hafta 2
-**Status:** ✅ Foundation + frontends + CI + **auth service end-to-end** all shipped. ⏳ Heritage CRUD begins next.
+**Status:** ✅ Foundation + frontends + CI + **auth (incl. middleware)** + **heritage CRUD** all shipped. ⏳ AI vector + media services next.
 
 ### Latest milestone
 
-**Auth service live** (commit `0a045bd`):
-- `POST /v1/auth/register`, `/login`, `/refresh` — all verified via live curl
-- Argon2id password hashing (3 iter / 64 MiB / 2 parallel)
-- JWT HS256 access tokens (15min) + opaque refresh tokens (30d) with family-rotation replay defence
-- Clean Architecture layers: domain (entities/errors/protocols/service) → infrastructure (argon2 + JWT + SqlUserRepository + SqlSessionRepository) → api (routers)
-- 33/33 pytest green; ruff lint + format clean
+**Heritage CRUD live + Auth middleware** (this session):
+- `GET /v1/heritage` (public, filterable: kind / country / status / search, paginated)
+- `GET /v1/heritage/{pub_id}` (public, 404 on unknown)
+- `POST /v1/heritage` (`heritage:create` permission required, returns 201 with new pub_id)
+- `GET /v1/auth/me` (protected — returns AuthContext)
+- `POST /v1/auth/logout` (protected — revokes session + refresh family)
+- `BearerContextMiddleware` decodes `Authorization: Bearer …` into `request.state.auth`
+- `require_user` + `require_permission(slug)` FastAPI dependencies; the latter calls `app.has_permission()` SQL function
+- Migration 0010 (`heritage_objects`/`heritage_aliases`/`heritage_revisions` w/ BEFORE-bump + AFTER-log triggers) + 0011 (`heritage_facts`/`heritage_provenance`/`fact_provenance` w/ winning-fact unique index)
+- Domain layer (entities/errors/repository protocol/service) + SqlHeritageRepository emitting `heritage.created.v1` into event_outbox
+- **51/51 pytest green** (33 prior + 7 middleware + 11 heritage); ruff lint + format clean
+- Round-trip downgrade-to-base + upgrade-to-head verified clean across all 11 migrations
+
+### Prior milestone — Auth service core (`0a045bd`)
+
+- `POST /v1/auth/register`, `/login`, `/refresh` (Argon2id + JWT HS256 + refresh family rotation w/ replay defence)
+- Clean Architecture layers: domain → infrastructure → api
 
 ### What is done and verified
 
@@ -62,13 +73,16 @@
 
 ### What is NOT yet done (next pickups in priority order)
 
-1. **Auth follow-ups** (the easy parts shipped; these remain):
-   - `POST /v1/auth/logout` — revoke current session
+1. **Auth follow-ups still pending:**
    - OAuth start/callback for Google + Apple + Telegram (providers seeded, secrets+endpoints config remaining)
-   - Auth middleware that extracts `(user_id, residency, tenant_id)` from `Bearer ...` and binds them to the request — lands together with the first protected endpoint
-   - Audit middleware wrapping every privileged route to call `app.audit(...)` automatically
+   - Audit middleware wrapping privileged routes to call `app.audit(...)` automatically (currently only emit_event is wired into heritage create)
    - MFA / WebAuthn (deferred per HANDOFF deferred decisions)
-2. **Heritage CRUD** — migrations 0010–0030 (per `docs/architecture/01-core-domain.md`):
+2. **Heritage follow-ups:**
+   - `PATCH /v1/heritage/{pub_id}` and soft-delete with `heritage:update` / `heritage:delete` perms
+   - `heritage:moderate` workflow (status transitions draft → review → published)
+   - Fact-resolver background job that computes winning facts from `heritage_facts` rows back into `heritage_objects` denormalized columns
+   - Aliases endpoint (`POST /v1/heritage/{pub_id}/aliases`)
+3. **Heritage migrations beyond 0011** — geographic hierarchy (`geographic_admin_levels` with ltree), historical periods, architectural styles, full Agent 1 §3 catalog (~25 more tables).
    - `heritage_objects` (root polymorphic table) + `heritage_facts` (provenance-tagged claims) + `heritage_revisions` (bi-temporal) + `heritage_aliases`
    - `geographic_admin_levels` (ltree) + `historical_periods` + `architectural_styles`
    - At minimum `GET /v1/heritage`, `GET /v1/heritage/{pub_id}`, `POST /v1/heritage` (with `heritage:create` permission), search via Elasticsearch tier-1 index
@@ -94,15 +108,19 @@ cd services/api
 source .venv/bin/activate
 
 # 3. Verify green baseline
-pytest -q                                     # expect 33/33
+pytest -q                                     # expect 51/51
 ruff check src tests                          # expect clean
-alembic current                               # expect 0009_sessions
+alembic current                               # expect 0011_heritage_facts
 
-# 4. Smoke-test the auth flow
+# 4. Smoke-test the full flow
 python -m src &                               # start the API (port 8000)
 curl -X POST http://localhost:8000/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"test@silklens-test.com","password":"DemoPassword12345"}'
+# → grab access_token, then:
+curl http://localhost:8000/v1/auth/me \
+  -H "Authorization: Bearer <access_token>"
+curl http://localhost:8000/v1/heritage     # public list
 
 # 5. Drop into the next FAZA — see "What is NOT yet done" above
 ```

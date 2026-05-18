@@ -27,6 +27,7 @@ from src.infrastructure.identity.repositories import (
     SqlUserRepository,
 )
 from src.infrastructure.security import Argon2PasswordHasher, JwtTokenIssuer
+from src.middleware.auth import CurrentUserDep
 
 router = APIRouter(prefix="/v1/auth", tags=["auth"])
 
@@ -201,3 +202,45 @@ async def refresh(payload: RefreshRequest, db: SessionDep) -> LoginResponse:
         user=_user_out(auth.user),
         tokens=_token_bundle(auth, ttl=settings.jwt_access_token_ttl_seconds),
     )
+
+
+# --- Protected endpoints ----------------------------------------------------
+
+
+class MeResponse(BaseModel):
+    user: UserOut
+    session_id: UUID
+    trust_tier: str
+
+
+@router.get("/me", response_model=MeResponse)
+async def me(ctx: CurrentUserDep, db: SessionDep) -> MeResponse:
+    """Return the currently authenticated user. Foundational protected endpoint."""
+    repo = SqlUserRepository(db)
+    user = await repo.get_by_id(ctx.user_id, ctx.residency_region)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "identity.user_not_found", "message": "user no longer exists"},
+        )
+    return MeResponse(
+        user=_user_out(user),
+        session_id=ctx.session_id,
+        trust_tier=ctx.trust_tier.value,
+    )
+
+
+class LogoutResponse(BaseModel):
+    status: str = "ok"
+
+
+@router.post("/logout", response_model=LogoutResponse)
+async def logout(ctx: CurrentUserDep, db: SessionDep) -> LogoutResponse:
+    """Revoke the current session (and its refresh-token family)."""
+    sessions = SqlSessionRepository(db)
+    await sessions.revoke_session(
+        ctx.session_id,
+        ctx.residency_region,
+        reason="user_logout",
+    )
+    return LogoutResponse()
