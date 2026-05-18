@@ -1,139 +1,156 @@
 # SilkLens — Progress Tracker
 
-> **Sizning ko'zingiz uchun.** Bu fayl `HANDOFF.md` dan ko'ra qisqaroq — har bir item checkbox bilan.
-> Last refresh: 2026-05-18 · Last commit: `0391819`
+> **Tag:** `v0.1.0-alpha` · Last commit: `914cce0` · Refreshed: 2026-05-18
 
 ## Qayerda kuzata olasiz
-
-| Joy | Nima ko'rasiz | Yangilanish |
-|---|---|---|
-| 📋 **`PROGRESS.md`** (bu fayl) | Yuqori darajadagi checklist | Har commit'da |
-| 📘 **`docs/HANDOFF.md`** | Texnik tafsilotlar, keyingi qadamlar, deferred decisions | Har milestone'da |
-| 🔗 **GitHub commits** — https://github.com/menarzullayev/silklens/commits/main | Har bir o'zgarish full diff bilan | Real vaqtda |
-| 🟢 **`pytest` (lokal)** | 51/51 yashil | Har sessiyada |
+- 📋 **`PROGRESS.md`** (bu fayl) — checklist
+- 📘 **`docs/HANDOFF.md`** — texnik holat
+- 🔗 **GitHub:** https://github.com/menarzullayev/silklens
+- 🏷️ **Release:** https://github.com/menarzullayev/silklens/releases/tag/v0.1.0-alpha
+- 🟢 **`pytest`:** 145/145 yashil
 
 ---
 
 ## FAZA 1 — Launch (Hafta 1-2)
 
-### Hafta 1 — Foundation
+### Foundation ✅
+- [x] Monorepo + Clean Architecture
+- [x] Docker stack 5/5 healthy
+- [x] FastAPI + Alembic + UUIDv7
+- [x] 4 ADRs
+- [x] CI/CD: 3 GitHub Actions workflows
 
-- [x] Monorepo struktura + Clean Architecture layout
-- [x] Docker Compose stack (Postgres+pgvector / Redis / MinIO / Elasticsearch / Redpanda) — 5/5 healthy
-- [x] FastAPI service skeleton + `/health`, `/ready`, `/version`
-- [x] Alembic + UUIDv7 funksiyasi (migration 0001)
-- [x] 4 ta ADR (monorepo, Postgres SoR, Clean Arch, UUIDv7)
-- [x] pytest infrastructure + ruff + mypy konfiguratsiya
-- [x] `.env.example` + Makefile + Dockerfile (multi-stage)
-- [x] Memory saqlash (9 fayl `~/.claude/projects/.../memory/`)
+### Database migrations (13 fayl, 0001 → 0062) ✅
+- [x] 0001 extensions + UUIDv7
+- [x] 0002 tenants + branding + domains
+- [x] 0003 system_settings + feature_flags + controlled_vocabularies (17 seeded)
+- [x] 0004 users + user_profiles (residency-partitioned)
+- [x] 0005 oauth_providers + identities + emails + phones (7 providers)
+- [x] 0006 RBAC: 23 perms + 5 roles + `app.has_permission()`
+- [x] 0007 audit_log (HMAC chain) + `app.audit()`
+- [x] 0008 event_bus: outbox + log + 17+14 event types
+- [x] 0009 sessions + refresh_tokens + device_fingerprints
+- [x] 0010 heritage_objects + aliases + revisions (bi-temporal triggers)
+- [x] 0011 heritage_facts + provenance (7 sources)
+- [x] 0012 geography: countries (49) + cities (9) + admin_levels (ltree)
+- [x] 0013 taxonomies: historical_periods (18) + styles (8) + dynasties (8)
+- [x] 0014 heritage_relations + unesco_inscriptions (5 UZ) + events
+- [x] 0015 heritage_indexes + tsvector search_vector
+- [x] 0020 media_assets + variants + storage_locations
+- [x] 0021 media_pipeline: presets + jobs + lifecycle + signed_url_grants
+- [x] 0022 media_licensing: 10 license types + DMCA
+- [x] 0023 offline_bundles: Ed25519-signed
+- [x] 0030 ai_registry: 10 providers + 16 models + 4 fallback chains
+- [x] 0031 embeddings: per-(target,model,dim) tables + 5 HNSW indexes
+- [x] 0032 ai_runtime: generations + jobs + cache + token_usage + cost_ledger
+- [x] 0033 ai_safety_and_tm: translation_memory + prompt_injection_log
+- [x] 0040 social_graph: follows + friendships + activity feed
+- [x] 0041 reviews_and_ugc: multi-dim ratings + ltree comments + reactions
+- [x] 0042 gamification: badges (12) + xp_events ledger + levels (5) + leaderboards
+- [x] 0043 moderation_pipeline: queue + actions + reports + sockpuppet graph
+- [x] 0050 products_pricing: 15 currencies + 7 zones + 9 features
+- [x] 0051 subscriptions: state machine + dunning
+- [x] 0052 payments_invoicing: idempotent webhooks + SLN-YYYY invoice trigger
+- [x] 0053 b2b_enterprise: listings + sealed-bid auctions + API keys + affiliates
+- [x] 0054 rls_tenancy: 81 RLS policies + helper functions
+- [x] 0060 notifications: templates + push + email/SMS + webhooks_outbound
+- [x] 0061 search_jobs: search index sync + cron + analytics sink
+- [x] 0062 security_patches: has_permission deleted_at + audit fallback removal + missing events
 
-### Hafta 2 — Foundation migrations (9 dona)
+**Total: ~220 jadval, 8 funksiya, 81 RLS policy, ~75 seed-data row**
 
-- [x] 0001 — extensions + UUIDv7
-- [x] 0002 — tenants + branding + domains (white-label foundation)
-- [x] 0003 — system_settings + feature_flags + controlled_vocabularies (7 vocab, 17 terms seeded)
-- [x] 0004 — users + user_profiles (residency-partitioned: uz/eu/us/global)
-- [x] 0005 — oauth_providers + identities + emails + phones (7 providers seeded)
-- [x] 0006 — RBAC: 23 permissions + 5 roles + `app.has_permission()` function
-- [x] 0007 — audit_log (Merkle-anchored) + `app.audit()` HMAC hash-chain
-- [x] 0008 — event_bus: outbox + log + 17 event types + `app.emit_event()`
-- [x] 0009 — sessions + refresh_tokens + device_fingerprints
-- [x] 0010 — heritage_objects + aliases + revisions (bi-temporal)
-- [x] 0011 — heritage_facts + provenance (fact-level confidence)
-- [ ] 0012 — geographic_admin_levels (ltree) + historical_periods
-- [ ] 0013 — architectural_styles + dynasties
-- [ ] 0014 — heritage_relationships (part_of, near, restored_from)
-- [ ] 0015 — heritage_movable_ext + heritage_intangible_ext
+### Backend services ✅
+- [x] Identity domain (entities, errors, repositories, service, infrastructure)
+- [x] Auth flow: register/login/refresh/logout/me (Argon2id + JWT HS256 + family rotation)
+- [x] BearerContextMiddleware + require_permission factory
+- [x] TenantContextMiddleware (RLS enforcement)
+- [x] Heritage CRUD: list/get/create/update/delete/aliases/revisions/transitions
+- [x] Media: upload/get/signed-url/delete (MinIO integration + BOLA-safe)
+- [x] AI service: recognize/chat/translate/tts/search + admin (Mock + Anthropic providers)
+- [x] Social: follow/friend/block/feed (hybrid pull/push fanout)
+- [x] Reviews + UGC: multi-dim ratings + threaded comments + reactions
+- [x] Gamification: XP ledger + badges + streaks + leaderboards
+- [x] Billing: subscriptions + payments + invoices + webhooks (MockProvider + shared-secret gate)
+- [x] Notifications: templates + push devices + preferences + quiet hours
+- [x] Admin: tenants/branding/system-settings/feature-flags/ai-models endpoints
+- [x] Public meta: /branding /vocab
 
-### Hafta 2 — Backend services
+**75+ endpoints, 145/145 tests green**
 
-- [x] Identity domain (entities, errors, protocols, service)
-- [x] Argon2id password hasher
-- [x] JWT issuer (HS256, access 15min, refresh 30d, family rotation)
-- [x] SqlUserRepository + SqlSessionRepository
-- [x] `POST /v1/auth/register` (auto-login + 201)
-- [x] `POST /v1/auth/login`
-- [x] `POST /v1/auth/refresh` (replay defence revokes family)
-- [x] `POST /v1/auth/logout`
-- [x] `GET /v1/auth/me` (protected)
-- [x] `BearerContextMiddleware` decodes Bearer → AuthContext
-- [x] `require_user` + `require_permission(slug)` deps
-- [x] Heritage domain (entities, errors, repository protocol, service)
-- [x] SqlHeritageRepository (emits `heritage.created.v1`)
-- [x] `GET /v1/heritage` (filter + paginate, public)
-- [x] `GET /v1/heritage/{pub_id}` (public)
-- [x] `POST /v1/heritage` (RBAC-gated: `heritage:create`)
-- [ ] `PATCH /v1/heritage/{pub_id}` (heritage:update)
-- [ ] `DELETE /v1/heritage/{pub_id}` (heritage:delete soft-delete)
-- [ ] `POST /v1/heritage/{pub_id}/aliases`
-- [ ] Heritage moderation workflow (draft → review → published)
-- [ ] OAuth start/callback (Google + Apple + Telegram)
-- [ ] Audit middleware (auto-wrap all privileged routes)
+### Frontend ✅
+- [x] Flutter mobile (`apps/mobile/`): 24 ekran wired
+  - Auth: splash, onboarding, sign-in/up/forgot
+  - Heritage: list, detail, search, saved (filter+pagination+offline cache)
+  - Camera: Shazam-style capture + recognition flow
+  - Map: flutter_map OSM/Mapbox with marker preview
+  - Chat: AI bubbles + TTS playback
+  - Profile: 5-tab activity/saved/reviews/friends/settings
+  - Gamification: XP card, streak, badges grid, leaderboard
+  - Billing: plans, checkout, manage sub, invoices
+  - Clean Architecture enforced; 4 ARB locales (uz/en/ru/zh)
+- [x] Admin panel (`apps/admin/`): 8 sahifa wired
+  - Dashboard, Heritage CRUD (5-tab detail), Tenants, Branding,
+    Settings, Feature flags, AI models, Moderation placeholder
+  - NextAuth v5 silent refresh
+  - 8 Playwright tests
+  - RBAC PermissionGuard aligned with backend
 
-### Hafta 2 — Frontend skeletons
+### Wave 4 — Review + Critical fixes ✅
+- [x] Code review: 3 Critical + 6 High + 7 Medium + 6 Low → docs/code-review-2026-05-18.md
+- [x] Security review: 4 Critical + 5 High + 6 Medium + 8 Low → docs/security-review-2026-05-18.md
+- [x] Fixed CRIT-1/SEC-006: TenantContextMiddleware (RLS now enforced)
+- [x] Fixed CRIT-2/SEC-012: atomic refresh-token rotation
+- [x] Fixed CRIT-3/SEC-001: webhook shared-secret + provider allow-list
+- [x] Fixed SEC-002: audit HMAC fallback constant removed
+- [x] Fixed SEC-003: media GET tenant filter (BOLA)
+- [x] Fixed SEC-004: refresh-token HMAC (not bare SHA)
+- [x] Fixed SEC-007: openapi.json gated by env != 'prod'
+- [x] Fixed SEC-008: has_permission requires deleted_at IS NULL
+- [x] Fixed HIGH-1: heritage get_by_pub_id deleted_at filter
 
-- [x] Flutter (`apps/mobile/`) — Clean Arch + Riverpod + Go Router + Isar + 4 ARB locales + HLC CRDT util
-- [x] Admin panel (`apps/admin/`) — Next.js 14 + shadcn/ui + 12 routes + NextAuth v5 stub + PermissionGuard
-- [ ] Flutter — kamera moduli (FAZA 2)
-- [ ] Flutter — xarita integratsiyasi (FAZA 2)
-- [ ] Flutter — onboarding "Shazam style" ekran
-- [ ] Admin — OpenAPI types regeneratsiya (heritage endpoint live bo'lganda)
-- [ ] Admin — branding sahifasi backend bilan ulanishi
-
-### Hafta 2 — CI/CD
-
-- [x] `.github/workflows/ci.yml` — 7 jobs (lint, test, migrations round-trip, mobile, admin)
-- [x] `.github/workflows/security.yml` — Trivy + Bandit + CodeQL
-- [x] `.github/workflows/release.yml` — Docker→GHCR, mobile artifacts, auto-changelog
-- [ ] CI hozircha PR ochilganda ishlamaganga o'xshaydi — birinchi PR'dan keyin testlash
-
-### Hafta 2 — Tests
-
-- [x] 7 unit + 44 integration = **51/51 yashil**
-- [x] Migration round-trip: downgrade base → upgrade head clean
-- [x] Live curl tests: register → /me → 403 RBAC → public list
-- [ ] Load test (k6) — 10K parallel users (FAZA 4)
-- [ ] Flutter widget tests beyond skeleton
-- [ ] Admin Playwright tests beyond smoke
+### Tag ✅
+- [x] `v0.1.0-alpha` released
 
 ---
 
 ## FAZA 2 — Boost (Hafta 3-4)
 
-> Roadmap: kamera tanish + xarita + audio guide + offline rejim
+> **Status:** ~85% scaffolded, AI integration deferred to FAZA 4 (real GPU server work)
 
-- [ ] Media migrations (0020+) — `media_assets`, variants, transcoding jobs, perceptual hashes
-- [ ] MinIO bucket provisioning + signed URLs
-- [ ] AI domain migrations (0030+) — `ai_models`, `ai_providers`, embeddings tables, RAG chunks
-- [ ] pgvector HNSW indexes
-- [ ] Vision recognition endpoint (`POST /v1/recognize`)
-- [ ] LLaVA / InternVL local benchmark
-- [ ] Audio guide generation (Kokoro TTS)
-- [ ] NLLB-200 translation pipeline
-- [ ] Flutter camera screen + recognition flow
-- [ ] Mapbox/OpenStreetMap integration
-- [ ] Offline bundle generation (Ed25519 signed)
-
----
-
-## FAZA 3-12 — Roadmap
-
-[`Roadmap.md`](Roadmap.md) — 12 faza, 12 oy. Hozircha FAZA 1 da emas, deyarli yarmida.
+- [x] Camera UI (Flutter screen wired to /v1/ai/recognize)
+- [x] Vector search backend (pgvector HNSW)
+- [x] Map screen wired (flutter_map OSM)
+- [x] Heritage detail page + multi-language UI
+- [x] Offline mode v1 (Isar cache + heritage list)
+- [x] UGC: photo upload, reviews, ratings (backend + Flutter)
+- [x] Push notification scaffolding (FCM stub)
+- [x] Admin: heritage CRUD UI
+- [ ] **REAL LLaVA / InternVL benchmark on GPU server** (MockProvider in place)
+- [ ] **REAL Kokoro / Piper TTS on GPU server** (MockProvider in place)
+- [ ] **REAL NLLB-200 translation pipeline** (MockProvider in place)
+- [ ] Heritage bulk import (Wikidata SPARQL → Postgres)
+- [ ] Real-device camera testing
+- [ ] Mapbox API key wiring (OSM fallback active)
 
 ---
 
-## Bu sessiya yutuqlari (commit `0391819`)
+## FAZA 3 — Spark (Hafta 5-6)
 
-| Metrika | Qiymat |
-|---|---|
-| Yangi migrations | 2 (0010, 0011) |
-| Yangi tables | ~8 (heritage_objects, aliases, revisions, facts, provenance, fact_provenance + 2 trigger functions) |
-| Yangi domains | 1 (heritage) + auth middleware |
-| Yangi endpoints | 5 (`/me`, `/logout`, GET heritage list, GET heritage one, POST heritage) |
-| Yangi tests | 18 (7 middleware + 11 heritage) |
-| Test holati | **51/51 yashil** |
-| Lint | ruff + format toza |
-| Round-trip | downgrade base ↔ upgrade head clean |
+> **Status:** ~70% scaffolded, hardware-dependent features deferred
+
+- [x] AI Chat backend (/v1/ai/chat + Flutter ChatPage)
+- [x] Gamification UI (XP, badges, streaks, leaderboard)
+- [x] Social features (follow, friends, feed)
+- [x] B2B listings backend (Auctions + featured slots)
+- [x] B2B admin endpoints
+- [x] Freemium plan structure + entitlements
+- [ ] AR overlay (deferred — needs real device + ARCore/ARKit testing)
+- [ ] Historical AR reconstruction (deferred)
+- [ ] Route planning AI endpoint
+- [ ] Turn-by-turn navigation (Flutter)
+- [ ] Hotel/restaurant integration UI (Booking.com / Yandex)
+- [ ] Group travel real-time channels (WebSocket)
+- [ ] App Store / Play Store submission (deferred — needs Apple dev account)
 
 ---
 
@@ -141,12 +158,40 @@
 
 | Metrika | Qiymat |
 |---|---|
-| Migration | 11 ta (0001-0011) |
-| DB tables | ~70 ta |
-| Endpoint | 10 ta |
-| Test | 51/51 yashil |
-| Architecture docs | ~11,000 qator |
-| Backend code | ~5,500 qator |
-| Frontend skeletons | Flutter (~3K) + Admin (~2K) |
-| Commits | 14 ta (main'da) |
-| ADRs | 4 ta |
+| Migration files | 28 ta (0001-0062) |
+| DB tables | ~220 |
+| RLS policies | 81 |
+| SQL functions | 8 (gen_uuid_v7, has_permission, audit, emit_event, set_tenant_context, …) |
+| Backend endpoints | 75+ |
+| Backend tests | **145/145 yashil** |
+| Backend code | ~12,000+ qator (services/api/src) |
+| Flutter screens | 24 wired |
+| Flutter tests | 16 widget + unit |
+| Admin pages | 8 wired |
+| Admin tests | 8 Playwright |
+| Architecture docs | ~11,000 qator (9 fayl docs/architecture/) |
+| ADRs | 4 |
+| Commits | 25+ (main'da) |
+| Tags | v0.1.0-alpha |
+
+---
+
+## v0.1.0-alpha → v0.2.0-beta gacha qoldi
+
+**Production hardening (FAZA 4 work):**
+- Rate limiting (slowapi + Redis) on auth routes
+- MIME magic-byte validation on media uploads
+- Real provider integrations: Stripe + Apple IAP + Google IAP + Stripe webhook signature
+- Real AI models on GPU server: LLaVA/InternVL benchmark, Kokoro/Piper TTS, NLLB-200
+- Anthropic SDK opt-in for prod (ANTHROPIC_API_KEY)
+- KMS for audit HMAC key + Stripe secret
+- MFA / WebAuthn
+- OAuth Google/Apple/Telegram start/callback wiring
+- Atomic XP idempotency via `INSERT ON CONFLICT DO NOTHING RETURNING`
+- Extract AiRepository (ADR-0003 cleanup)
+- Replace bare `assert` with explicit raise
+- AR module on real iOS/Android devices
+- Wikidata SPARQL ingestion job
+- Mapbox API key
+- Load testing (k6) — 10K parallel users
+- App Store + Play Store submission
