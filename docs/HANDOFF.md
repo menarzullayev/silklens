@@ -1,45 +1,76 @@
 # SilkLens — Session Handoff
 
-> **Last updated:** 2026-05-18 · Last commit: `b4cdc76`
+> **Last updated:** 2026-05-18 · Last commit: `7b86bee`
 > Keep this file current at the end of every session. It is the entry point for the next agent or developer to pick up without re-reading the entire transcript.
 
 ---
 
 ## Where we are right now
 
-**Active FAZA:** FAZA 1 — Hafta 1 (foundation week)
-**Status:** ✅ Foundation shipped and verified. ⏳ Domain migrations begin next.
+**Active FAZA:** FAZA 1 — transitioning Hafta 1 → Hafta 2
+**Status:** ✅ Foundation database + frontend skeletons + CI all shipped. ⏳ Domain services (auth, heritage CRUD) begin next.
 
 ### What is done and verified
 
-- ✅ Monorepo layout established per [ADR-0001](adr/0001-monorepo-layout.md)
-- ✅ Docker stack (Postgres 16+pgvector, Redis 7, MinIO, Elasticsearch 8.15, Redpanda 24.2) — `docker compose -f infra/docker/docker-compose.yml ps` shows 5/5 healthy
-- ✅ Ports: Postgres `5434`, Redis `6381`, MinIO `9000/9001`, Elasticsearch `9200`, Redpanda `19092` (offset from defaults to avoid clashes with co-located projects on this host)
-- ✅ FastAPI service skeleton with Clean Architecture per [ADR-0003](adr/0003-clean-architecture-layers.md)
-- ✅ `/health`, `/ready`, `/version` endpoints — verified live with `curl`
-- ✅ Migration `0001_extensions_uuidv7` applied; round-trip downgrade-upgrade green
-- ✅ `gen_uuid_v7()` SQL function per [ADR-0004](adr/0004-uuidv7-primary-keys.md) — version 7 nibble and time-ordering both tested
-- ✅ pytest **7/7 green** (2 unit + 5 integration)
+**Infrastructure & Foundation:**
+- ✅ Monorepo layout — [ADR-0001](adr/0001-monorepo-layout.md)
+- ✅ Docker stack (Postgres 16+pgvector, Redis 7, MinIO, Elasticsearch 8.15, Redpanda 24.2) — `make ps` shows 5/5 healthy
+- ✅ Ports: Postgres `5434`, Redis `6381`, MinIO `9000/9001`, Elasticsearch `9200`, Redpanda `19092` (offset from defaults to avoid clashes with co-located stacks)
+- ✅ FastAPI Clean Architecture skeleton ([ADR-0003](adr/0003-clean-architecture-layers.md))
+- ✅ `/health`, `/ready`, `/version` endpoints — live and tested
+
+**Database (9 migrations applied + round-trip verified):**
+
+| # | Migration | What it lands |
+|---|---|---|
+| 0001 | extensions_uuidv7 | pgcrypto, pg_trgm, citext, ltree, vector, btree_gist + `gen_uuid_v7()` ([ADR-0004](adr/0004-uuidv7-primary-keys.md)) |
+| 0002 | tenants_branding | `tenants`, `tenant_branding`, `tenant_domains` + default tenant seeded |
+| 0003 | admin_config | `system_settings`, `feature_flags`, `controlled_vocabularies`, `vocabulary_terms` + 7 vocabs + 9 heritage_kinds + 4 languages + 4 residency_regions |
+| 0004 | users | `users` + `user_profiles` partitioned by `LIST(residency_region)` into `_uz/_eu/_us/_global` + system_actor user seeded |
+| 0005 | oauth_identities | `oauth_providers` (admin catalog), `oauth_provider_secrets` (privilege isolation), `user_identities`, `user_emails`, `user_phones` + 7 providers seeded |
+| 0006 | rbac | `permissions`, `roles`, `role_permissions`, `user_roles` (residency-partitioned), `app.has_permission()` + 23 perms + 5 roles + super_admin granted to system_actor |
+| 0007 | audit_log | `audit.audit_log` (RANGE-partitioned monthly), `audit.audit_anchors` (Merkle roots), `app.audit()` with HMAC hash-chain |
+| 0008 | event_bus | `event_types` catalog, `event_outbox` (transactional, transient), `event_log` (immutable, daily-partitioned), `app.emit_event()` + 17 events seeded |
+| 0009 | sessions | `device_fingerprints`, `sessions`, `refresh_tokens` (residency-partitioned, family-rotated) |
+
+**Test suite:**
+- ✅ pytest **23/23 green** (2 unit + 21 integration including hash-chain assertion, event-name rejection, partition checks, RBAC behaviour)
 - ✅ ruff lint + format clean
-- ✅ Architecture docs (`docs/architecture/`) — ~11,000 lines, ~328 tables across 8 specialist designs + master synthesis (committed previously, `2ddd78e`)
+- ✅ Round-trip `alembic downgrade base` → `alembic upgrade head` clean
+
+**Frontend skeletons (parallel-agent output):**
+- ✅ `apps/mobile/` — Flutter + Riverpod + Go Router 14 + Isar + dio/retrofit, Clean Architecture, 4 ARB locales, dynamic theme tokens, HLC utility for CRDT sync
+- ✅ `apps/admin/` — Next.js 14 + shadcn/ui + TypeScript strict + next-intl, 9 dashboard routes, NextAuth v5 stub, PermissionGuard mirroring server RBAC, Playwright smoke test
+
+**CI/CD:**
+- ✅ `.github/workflows/ci.yml` — 7 jobs with paths-filter routing
+- ✅ `.github/workflows/security.yml` — Trivy + Bandit + CodeQL matrix
+- ✅ `.github/workflows/release.yml` — semver-tag-driven build of API Docker → GHCR + mobile artifacts + admin build + auto-changelog
+
+**Documentation:**
+- 4 ADRs ([0001](adr/0001-monorepo-layout.md), [0002](adr/0002-postgres-as-system-of-record.md), [0003](adr/0003-clean-architecture-layers.md), [0004](adr/0004-uuidv7-primary-keys.md))
+- 8-domain architecture (~11,000 lines, ~328 tables) under `docs/architecture/` — committed at `2ddd78e`
 
 ### What is NOT yet done (next pickups in priority order)
 
-1. **Migrations 0002–0010 — core foundation tables** (per [ADR-0001](adr/0001-monorepo-layout.md) + master architecture §4 cross-agent contracts):
-   - `tenants` (default tenant seeded with id `00000000-0000-0000-0000-000000000001`)
-   - `users` partitioned by `residency_region` LIST per Agent 2 architecture
-   - `system_settings` (admin-managed runtime config rows)
-   - `feature_flags`
-   - `audit_log` partitioned monthly + `audit_anchors` (Merkle daily roots)
-   - `event_outbox` + `event_log` daily partitioned
-   - `controlled_vocabularies` + `vocabulary_terms` + `taxonomy_nodes`
-   - `oauth_providers` (admin registry)
-2. **Per-domain migrations** for the remaining ~280 tables — 8 domains, each owning its own `alembic/versions/` revisions.
-3. **Identity / auth service** — register, login, OAuth (Google + Apple + Telegram), JWT issue/refresh, RBAC middleware, audit-log writer wrapping `app.audit(...)`.
-4. **Heritage CRUD** — minimal endpoint surface to ship FAZA 2 obida-tanish dependency.
-5. **GitHub Actions CI** — lint + test + build + Trivy/Bandit security scan.
-6. **Flutter mobile skeleton** — Clean Architecture, Riverpod, Go Router, Isar.
-7. **Admin panel skeleton** — Next.js 14 + shadcn/ui.
+1. **Identity / Auth service** — concrete FastAPI routers for:
+   - `POST /v1/auth/register` (email+password; argon2id; emits `user.registered.v1`)
+   - `POST /v1/auth/login` (email or phone OTP)
+   - `POST /v1/auth/refresh` (rotation via `family_id`)
+   - `POST /v1/auth/logout` (revoke session)
+   - OAuth start/callback for Google + Apple + Telegram (use seeded `oauth_providers` rows; secrets fetched from `oauth_provider_secrets` at startup)
+   - JWT issuance middleware that signs with `SILKLENS_JWT_SECRET`
+   - Audit-middleware that wraps every privileged route to call `app.audit(...)`
+2. **Heritage CRUD** — migrations 0010–0030 (per `docs/architecture/01-core-domain.md`):
+   - `heritage_objects` (root polymorphic table) + `heritage_facts` (provenance-tagged claims) + `heritage_revisions` (bi-temporal) + `heritage_aliases`
+   - `geographic_admin_levels` (ltree) + `historical_periods` + `architectural_styles`
+   - At minimum `GET /v1/heritage`, `GET /v1/heritage/{pub_id}`, `POST /v1/heritage` (with `heritage:create` permission), search via Elasticsearch tier-1 index
+3. **Media service** — migrations 0040–0060 + MinIO bucket provisioning + signed-URL endpoint + transcoding pipeline scaffolding
+4. **Remaining ~250 tables** across AI, social, monetization, infra-events (per per-domain `docs/architecture/0N-*.md`)
+5. **Open ADRs to write:**
+   - `0005-hmac-key-custody.md` (move from env to KMS before any prod RLS audit)
+   - `0006-identity-merge-workflow.md` (Apple Hide-My-Email, dual-registration)
+6. **First end-of-FAZA tag:** `v0.1.0-alpha` after auth + heritage CRUD ship and CI is green.
 
 ---
 
@@ -49,65 +80,63 @@
 # 1. Boot infra
 cd /home/nsn/Workspace/silklens
 make dev
-make ps                    # confirm 5/5 healthy
+make ps                                       # confirm 5/5 healthy
 
 # 2. Activate API venv
 cd services/api
 source .venv/bin/activate
 
-# 3. Verify green baseline before touching anything
-pytest -q                  # expect 7/7
-ruff check src tests       # expect clean
-alembic upgrade head       # idempotent
+# 3. Verify green baseline
+pytest -q                                     # expect 23/23
+ruff check src tests                          # expect clean
+alembic current                               # expect 0009_sessions
 
-# 4. Generate next migration scaffold
-alembic revision -m "your description"
-# Edit the generated file under alembic/versions/
-
-# 5. Apply and test
-alembic upgrade head
-pytest -q
+# 4. Drop into the next FAZA — see "What is NOT yet done" above
 ```
 
 ---
 
 ## How to add a new bounded-context migration
 
-Architecture says migrations are hand-authored (not autogenerate) because we use PG features Alembic can't infer: RLS, partitions, GIN/GiST/HNSW indexes, partial indexes, EXCLUDE constraints, CHECK constraints with subqueries, custom enums via `controlled_vocabularies`.
-
-1. **Read first:** the relevant `docs/architecture/0N-*.md` for that domain, plus `00-MASTER-ARCHITECTURE.md` §4 (cross-agent contracts) and Appendix B.
-2. **Naming:** `YYYYMMDD_NNNN_short_description.py` (ISO date + zero-padded sequence).
-3. **Use `gen_uuid_v7()` for every PK default.**
-4. **Every PII table must declare `residency_region` and partition on it** per [ADR-0002](adr/0002-postgres-as-system-of-record.md).
-5. **Every tenant-bearing table must enable RLS** in the same migration that creates it; a follow-up migration adding RLS is too easy to forget.
-6. **Write an integration test in `tests/`** asserting at least: table exists, indexes exist, FK constraints are correct, default values fire.
-7. **Run downgrade-upgrade** round-trip locally before committing.
+1. **Read first:** the relevant `docs/architecture/0N-*.md` + `00-MASTER-ARCHITECTURE.md` §4 cross-agent contracts.
+2. **File name:** `YYYYMMDD_NNNN_short_description.py` (next sequential — 0010 for heritage).
+3. **PK default:** `gen_uuid_v7()`. **Never** `gen_random_uuid()` on hot tables.
+4. **Partitioning rules (already in production):**
+   - PII tables: `LIST(residency_region)` like users/sessions
+   - Append-only event tables: `RANGE(created_at)` monthly or daily
+   - Audit log: `RANGE` monthly
+5. **Unique constraints on partitioned tables MUST include the partition key.** PostgreSQL requirement, learned the hard way in migration 0005.
+6. **Use the helpers in `alembic/_helpers.py`** for `tg_set_updated_at()` trigger.
+7. **Every write that mutates a domain entity must call** `app.audit(...)` and `app.emit_event(...)` in the same transaction. New event names must be inserted into `event_types` first.
+8. **RLS** stays off until tenant_admin role assignments propagate (next migration after auth service ships).
+9. **Test:** add at least one integration test in `tests/test_foundation_schema.py` (or a new file) asserting the table exists, expected indexes are present, seeded data is correct.
+10. **Round-trip:** `alembic downgrade base && alembic upgrade head && pytest -q` before commit.
 
 ---
 
 ## Open architectural questions (deferred decisions)
 
-Tracked here so we don't lose them. Promote to ADR when decided.
-
-- **HMAC key custody for audit chain** ([ADR-pending]) — `audit_hmac_key` is currently a dev env var. Production needs HSM/KMS. Decide before the first prod-bound RLS audit.
-- **Apple Hide-My-Email forwarding** — affects `user_emails.primary` semantics in identity domain. Needs concrete handling before launching Apple auth.
-- **Photogrammetry GPU contention** — single RTX 4090 hosts vision + TTS + embeddings + 3D processing. Project-Decisions §29 promises AR; we may need cloud RealityCapture surge contract. Budget unresolved.
-- **Per-jurisdiction PD law conflicts** — Uzbek PD law may require processing (not just storage) on Uzbek soil; conflicts with global AI provider routing. Legal review needed before FAZA 4 launch.
+- **HMAC key custody** for `app.audit()` — currently `SILKLENS_AUDIT_HMAC_KEY` env. Needs HSM/KMS before prod (ADR pending).
+- **Apple Hide-My-Email** — affects `user_emails.is_forwarded` semantics; needs concrete handling before launching Apple auth.
+- **Photogrammetry GPU contention** — single RTX 4090 hosts vision + TTS + embeddings + 3D. May need cloud RealityCapture surge contract.
+- **Uzbek PD law on AI processing** — may require Uz-resident user inference to run only on Uz-soil GPUs; conflicts with global AI fallback.
+- **RLS rollout strategy** — should we enable RLS table-by-table as roles get assigned, or all-at-once after a CI gate?
 
 ---
 
 ## Cross-session memory pointer
 
-Long-running project context lives at:
 ```
 /home/nsn/.claude/projects/-home-nsn-Workspace-silklens/memory/MEMORY.md
 ```
-Read it first in any new session. The MEMORY.md is an index; specific facts are in sibling files (user profile, feedback, project notes, references).
+Read first. Index → 9 specific memory files (user profile, feedback, project, references).
 
 ---
 
 ## Repository
 
 - GitHub: https://github.com/menarzullayev/silklens
-- Branch: `main` (direct push during pre-launch; will switch to GitFlow once a team forms or v0.1.0-alpha tags)
-- CI: not yet wired (pickup #5 above)
+- Branch: `main` (direct push during pre-launch; GitFlow after `v0.1.0-alpha`)
+- CI: ⏳ wired but will only start running once first PR opens against this branch with workflows on `main`. Next push to `main` after this commit will trigger.
+- Latest commit: `7b86bee` (foundation milestone)
+- Commits behind plan: 0
