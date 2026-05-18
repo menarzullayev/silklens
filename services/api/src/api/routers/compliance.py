@@ -382,7 +382,10 @@ async def get_data_export(request_id: UUID, ctx: CurrentUserDep, db: SessionDep)
     "/v1/me/account/delete",
     response_model=GdprRequestOut,
     status_code=status.HTTP_202_ACCEPTED,
-    dependencies=[Depends(require_recent_mfa(seconds=300, allow_first_setup=True))],
+    # SEC-W5-007 / C-2 fix: destructive routes refuse to pass through users
+    # without a recent MFA proof. Users who never enrolled MFA must enroll
+    # first (router returns 403 identity.mfa_step_up_required).
+    dependencies=[Depends(require_recent_mfa(seconds=300, allow_first_setup=False))],
 )
 async def schedule_account_deletion(
     payload: DeletionRequestIn,
@@ -468,7 +471,10 @@ async def record_cookie_consent(
 @router.post(
     "/v1/admin/gdpr-requests/{request_id}/process",
     response_model=GdprRequestOut,
-    dependencies=[Depends(require_recent_mfa(seconds=300, allow_first_setup=True))],
+    # SEC-W5-007 / C-2 fix: destructive routes refuse to pass through users
+    # without a recent MFA proof. Users who never enrolled MFA must enroll
+    # first (router returns 403 identity.mfa_step_up_required).
+    dependencies=[Depends(require_recent_mfa(seconds=300, allow_first_setup=False))],
 )
 async def admin_process_request(
     request_id: UUID,

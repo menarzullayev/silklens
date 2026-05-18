@@ -61,7 +61,7 @@ jobs:
       - name: Run Trivy filesystem scan
         # Pinned to a known-good tag. 0.30.0 shipped 2025-12; verify at
         # https://github.com/aquasecurity/trivy-action/releases before bumping.
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           scan-type: fs
           scan-ref: "."

@@ -230,23 +230,30 @@ class PayPalPaymentProvider:
     def _sdk_verify_or_passthrough(
         self, headers_lower: dict[str, str], body: dict[str, Any]
     ) -> bool:
-        """Run the SDK-backed verify call if available; pass-through otherwise.
+        """Run the SDK-backed verify call.
 
-        Returns ``True`` if verification succeeded **or** the SDK isn't present
-        (header presence + configured webhook_id is the minimum gate). Returns
-        ``False`` if the SDK is present and rejected the signature.
+        Fixes C-1 / SEC-W5-001: when the deployment has set ``PAYPAL_WEBHOOK_ID``
+        but the ``[billing]`` extra is not installed, we previously returned
+        ``True`` on header-presence alone — that's effectively no verification.
+        Now we fail closed: if the operator declared they expect signed
+        webhooks (webhook_id non-empty) but the SDK is missing, raise so the
+        router returns 503/401 rather than accepting forged events.
+
+        Returns ``True`` only when the SDK actually verified the signature.
+        Returns ``False`` when the SDK is present and rejected.
         """
         try:
             self._ensure_sdk()
         except ProviderUnavailable:
-            # No SDK → header-presence gate is the floor. Keeps the dev path
-            # exercisable without the [billing] extra installed.
+            if self._webhook_id:
+                # Operator wanted signed verification but SDK isn't installed.
+                # Fail closed — the alternative is accepting forgeries.
+                raise
+            # Pure dev/test path: no webhook_id configured at all, no SDK.
+            log.debug("billing.paypal.webhook.sdk_absent_dev_mode")
             return True
 
         sdk = self._sdk
-        # paypalrestsdk exposes ``WebhookEvent.verify``; the new server SDK
-        # exposes ``WebhooksController``. We try the legacy call first as it's
-        # synchronous; either succeeding is enough.
         try:
             WebhookEvent = getattr(sdk, "WebhookEvent", None)  # noqa: N806
             if WebhookEvent is not None and hasattr(WebhookEvent, "verify"):
@@ -264,7 +271,9 @@ class PayPalPaymentProvider:
         except Exception as exc:  # pragma: no cover — defensive
             log.warning("billing.paypal.webhook.sdk_verify_error", error=str(exc))
             return False
-        # SDK present but no recognisable verify API — fall back to header gate.
+        # SDK present but no recognisable verify API — fail closed in prod.
+        if self._webhook_id:
+            return False
         return True
 
 

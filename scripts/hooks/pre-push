@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+# SilkLens pre-push hook — mirrors the CI api-lint + api-test jobs locally.
+#
+# Runs BEFORE every `git push`. If any check fails the push is aborted so
+# broken code never reaches GitHub CI. Install via:
+#   bash scripts/install-hooks.sh
+#
+# Skip for emergency hotfixes (use sparingly):
+#   git push --no-verify
+#
+# What is checked:
+#   1. ruff lint      — same command as CI api-lint
+#   2. ruff format    — same command as CI api-lint
+#   3. pytest         — same suite as CI api-test (skips Redis-only tests gracefully)
+#
+# What is NOT checked here (too slow / needs services):
+#   - mypy strict       — run manually with `make api-mypy`
+#   - Alembic roundtrip — run manually with `make api-migrate && make api-downgrade`
+#   - Bandit / Trivy    — run in CI security workflow
+#   - Flutter / Next.js — run in CI mobile/admin jobs
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+API_DIR="$REPO_ROOT/services/api"
+VENV="$API_DIR/.venv"
+
+# Detect whether any api/** files changed in the current push.
+# Compares local HEAD to the remote tracking branch (or origin/main).
+changed_api=false
+remote="$1"
+url="$2"
+
+while read local_ref local_sha remote_ref remote_sha; do
+    if [ "$local_sha" = "0000000000000000000000000000000000000000" ]; then
+        continue  # branch deletion — skip
+    fi
+    base="${remote_sha:-$(git merge-base HEAD "origin/main" 2>/dev/null || echo "HEAD")}"
+    if git diff --name-only "$base" HEAD 2>/dev/null | grep -q "^services/api/"; then
+        changed_api=true
+    fi
+done
+
+if [ "$changed_api" = "false" ]; then
+    echo "pre-push: no services/api changes detected — skipping API checks."
+    exit 0
+fi
+
+if [ ! -x "$VENV/bin/python" ]; then
+    echo "pre-push: WARNING — $VENV not found. Run 'make api-install' to set it up."
+    echo "pre-push: Skipping checks (install the venv to enforce pre-push)."
+    exit 0
+fi
+
+echo ""
+echo "┌─────────────────────────────────────────────┐"
+echo "│  SilkLens pre-push checks  (services/api)  │"
+echo "└─────────────────────────────────────────────┘"
+
+cd "$API_DIR"
+
+fail=0
+
+# 1. ruff lint
+echo ""
+echo "▶ ruff check src tests"
+if ! .venv/bin/ruff check src tests; then
+    echo "✗  ruff lint failed. Fix with: .venv/bin/ruff check --fix src tests"
+    fail=1
+fi
+
+# 2. ruff format
+echo ""
+echo "▶ ruff format --check src tests"
+if ! .venv/bin/ruff format --check src tests; then
+    echo "✗  ruff format failed. Fix with: .venv/bin/ruff format src tests"
+    fail=1
+fi
+
+# 3. pytest (skip rate-limit Redis tests if Redis unreachable)
+echo ""
+echo "▶ pytest -q"
+export SILKLENS_RATE_LIMIT_ENABLED=false
+if ! .venv/bin/pytest -q --tb=short 2>&1; then
+    echo "✗  pytest failed."
+    fail=1
+fi
+
+if [ "$fail" -ne 0 ]; then
+    echo ""
+    echo "╔══════════════════════════════════════════════╗"
+    echo "║  PRE-PUSH FAILED — push aborted.            ║"
+    echo "║  Fix the issues above and try again.        ║"
+    echo "║  Emergency bypass: git push --no-verify     ║"
+    echo "╚══════════════════════════════════════════════╝"
+    exit 1
+fi
+
+echo ""
+echo "╔══════════════════════════════════════════════╗"
+echo "║  All pre-push checks passed ✓               ║"
+echo "╚══════════════════════════════════════════════╝"
+exit 0

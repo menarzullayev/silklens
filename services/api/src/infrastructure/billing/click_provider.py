@@ -80,7 +80,10 @@ def click_sign_string(
 ) -> str:
     """Reproduce the Click MD5 sign-string per their merchant docs."""
     raw = f"{click_trans_id}{service_id}{secret_key}{merchant_trans_id}{amount}{action}{sign_time}"
-    return hashlib.md5(raw.encode("utf-8")).hexdigest()  # noqa: S324 — Click protocol
+    # MD5 is mandated by the Click merchant integration specification — not our
+    # choice. usedforsecurity=False marks it as a non-cryptographic use so
+    # OpenSSL in FIPS mode won't reject it, and # nosec B324 silences Bandit.
+    return hashlib.md5(raw.encode("utf-8"), usedforsecurity=False).hexdigest()  # nosec B324
 
 
 def click_hmac_sha1(

@@ -1,7 +1,7 @@
 # SilkLens — top-level Makefile.
 # Aggregates per-service tasks so contributors only need one entry point.
 
-.PHONY: help dev down logs ps api-install api-run api-test api-lint api-format api-mypy api-migrate api-revision api-shell clean
+.PHONY: help dev down logs ps api-install api-run api-test api-lint api-format api-mypy api-migrate api-revision api-shell clean install-hooks
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -42,6 +42,9 @@ api-format: ## Auto-format the API
 
 api-mypy: ## Type-check the API
 	cd services/api && .venv/bin/mypy src
+
+install-hooks: ## Install pre-push + pre-commit git hooks (run once after clone)
+	bash scripts/install-hooks.sh
 
 api-migrate: ## Apply Alembic migrations
 	cd services/api && .venv/bin/alembic upgrade head
