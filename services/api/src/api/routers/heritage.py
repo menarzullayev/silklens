@@ -1,33 +1,41 @@
 """Heritage CRUD endpoints.
 
-GET  /v1/heritage              — list + filter + paginate (public)
-GET  /v1/heritage/{pub_id}     — fetch one (public)
-POST /v1/heritage              — create (requires heritage:create permission)
-
-Update / delete land in a follow-up migration with their own RBAC scopes.
+GET    /v1/heritage                      — list + filter + paginate (public)
+GET    /v1/heritage/{pub_id}              — fetch one (public)
+POST   /v1/heritage                       — create (requires heritage:create)
+PATCH  /v1/heritage/{pub_id}              — partial update (requires heritage:update)
+DELETE /v1/heritage/{pub_id}              — soft delete (requires heritage:delete)
+POST   /v1/heritage/{pub_id}/aliases      — add alias (requires heritage:update)
+GET    /v1/heritage/{pub_id}/revisions    — list revisions (requires heritage:read)
+POST   /v1/heritage/{pub_id}/transitions  — moderation state machine
 """
 
 from __future__ import annotations
 
+from datetime import datetime
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field, field_validator
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_session
 from src.domain.heritage.entities import (
+    AliasKind,
+    HeritageAliasDraft,
     HeritageDraft,
     HeritageFilters,
     HeritageObject,
     HeritageStatus,
+    HeritageUpdate,
+    StatusTransitionAction,
 )
 from src.domain.heritage.errors import HeritageError
-from src.domain.heritage.service import HeritageService
+from src.domain.heritage.service import HeritageService, required_permission
 from src.infrastructure.heritage.repository import SqlHeritageRepository
-from src.middleware.auth import require_permission
+from src.middleware.auth import require_permission, require_user
 
 router = APIRouter(prefix="/v1/heritage", tags=["heritage"])
 
@@ -85,6 +93,85 @@ class HeritageCreate(BaseModel):
         return v.upper() if v else v
 
 
+class HeritagePatch(BaseModel):
+    """Partial-update payload. Every field is optional; we use
+    ``model_fields_set`` to distinguish "not provided" from "explicit null"
+    so the service can perform a true PATCH semantic on jsonb columns.
+    """
+
+    name: dict[str, str] | None = None
+    summary_md: dict[str, str] | None = None
+    description_md: dict[str, str] | None = None
+    tags: list[str] | None = None
+    country_code: str | None = Field(default=None, max_length=2)
+    latitude: Decimal | None = Field(default=None, ge=-90, le=90)
+    longitude: Decimal | None = Field(default=None, ge=-180, le=180)
+    period_start_year: int | None = Field(default=None, ge=-10000, le=2200)
+    period_end_year: int | None = Field(default=None, ge=-10000, le=2200)
+    unesco_inscription_year: int | None = Field(default=None, ge=1972, le=2200)
+    hero_media_id: UUID | None = None
+    status: HeritageStatus | None = None
+
+    @field_validator("country_code")
+    @classmethod
+    def _upper_country(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        if len(v) != 2:
+            raise ValueError("country_code must be 2 chars")
+        return v.upper()
+
+    @model_validator(mode="after")
+    def _at_least_one_field(self) -> HeritagePatch:
+        if not self.model_fields_set:
+            raise ValueError("at least one field must be provided")
+        return self
+
+
+class HeritageAliasIn(BaseModel):
+    alias: str = Field(min_length=1, max_length=512)
+    language_tag: str = Field(min_length=2, max_length=32)
+    kind: AliasKind = AliasKind.HISTORICAL
+    confidence: int = Field(default=80, ge=0, le=100)
+    script: str | None = Field(default=None, max_length=32)
+    source: str | None = Field(default=None, max_length=256)
+
+
+class HeritageAliasOut(BaseModel):
+    id: UUID
+    heritage_id: UUID
+    alias: str
+    language_tag: str
+    kind: AliasKind
+    confidence: int
+    script: str | None
+    source: str | None
+    created_at: datetime | None
+
+
+class RevisionOut(BaseModel):
+    id: UUID
+    revision: int
+    action: str
+    actor_user_id: UUID | None
+    comment: str | None
+    valid_from: datetime
+    before: dict[str, Any] | None
+    after: dict[str, Any]
+
+
+class RevisionPageOut(BaseModel):
+    items: list[RevisionOut]
+    total: int
+    limit: int
+    offset: int
+
+
+class TransitionIn(BaseModel):
+    action: StatusTransitionAction
+    comment: str | None = Field(default=None, max_length=1024)
+
+
 def _to_out(entity: HeritageObject) -> HeritageOut:
     return HeritageOut(
         id=entity.id,
@@ -110,6 +197,13 @@ def _to_out(entity: HeritageObject) -> HeritageOut:
 
 def _service(db: AsyncSession) -> HeritageService:
     return HeritageService(repository=SqlHeritageRepository(db))
+
+
+def _raise_heritage_error(exc: HeritageError) -> None:
+    raise HTTPException(
+        status_code=exc.status_code,
+        detail={"code": exc.code, "message": str(exc)},
+    ) from exc
 
 
 # --- Routes ------------------------------------------------------------------
@@ -157,10 +251,7 @@ async def get_heritage(pub_id: str, db: SessionDep) -> HeritageOut:
     try:
         entity = await _service(db).get(pub_id)
     except HeritageError as exc:
-        raise HTTPException(
-            status_code=exc.status_code,
-            detail={"code": exc.code, "message": str(exc)},
-        ) from exc
+        _raise_heritage_error(exc)
     return _to_out(entity)
 
 
@@ -168,13 +259,12 @@ async def get_heritage(pub_id: str, db: SessionDep) -> HeritageOut:
     "",
     response_model=HeritageOut,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_permission("heritage:create"))],
 )
 async def create_heritage(
     payload: HeritageCreate,
     db: SessionDep,
     ctx: Annotated[
-        object,  # actually AuthContext, but typing is enforced by dependency above
+        object,
         Depends(require_permission("heritage:create")),
     ],
 ) -> HeritageOut:
@@ -196,8 +286,171 @@ async def create_heritage(
     try:
         entity = await _service(db).create(draft, created_by=ctx.user_id)
     except HeritageError as exc:
-        raise HTTPException(
-            status_code=exc.status_code,
-            detail={"code": exc.code, "message": str(exc)},
-        ) from exc
+        _raise_heritage_error(exc)
     return _to_out(entity)
+
+
+@router.patch("/{pub_id}", response_model=HeritageOut)
+async def update_heritage(
+    pub_id: str,
+    payload: HeritagePatch,
+    db: SessionDep,
+    ctx: Annotated[
+        object,
+        Depends(require_permission("heritage:update")),
+    ],
+) -> HeritageOut:
+    update = HeritageUpdate(
+        name=payload.name,
+        summary_md=payload.summary_md,
+        description_md=payload.description_md,
+        tags=tuple(payload.tags) if payload.tags is not None else None,
+        country_code=payload.country_code,
+        latitude=payload.latitude,
+        longitude=payload.longitude,
+        period_start_year=payload.period_start_year,
+        period_end_year=payload.period_end_year,
+        unesco_inscription_year=payload.unesco_inscription_year,
+        hero_media_id=payload.hero_media_id,
+        status=payload.status,
+        set_fields=frozenset(payload.model_fields_set),
+    )
+    try:
+        entity = await _service(db).update(pub_id=pub_id, update=update, updated_by=ctx.user_id)
+    except HeritageError as exc:
+        _raise_heritage_error(exc)
+    return _to_out(entity)
+
+
+@router.delete("/{pub_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_heritage(
+    pub_id: str,
+    db: SessionDep,
+    ctx: Annotated[
+        object,
+        Depends(require_permission("heritage:delete")),
+    ],
+) -> Response:
+    try:
+        await _service(db).soft_delete(pub_id=pub_id, deleted_by=ctx.user_id)
+    except HeritageError as exc:
+        _raise_heritage_error(exc)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/{pub_id}/aliases",
+    response_model=HeritageAliasOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def add_alias(
+    pub_id: str,
+    payload: HeritageAliasIn,
+    db: SessionDep,
+    ctx: Annotated[
+        object,
+        Depends(require_permission("heritage:update")),
+    ],
+) -> HeritageAliasOut:
+    draft = HeritageAliasDraft(
+        alias=payload.alias,
+        language_tag=payload.language_tag,
+        kind=payload.kind,
+        confidence=payload.confidence,
+        script=payload.script,
+        source=payload.source,
+    )
+    try:
+        alias = await _service(db).add_alias(pub_id=pub_id, draft=draft, actor=ctx.user_id)
+    except HeritageError as exc:
+        _raise_heritage_error(exc)
+    return HeritageAliasOut(
+        id=alias.id,
+        heritage_id=alias.heritage_id,
+        alias=alias.alias,
+        language_tag=alias.language_tag,
+        kind=alias.kind,
+        confidence=alias.confidence,
+        script=alias.script,
+        source=alias.source,
+        created_at=alias.created_at,
+    )
+
+
+@router.get("/{pub_id}/revisions", response_model=RevisionPageOut)
+async def list_revisions(
+    pub_id: str,
+    db: SessionDep,
+    _ctx: Annotated[
+        object,
+        Depends(require_permission("heritage:read")),
+    ],
+    limit: LimitQ = 20,
+    offset: OffsetQ = 0,
+) -> RevisionPageOut:
+    try:
+        page = await _service(db).list_revisions(pub_id=pub_id, limit=limit, offset=offset)
+    except HeritageError as exc:
+        _raise_heritage_error(exc)
+    return RevisionPageOut(
+        items=[
+            RevisionOut(
+                id=r.id,
+                revision=r.revision,
+                action=r.action,
+                actor_user_id=r.actor_user_id,
+                comment=r.comment,
+                valid_from=r.valid_from,
+                before=r.before,
+                after=r.after,
+            )
+            for r in page.items
+        ],
+        total=page.total,
+        limit=page.limit,
+        offset=page.offset,
+    )
+
+
+@router.post("/{pub_id}/transitions", response_model=HeritageOut)
+async def transition_heritage(
+    pub_id: str,
+    payload: TransitionIn,
+    db: SessionDep,
+    ctx: Annotated[object, Depends(require_user)],
+) -> HeritageOut:
+    # Each action requires a different permission — we resolve at call time
+    # via the same has_permission SQL function the dependency factory uses.
+    perm = required_permission(payload.action)
+    granted = await _check_permission(db, ctx, perm)
+    if not granted:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "identity.permission_denied",
+                "message": f"missing permission '{perm}'",
+                "permission": perm,
+            },
+        )
+    try:
+        entity = await _service(db).transition_status(
+            pub_id=pub_id, action=payload.action, actor=ctx.user_id
+        )
+    except HeritageError as exc:
+        _raise_heritage_error(exc)
+    return _to_out(entity)
+
+
+async def _check_permission(db: AsyncSession, ctx: object, perm: str) -> bool:
+    from sqlalchemy import text
+
+    row = await db.execute(
+        text("SELECT app.has_permission(:uid, :residency, :perm, :tenant)"),
+        {
+            "uid": ctx.user_id,
+            "residency": ctx.residency_region.value,
+            "perm": perm,
+            "tenant": ctx.tenant_id,
+        },
+    )
+    return bool(row.scalar_one())

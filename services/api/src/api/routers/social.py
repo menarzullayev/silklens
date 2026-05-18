@@ -1,0 +1,287 @@
+"""Social graph endpoints — follows, friends, blocks, activity feed.
+
+Follows are residency-aware: every write carries the actor's residency so the
+composite FK to ``users`` resolves correctly. Public read endpoints (followers,
+following) don't require auth.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Annotated, Any
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, EmailStr, Field
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.database import get_session
+from src.domain.social.errors import SocialError
+from src.domain.social.service import SocialService
+from src.infrastructure.social.repository import (
+    SqlActivityFeedRepository,
+    SqlFollowRepository,
+    SqlFriendshipRepository,
+)
+from src.middleware.auth import CurrentUserDep
+
+router = APIRouter(prefix="/v1/social", tags=["social"])
+
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
+
+
+def _service(db: AsyncSession) -> SocialService:
+    return SocialService(
+        follows=SqlFollowRepository(db),
+        friendships=SqlFriendshipRepository(db),
+        feed_repo=SqlActivityFeedRepository(db),
+    )
+
+
+def _raise(exc: SocialError) -> None:
+    raise HTTPException(
+        status_code=exc.status_code,
+        detail={"code": exc.code, "message": str(exc)},
+    ) from exc
+
+
+# --- Schemas ---------------------------------------------------------------
+
+
+class UserRefOut(BaseModel):
+    pub_id: str
+    residency_region: str
+
+
+class FollowEdgeListOut(BaseModel):
+    items: list[UserRefOut]
+    total: int
+
+
+class FriendInviteRequest(BaseModel):
+    target_pub_id: str | None = Field(default=None, min_length=4, max_length=64)
+    target_email: EmailStr | None = None
+    message: str | None = Field(default=None, max_length=512)
+
+
+class FriendInviteOut(BaseModel):
+    id: UUID
+    token: str
+    status: str
+    expires_at: datetime
+
+
+class FriendAcceptRequest(BaseModel):
+    token: str = Field(min_length=16, max_length=128)
+
+
+class BlockRequest(BaseModel):
+    reason: str | None = Field(default=None, max_length=512)
+
+
+class ActivityItemOut(BaseModel):
+    event_id: UUID
+    actor_user_id: UUID
+    verb: str
+    object_kind: str
+    object_id: UUID
+    payload: dict[str, Any]
+    created_at: datetime
+    delivered_at: datetime | None
+    target_kind: str | None
+    target_id: UUID | None
+
+
+class FeedOut(BaseModel):
+    items: list[ActivityItemOut]
+    next_cursor: datetime | None
+
+
+# --- Follow / unfollow -----------------------------------------------------
+
+
+@router.post("/follow/{pub_id}", status_code=status.HTTP_201_CREATED)
+async def follow(
+    pub_id: str,
+    db: SessionDep,
+    ctx: CurrentUserDep,
+) -> dict:
+    try:
+        target = await _service(db).follow(
+            actor_id=ctx.user_id,
+            actor_residency=ctx.residency_region.value,
+            tenant_id=ctx.tenant_id,
+            target_pub_id=pub_id,
+        )
+        await db.commit()
+    except SocialError as exc:
+        await db.rollback()
+        _raise(exc)
+    return {"status": "ok", "target_pub_id": target.pub_id}
+
+
+@router.delete("/follow/{pub_id}", status_code=status.HTTP_200_OK)
+async def unfollow(pub_id: str, db: SessionDep, ctx: CurrentUserDep) -> dict:
+    try:
+        await _service(db).unfollow(actor_id=ctx.user_id, target_pub_id=pub_id)
+        await db.commit()
+    except SocialError as exc:
+        await db.rollback()
+        _raise(exc)
+    return {"status": "ok"}
+
+
+@router.get("/followers/{pub_id}", response_model=FollowEdgeListOut)
+async def followers(
+    pub_id: str,
+    db: SessionDep,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> FollowEdgeListOut:
+    try:
+        page = await _service(db).followers(target_pub_id=pub_id, limit=limit, offset=offset)
+    except SocialError as exc:
+        _raise(exc)
+    return FollowEdgeListOut(
+        items=[
+            UserRefOut(pub_id=u.pub_id, residency_region=u.residency_region) for u in page.items
+        ],
+        total=page.total,
+    )
+
+
+@router.get("/following/{pub_id}", response_model=FollowEdgeListOut)
+async def following(
+    pub_id: str,
+    db: SessionDep,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> FollowEdgeListOut:
+    try:
+        page = await _service(db).following(target_pub_id=pub_id, limit=limit, offset=offset)
+    except SocialError as exc:
+        _raise(exc)
+    return FollowEdgeListOut(
+        items=[
+            UserRefOut(pub_id=u.pub_id, residency_region=u.residency_region) for u in page.items
+        ],
+        total=page.total,
+    )
+
+
+# --- Friend invitations ----------------------------------------------------
+
+
+@router.post("/friends/invite", response_model=FriendInviteOut)
+async def send_friend_invitation(
+    payload: FriendInviteRequest, db: SessionDep, ctx: CurrentUserDep
+) -> FriendInviteOut:
+    try:
+        invitation = await _service(db).send_friend_invitation(
+            actor_id=ctx.user_id,
+            actor_residency=ctx.residency_region.value,
+            target_pub_id=payload.target_pub_id,
+            target_email=str(payload.target_email) if payload.target_email else None,
+            message=payload.message,
+        )
+        await db.commit()
+    except SocialError as exc:
+        await db.rollback()
+        _raise(exc)
+    return FriendInviteOut(
+        id=invitation.id,
+        token=invitation.token,
+        status=invitation.status.value,
+        expires_at=invitation.expires_at,
+    )
+
+
+@router.post("/friends/accept", response_model=FriendInviteOut)
+async def accept_friend_invitation(
+    payload: FriendAcceptRequest, db: SessionDep, ctx: CurrentUserDep
+) -> FriendInviteOut:
+    try:
+        invitation = await _service(db).accept_friend_invitation(
+            actor_id=ctx.user_id, token=payload.token
+        )
+        await db.commit()
+    except SocialError as exc:
+        await db.rollback()
+        _raise(exc)
+    return FriendInviteOut(
+        id=invitation.id,
+        token=invitation.token,
+        status=invitation.status.value,
+        expires_at=invitation.expires_at,
+    )
+
+
+# --- Block / unblock -------------------------------------------------------
+
+
+@router.post("/block/{pub_id}", status_code=status.HTTP_201_CREATED)
+async def block(
+    pub_id: str,
+    db: SessionDep,
+    ctx: CurrentUserDep,
+    payload: BlockRequest | None = None,
+) -> dict:
+    try:
+        await _service(db).block_user(
+            actor_id=ctx.user_id,
+            actor_residency=ctx.residency_region.value,
+            target_pub_id=pub_id,
+            reason=payload.reason if payload else None,
+        )
+        await db.commit()
+    except SocialError as exc:
+        await db.rollback()
+        _raise(exc)
+    return {"status": "ok"}
+
+
+@router.delete("/block/{pub_id}")
+async def unblock(pub_id: str, db: SessionDep, ctx: CurrentUserDep) -> dict:
+    try:
+        await _service(db).unblock_user(actor_id=ctx.user_id, target_pub_id=pub_id)
+        await db.commit()
+    except SocialError as exc:
+        await db.rollback()
+        _raise(exc)
+    return {"status": "ok"}
+
+
+# --- Feed ------------------------------------------------------------------
+
+
+@router.get("/feed", response_model=FeedOut)
+async def feed(
+    db: SessionDep,
+    ctx: CurrentUserDep,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    before: Annotated[datetime | None, Query()] = None,
+) -> FeedOut:
+    page = await _service(db).feed(
+        user_id=ctx.user_id,
+        residency=ctx.residency_region.value,
+        limit=limit,
+        before_ts=before,
+    )
+    return FeedOut(
+        items=[
+            ActivityItemOut(
+                event_id=i.event_id,
+                actor_user_id=i.actor_user_id,
+                verb=i.verb.value,
+                object_kind=i.object_kind,
+                object_id=i.object_id,
+                payload=i.payload,
+                created_at=i.created_at,
+                delivered_at=i.delivered_at,
+                target_kind=i.target_kind,
+                target_id=i.target_id,
+            )
+            for i in page.items
+        ],
+        next_cursor=page.next_cursor,
+    )

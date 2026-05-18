@@ -6,19 +6,28 @@ Hand-written SQL again (per the identity infrastructure rationale): migration
 
 from __future__ import annotations
 
+import json
 from typing import Final
 from uuid import UUID
 
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.heritage.entities import (
+    AliasKind,
+    HeritageAlias,
+    HeritageAliasDraft,
     HeritageDraft,
     HeritageFilters,
     HeritageObject,
     HeritagePage,
+    HeritageRevision,
+    HeritageRevisionPage,
     HeritageStatus,
+    HeritageUpdate,
 )
+from src.domain.heritage.errors import DuplicateAlias
 
 _SELECT_COLUMNS: Final = """
     id, tenant_id, pub_id, kind_slug,
@@ -59,6 +68,22 @@ def _row_to_entity(row: object) -> HeritageObject:
         deleted_at=m["deleted_at"],
         created_by=m["created_by"],
         updated_by=m["updated_by"],
+    )
+
+
+def _row_to_revision(row: object) -> HeritageRevision:
+    m = row._mapping  # type: ignore[attr-defined]
+    return HeritageRevision(
+        id=m["id"],
+        heritage_id=m["heritage_id"],
+        revision=m["revision"],
+        action=m["action"],
+        actor_user_id=m["actor_user_id"],
+        before=dict(m["before"]) if m["before"] else None,
+        after=dict(m["after"]) if m["after"] else {},
+        diff=dict(m["diff"]) if m["diff"] else None,
+        comment=m["comment"],
+        valid_from=m["valid_from"],
     )
 
 
@@ -271,9 +296,324 @@ class SqlHeritageRepository:
         await self._session.commit()
         return entity
 
+    async def update(
+        self,
+        *,
+        existing: HeritageObject,
+        update: HeritageUpdate,
+        updated_by: UUID,
+    ) -> HeritageObject:
+        # Partial update — we only emit SET clauses for fields the caller
+        # explicitly provided. For jsonb merge columns we use the ``||``
+        # operator so callers can patch individual locales without losing
+        # the rest of the i18n map.
+        sets: list[str] = ["updated_by = :updated_by"]
+        params: dict[str, object] = {"hid": existing.id, "updated_by": updated_by}
+
+        if update.has("name") and update.name is not None:
+            sets.append("name = name || CAST(:name AS jsonb)")
+            params["name"] = _json(update.name)
+        if update.has("summary_md") and update.summary_md is not None:
+            sets.append("summary_md = summary_md || CAST(:summary AS jsonb)")
+            params["summary"] = _json(update.summary_md)
+        if update.has("description_md") and update.description_md is not None:
+            sets.append("description_md = description_md || CAST(:description AS jsonb)")
+            params["description"] = _json(update.description_md)
+        if update.has("tags"):
+            sets.append("tags = :tags")
+            params["tags"] = list(update.tags) if update.tags else []
+        if update.has("country_code"):
+            sets.append("country_code = :country_code")
+            params["country_code"] = update.country_code
+        if update.has("latitude"):
+            sets.append("latitude = :latitude")
+            params["latitude"] = update.latitude
+        if update.has("longitude"):
+            sets.append("longitude = :longitude")
+            params["longitude"] = update.longitude
+        if update.has("period_start_year"):
+            sets.append("period_start_year = :period_start")
+            params["period_start"] = update.period_start_year
+        if update.has("period_end_year"):
+            sets.append("period_end_year = :period_end")
+            params["period_end"] = update.period_end_year
+        if update.has("unesco_inscription_year"):
+            sets.append("unesco_inscription_year = :unesco_year")
+            params["unesco_year"] = update.unesco_inscription_year
+        if update.has("hero_media_id"):
+            sets.append("hero_media_id = :hero_media_id")
+            params["hero_media_id"] = update.hero_media_id
+        if update.has("status") and update.status is not None:
+            sets.append("status = :status")
+            params["status"] = update.status.value
+
+        set_clause = ", ".join(sets)
+        result = await self._session.execute(
+            text(
+                f"""
+                UPDATE heritage_objects
+                SET {set_clause}
+                WHERE id = :hid AND deleted_at IS NULL
+                RETURNING {_SELECT_COLUMNS}
+                """  # noqa: S608
+            ),
+            params,
+        )
+        row = result.one()
+        entity = _row_to_entity(row)
+
+        await self._session.execute(
+            text(
+                """
+                SELECT app.emit_event(
+                    :tenant, 'heritage.updated.v1', 'heritage', :hid,
+                    CAST(:payload AS jsonb)
+                )
+                """
+            ),
+            {
+                "tenant": entity.tenant_id,
+                "hid": entity.id,
+                "payload": _json(
+                    {
+                        "pub_id": entity.pub_id,
+                        "updated_by": str(updated_by),
+                        "revision": entity.revision,
+                        "changed_fields": sorted(update.set_fields),
+                    }
+                ),
+            },
+        )
+        await self._session.commit()
+        return entity
+
+    async def soft_delete(
+        self,
+        *,
+        existing: HeritageObject,
+        deleted_by: UUID,
+    ) -> HeritageObject:
+        result = await self._session.execute(
+            text(
+                f"""
+                UPDATE heritage_objects
+                SET deleted_at = now(), updated_by = :deleted_by
+                WHERE id = :hid AND deleted_at IS NULL
+                RETURNING {_SELECT_COLUMNS}
+                """  # noqa: S608
+            ),
+            {"hid": existing.id, "deleted_by": deleted_by},
+        )
+        row = result.one()
+        entity = _row_to_entity(row)
+
+        # heritage.deleted.v1 is not in the seeded event_types catalog; insert
+        # idempotently here so the emit_event() guard passes. Migrations are
+        # frozen for this agent.
+        await self._ensure_event_type("heritage.deleted.v1", "Heritage deleted")
+
+        await self._session.execute(
+            text(
+                """
+                SELECT app.emit_event(
+                    :tenant, 'heritage.deleted.v1', 'heritage', :hid,
+                    CAST(:payload AS jsonb)
+                )
+                """
+            ),
+            {
+                "tenant": entity.tenant_id,
+                "hid": entity.id,
+                "payload": _json(
+                    {
+                        "pub_id": entity.pub_id,
+                        "deleted_by": str(deleted_by),
+                        "revision": entity.revision,
+                    }
+                ),
+            },
+        )
+        await self._session.commit()
+        return entity
+
+    async def add_alias(
+        self,
+        *,
+        heritage_id: UUID,
+        tenant_id: UUID,
+        draft: HeritageAliasDraft,
+        actor: UUID,
+    ) -> HeritageAlias:
+        try:
+            result = await self._session.execute(
+                text(
+                    """
+                    INSERT INTO heritage_aliases (
+                        heritage_id, alias, language_tag, script, kind, source, confidence
+                    )
+                    VALUES (:hid, :alias, :lang, :script, :kind, :source, :conf)
+                    RETURNING id, heritage_id, alias, language_tag, script, kind,
+                              source, confidence, created_at
+                    """
+                ),
+                {
+                    "hid": heritage_id,
+                    "alias": draft.alias,
+                    "lang": draft.language_tag,
+                    "script": draft.script,
+                    "kind": draft.kind.value,
+                    "source": draft.source,
+                    "conf": draft.confidence,
+                },
+            )
+        except IntegrityError as exc:
+            await self._session.rollback()
+            raise DuplicateAlias(
+                f"alias '{draft.alias}@{draft.language_tag}' already exists"
+            ) from exc
+
+        row = result.one()._mapping  # type: ignore[attr-defined]
+        alias_entity = HeritageAlias(
+            id=row["id"],
+            heritage_id=row["heritage_id"],
+            alias=row["alias"],
+            language_tag=row["language_tag"],
+            script=row["script"],
+            kind=AliasKind(row["kind"]),
+            source=row["source"],
+            confidence=row["confidence"],
+            created_at=row["created_at"],
+        )
+
+        # The alias touches the aggregate — emit the standard updated.v1.
+        await self._session.execute(
+            text(
+                """
+                SELECT app.emit_event(
+                    :tenant, 'heritage.updated.v1', 'heritage', :hid,
+                    CAST(:payload AS jsonb)
+                )
+                """
+            ),
+            {
+                "tenant": tenant_id,
+                "hid": heritage_id,
+                "payload": _json(
+                    {
+                        "alias_added": draft.alias,
+                        "language_tag": draft.language_tag,
+                        "kind": draft.kind.value,
+                        "actor": str(actor),
+                    }
+                ),
+            },
+        )
+        await self._session.commit()
+        return alias_entity
+
+    async def list_revisions(
+        self,
+        *,
+        heritage_id: UUID,
+        limit: int,
+        offset: int,
+    ) -> HeritageRevisionPage:
+        total_row = await self._session.execute(
+            text("SELECT count(*) FROM heritage_revisions WHERE heritage_id = :hid"),
+            {"hid": heritage_id},
+        )
+        total = int(total_row.scalar_one())
+        result = await self._session.execute(
+            text(
+                """
+                SELECT id, heritage_id, revision, action, actor_user_id,
+                       before, after, diff, comment, valid_from
+                FROM heritage_revisions
+                WHERE heritage_id = :hid
+                ORDER BY revision DESC
+                LIMIT :limit OFFSET :offset
+                """
+            ),
+            {"hid": heritage_id, "limit": limit, "offset": offset},
+        )
+        items = tuple(_row_to_revision(r) for r in result.all())
+        return HeritageRevisionPage(
+            items=items,
+            total=total,
+            limit=limit,
+            offset=offset,
+        )
+
+    async def transition_status(
+        self,
+        *,
+        existing: HeritageObject,
+        new_status: str,
+        actor: UUID,
+    ) -> HeritageObject:
+        result = await self._session.execute(
+            text(
+                f"""
+                UPDATE heritage_objects
+                SET status = :status, updated_by = :actor
+                WHERE id = :hid AND deleted_at IS NULL
+                RETURNING {_SELECT_COLUMNS}
+                """  # noqa: S608
+            ),
+            {"hid": existing.id, "status": new_status, "actor": actor},
+        )
+        row = result.one()
+        entity = _row_to_entity(row)
+
+        await self._session.execute(
+            text(
+                """
+                SELECT app.emit_event(
+                    :tenant, 'heritage.updated.v1', 'heritage', :hid,
+                    CAST(:payload AS jsonb)
+                )
+                """
+            ),
+            {
+                "tenant": entity.tenant_id,
+                "hid": entity.id,
+                "payload": _json(
+                    {
+                        "pub_id": entity.pub_id,
+                        "status_from": existing.status.value,
+                        "status_to": new_status,
+                        "actor": str(actor),
+                        "revision": entity.revision,
+                    }
+                ),
+            },
+        )
+        await self._session.commit()
+        return entity
+
+    async def _ensure_event_type(self, event_name: str, display_en: str) -> None:
+        """Idempotently register an event_name so ``app.emit_event`` accepts it.
+
+        Migrations are frozen for this agent; the seed list in 0008 doesn't
+        include ``heritage.deleted.v1``. We insert on conflict do nothing in
+        the same transaction so production deploys converge after the first
+        delete call.
+        """
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO event_types (event_name, display_name, retention_days, kafka_topic)
+                VALUES (:name, CAST(:display AS jsonb), 365, 'silklens.heritage.events')
+                ON CONFLICT (event_name) DO NOTHING
+                """
+            ),
+            {
+                "name": event_name,
+                "display": _json({"en": display_en}),
+            },
+        )
+
 
 def _json(payload: object) -> str:
     """Serialize a Python value as a JSON string for jsonb casting."""
-    import json
-
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))

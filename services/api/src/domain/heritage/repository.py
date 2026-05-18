@@ -6,10 +6,14 @@ from typing import Protocol
 from uuid import UUID
 
 from src.domain.heritage.entities import (
+    HeritageAlias,
+    HeritageAliasDraft,
     HeritageDraft,
     HeritageFilters,
     HeritageObject,
     HeritagePage,
+    HeritageRevisionPage,
+    HeritageUpdate,
 )
 
 
@@ -30,4 +34,44 @@ class HeritageRepository(Protocol):
         draft: HeritageDraft,
         pub_id: str,
         created_by: UUID,
+    ) -> HeritageObject: ...
+
+    async def update(
+        self,
+        *,
+        existing: HeritageObject,
+        update: HeritageUpdate,
+        updated_by: UUID,
+    ) -> HeritageObject: ...
+
+    async def soft_delete(
+        self,
+        *,
+        existing: HeritageObject,
+        deleted_by: UUID,
+    ) -> HeritageObject: ...
+
+    async def add_alias(
+        self,
+        *,
+        heritage_id: UUID,
+        tenant_id: UUID,
+        draft: HeritageAliasDraft,
+        actor: UUID,
+    ) -> HeritageAlias: ...
+
+    async def list_revisions(
+        self,
+        *,
+        heritage_id: UUID,
+        limit: int,
+        offset: int,
+    ) -> HeritageRevisionPage: ...
+
+    async def transition_status(
+        self,
+        *,
+        existing: HeritageObject,
+        new_status: str,
+        actor: UUID,
     ) -> HeritageObject: ...

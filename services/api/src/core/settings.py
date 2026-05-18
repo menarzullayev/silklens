@@ -75,6 +75,12 @@ class Settings(BaseSettings):
     # --- Tenancy ---
     default_tenant_id: str = "00000000-0000-0000-0000-000000000001"
 
+    # --- AI ---
+    # When true, the provider resolver always returns deterministic mock
+    # providers (LLaVA / Kokoro / NLLB / Anthropic stubs). Set to false in
+    # prod once the GPU server is reachable + ANTHROPIC_API_KEY is wired.
+    ai_use_mock_providers: bool = True
+
     @field_validator("api_cors_origins", mode="before")
     @classmethod
     def _split_origins(cls, v: object) -> object:

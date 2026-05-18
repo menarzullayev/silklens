@@ -36,3 +36,23 @@ class HeritageValidationError(HeritageError):
         super().__init__(f"{field}: {reason}")
         self.field = field
         self.reason = reason
+
+
+class InvalidStatusTransition(HeritageError):
+    code = "heritage.invalid_transition"
+    status_code = 422
+
+    def __init__(self, current: str, action: str) -> None:
+        super().__init__(f"cannot apply action '{action}' from current status '{current}'")
+        self.current = current
+        self.action = action
+
+
+class DuplicateAlias(HeritageError):
+    code = "heritage.duplicate_alias"
+    status_code = 409
+
+
+class HeritageAlreadyDeleted(HeritageError):
+    code = "heritage.already_deleted"
+    status_code = 410

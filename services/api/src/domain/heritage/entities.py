@@ -132,3 +132,71 @@ class HeritageEvent:
     name: str
     aggregate_id: UUID
     payload: dict[str, Any]
+
+
+@dataclass(slots=True, frozen=True)
+class HeritageUpdate:
+    """Partial-update bundle. ``None`` fields are skipped server-side."""
+
+    name: dict[str, str] | None = None
+    summary_md: dict[str, str] | None = None
+    description_md: dict[str, str] | None = None
+    tags: tuple[str, ...] | None = None
+    country_code: str | None = None
+    latitude: Decimal | None = None
+    longitude: Decimal | None = None
+    period_start_year: int | None = None
+    period_end_year: int | None = None
+    unesco_inscription_year: int | None = None
+    hero_media_id: UUID | None = None
+    status: HeritageStatus | None = None
+    # Sentinel set: which fields were explicitly provided by the caller.
+    # We use a frozenset of field-names rather than relying on None because
+    # ``None`` is a legitimate value for clearing scalar columns.
+    set_fields: frozenset[str] = field(default_factory=frozenset)
+
+    def has(self, name: str) -> bool:
+        return name in self.set_fields
+
+
+@dataclass(slots=True, frozen=True)
+class HeritageAliasDraft:
+    """Input bundle for inserting a single alias row."""
+
+    alias: str
+    language_tag: str
+    kind: AliasKind = AliasKind.HISTORICAL
+    confidence: int = 80
+    script: str | None = None
+    source: str | None = None
+
+
+@dataclass(slots=True, frozen=True)
+class HeritageRevision:
+    """A single bi-temporal row from ``heritage_revisions``."""
+
+    id: UUID
+    heritage_id: UUID
+    revision: int
+    action: str
+    actor_user_id: UUID | None
+    before: dict[str, Any] | None
+    after: dict[str, Any]
+    diff: dict[str, Any] | None
+    comment: str | None
+    valid_from: datetime
+
+
+@dataclass(slots=True, frozen=True)
+class HeritageRevisionPage:
+    items: tuple[HeritageRevision, ...]
+    total: int
+    limit: int
+    offset: int
+
+
+class StatusTransitionAction(StrEnum):
+    SUBMIT_REVIEW = "submit_review"
+    APPROVE = "approve"
+    REJECT = "reject"
+    ARCHIVE = "archive"

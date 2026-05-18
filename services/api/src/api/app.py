@@ -14,10 +14,24 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src import __version__
-from src.api.routers import auth, health, heritage
+from src.api.routers import (
+    admin,
+    ai,
+    auth,
+    billing,
+    gamification,
+    health,
+    heritage,
+    media,
+    notifications,
+    public_meta,
+    reviews,
+    social,
+)
 from src.core.database import dispose_engine
 from src.core.logging import configure_logging, get_logger
 from src.core.settings import get_settings
+from src.infrastructure.media.minio_client import get_minio_client
 from src.middleware.auth import BearerContextMiddleware
 
 
@@ -25,7 +39,14 @@ from src.middleware.auth import BearerContextMiddleware
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     configure_logging()
     log = get_logger("silklens.lifespan")
+    settings = get_settings()
     log.info("api.startup", version=__version__)
+    # Bootstrap the primary media bucket; non-fatal so tests/dev keep working
+    # when the MinIO container is offline or a fake client is injected.
+    try:
+        get_minio_client().ensure_bucket(settings.minio_bucket_media)
+    except Exception as exc:
+        log.warning("media.minio.bucket_bootstrap_failed", error=str(exc))
     try:
         yield
     finally:
@@ -58,5 +79,14 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(heritage.router)
+    app.include_router(ai.router)
+    app.include_router(media.router)
+    app.include_router(social.router)
+    app.include_router(reviews.router)
+    app.include_router(gamification.router)
+    app.include_router(billing.router)
+    app.include_router(notifications.router)
+    app.include_router(admin.router)
+    app.include_router(public_meta.router)
 
     return app
