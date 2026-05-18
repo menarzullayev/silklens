@@ -58,29 +58,28 @@ jobs:
           # cheaper and matches what the runner has anyway after a normal PR.
           fetch-depth: 1
 
+      - name: Install Trivy via official script
+        # Avoids action-version resolution failures. The script always installs
+        # the latest stable Trivy release from GitHub releases.
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sudo sh -s -- -b /usr/local/bin
+          trivy --version
+
       - name: Run Trivy filesystem scan
-        # Pinned to a known-good tag. 0.30.0 shipped 2025-12; verify at
-        # https://github.com/aquasecurity/trivy-action/releases before bumping.
-        uses: aquasecurity/trivy-action@v0.28.0
-        with:
-          scan-type: fs
-          scan-ref: "."
-          # Combine vuln scanning with secret detection in one pass.
-          scanners: "vuln,secret,misconfig"
-          # Fail the build on HIGH+ findings. CRITICAL is implied.
-          severity: "HIGH,CRITICAL"
-          ignore-unfixed: true
-          exit-code: "1"
-          format: "sarif"
-          output: "trivy-results.sarif"
-          # Honour .trivyignore at repo root if present.
-          trivyignores: ".trivyignore"
-        env:
-          # Speeds up Trivy by pre-caching the vuln DB on the GH runner.
-          TRIVY_TIMEOUT: "10m"
+        # HIGH+ findings fail the build; SARIF written for the Security tab.
+        run: |
+          trivy fs . \
+            --exit-code 1 \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            --scanners vuln,secret,misconfig \
+            --format sarif \
+            --output trivy-results.sarif \
+            --timeout 10m
+        continue-on-error: false
 
       - name: Upload Trivy SARIF
-        # Always attempt upload so partial findings still show up.
         if: always()
         uses: github/codeql-action/upload-sarif@v4
         with:
