@@ -1,14 +1,23 @@
 # SilkLens — Session Handoff
 
-> **Last updated:** 2026-05-18 · Last commit: `7b86bee`
+> **Last updated:** 2026-05-18 · Last commit: `0a045bd`
 > Keep this file current at the end of every session. It is the entry point for the next agent or developer to pick up without re-reading the entire transcript.
 
 ---
 
 ## Where we are right now
 
-**Active FAZA:** FAZA 1 — transitioning Hafta 1 → Hafta 2
-**Status:** ✅ Foundation database + frontend skeletons + CI all shipped. ⏳ Domain services (auth, heritage CRUD) begin next.
+**Active FAZA:** FAZA 1 — Hafta 2
+**Status:** ✅ Foundation + frontends + CI + **auth service end-to-end** all shipped. ⏳ Heritage CRUD begins next.
+
+### Latest milestone
+
+**Auth service live** (commit `0a045bd`):
+- `POST /v1/auth/register`, `/login`, `/refresh` — all verified via live curl
+- Argon2id password hashing (3 iter / 64 MiB / 2 parallel)
+- JWT HS256 access tokens (15min) + opaque refresh tokens (30d) with family-rotation replay defence
+- Clean Architecture layers: domain (entities/errors/protocols/service) → infrastructure (argon2 + JWT + SqlUserRepository + SqlSessionRepository) → api (routers)
+- 33/33 pytest green; ruff lint + format clean
 
 ### What is done and verified
 
@@ -53,14 +62,12 @@
 
 ### What is NOT yet done (next pickups in priority order)
 
-1. **Identity / Auth service** — concrete FastAPI routers for:
-   - `POST /v1/auth/register` (email+password; argon2id; emits `user.registered.v1`)
-   - `POST /v1/auth/login` (email or phone OTP)
-   - `POST /v1/auth/refresh` (rotation via `family_id`)
-   - `POST /v1/auth/logout` (revoke session)
-   - OAuth start/callback for Google + Apple + Telegram (use seeded `oauth_providers` rows; secrets fetched from `oauth_provider_secrets` at startup)
-   - JWT issuance middleware that signs with `SILKLENS_JWT_SECRET`
-   - Audit-middleware that wraps every privileged route to call `app.audit(...)`
+1. **Auth follow-ups** (the easy parts shipped; these remain):
+   - `POST /v1/auth/logout` — revoke current session
+   - OAuth start/callback for Google + Apple + Telegram (providers seeded, secrets+endpoints config remaining)
+   - Auth middleware that extracts `(user_id, residency, tenant_id)` from `Bearer ...` and binds them to the request — lands together with the first protected endpoint
+   - Audit middleware wrapping every privileged route to call `app.audit(...)` automatically
+   - MFA / WebAuthn (deferred per HANDOFF deferred decisions)
 2. **Heritage CRUD** — migrations 0010–0030 (per `docs/architecture/01-core-domain.md`):
    - `heritage_objects` (root polymorphic table) + `heritage_facts` (provenance-tagged claims) + `heritage_revisions` (bi-temporal) + `heritage_aliases`
    - `geographic_admin_levels` (ltree) + `historical_periods` + `architectural_styles`
@@ -87,11 +94,17 @@ cd services/api
 source .venv/bin/activate
 
 # 3. Verify green baseline
-pytest -q                                     # expect 23/23
+pytest -q                                     # expect 33/33
 ruff check src tests                          # expect clean
 alembic current                               # expect 0009_sessions
 
-# 4. Drop into the next FAZA — see "What is NOT yet done" above
+# 4. Smoke-test the auth flow
+python -m src &                               # start the API (port 8000)
+curl -X POST http://localhost:8000/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@silklens-test.com","password":"DemoPassword12345"}'
+
+# 5. Drop into the next FAZA — see "What is NOT yet done" above
 ```
 
 ---
