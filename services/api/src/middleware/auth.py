@@ -18,6 +18,7 @@ session, while the JWT decode in the middleware is stateless.
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Annotated
 from uuid import UUID
@@ -55,7 +56,11 @@ class BearerContextMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self._issuer = issuer or JwtTokenIssuer()
 
-    async def dispatch(self, request: Request, call_next):  # type: ignore[override]
+    async def dispatch(  # type: ignore[override]
+        self,
+        request: Request,
+        call_next: Callable[..., Awaitable[object]],
+    ) -> object:
         header = request.headers.get("authorization") or request.headers.get("Authorization")
         request.state.auth = None
         if header and header.lower().startswith("bearer "):
@@ -88,7 +93,7 @@ def current_user(request: Request) -> AuthContext | None:
 
 def require_user(request: Request) -> AuthContext:
     """Reject if no bearer was sent or it was invalid."""
-    ctx = getattr(request.state, "auth", None)
+    ctx: AuthContext | None = getattr(request.state, "auth", None)
     if ctx is None:
         err = getattr(request.state, "auth_error", None)
         if err is not None:
@@ -110,7 +115,7 @@ CurrentUserDep = Annotated[AuthContext, Depends(require_user)]
 OptionalUserDep = Annotated[AuthContext | None, Depends(current_user)]
 
 
-def require_permission(permission_slug: str):
+def require_permission(permission_slug: str) -> Callable[..., Awaitable[AuthContext]]:
     """Factory: returns a dependency that 403s if the user lacks the permission."""
 
     async def _checker(
@@ -146,7 +151,9 @@ def require_permission(permission_slug: str):
     return _checker
 
 
-def require_recent_mfa(seconds: int = 300, *, allow_first_setup: bool = False):
+def require_recent_mfa(
+    seconds: int = 300, *, allow_first_setup: bool = False
+) -> Callable[..., Awaitable[AuthContext]]:
     """Factory: dependency that 403s when ``users.last_mfa_at`` is stale.
 
     ``allow_first_setup=True`` lets a user who has never satisfied MFA reach

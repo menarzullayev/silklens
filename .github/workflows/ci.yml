@@ -120,9 +120,9 @@ jobs:
       - name: Install uv ${{ env.UV_VERSION }}
         run: pip install "uv==${{ env.UV_VERSION }}"
 
-      - name: Install dev dependencies (system site-packages)
-        # `--system` avoids the venv overhead in CI and matches our Dockerfile.
-        run: uv pip install --system -e ".[dev]"
+      - name: Install dev + billing dependencies (system site-packages)
+        # [billing] adds stripe/paypal stubs needed for mypy + linting.
+        run: uv pip install --system -e ".[dev,billing]"
 
       - name: Install libmagic1 (needed for python-magic import at lint time)
         run: sudo apt-get install -y --no-install-recommends libmagic1
@@ -200,8 +200,10 @@ jobs:
       - name: Install uv ${{ env.UV_VERSION }}
         run: pip install "uv==${{ env.UV_VERSION }}"
 
-      - name: Install API + dev dependencies
-        run: uv pip install --system -e ".[dev]"
+      - name: Install API + dev + billing dependencies
+        # [billing] adds stripe (needed by test_real_providers.py Stripe tests).
+        # [ai] is intentionally excluded — Anthropic live tests skip via skipif.
+        run: uv pip install --system -e ".[dev,billing]"
 
       - name: Install system deps (psql + libmagic1 for python-magic)
         run: |

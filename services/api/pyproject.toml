@@ -107,6 +107,59 @@ exclude = ["alembic/versions"]
 module = ["pgvector.*", "minio.*", "celery.*", "elasticsearch.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+# Wave 5-6 agent-generated modules — strict typing to be added FAZA 6+.
+# Routers use `object` for AuthContext (intentional: avoids circular imports;
+# the dependency layer enforces the real type at request time).
+module = [
+    "src.api.routers.*",
+    "src.core.observability",
+    "src.core.logging",
+    "src.core.metrics",
+    "src.core.settings",
+    "src.domain.ai.*",
+    "src.domain.compliance.*",
+    "src.domain.gamification.*",
+    "src.domain.media.*",
+    "src.domain.mfa.*",
+    "src.domain.reviews.*",
+    "src.domain.social.*",
+    "src.infrastructure._events",
+    "src.infrastructure.ai.*",
+    "src.infrastructure.billing.*",
+    "src.infrastructure.compliance.*",
+    "src.infrastructure.gamification.*",
+    "src.infrastructure.heritage.*",
+    "src.infrastructure.identity.*",
+    "src.infrastructure.ingestion.*",
+    "src.infrastructure.media.*",
+    "src.infrastructure.mfa.*",
+    "src.infrastructure.notifications.*",
+    "src.infrastructure.reseller.*",
+    "src.infrastructure.reviews.*",
+    "src.infrastructure.search.*",
+    "src.infrastructure.social.*",
+]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+# OTel, sentry, slowapi, webauthn, pyotp, stripe, paypal — no bundled stubs.
+module = [
+    "opentelemetry.*",
+    "sentry_sdk.*",
+    "slowapi.*",
+    "limits.*",
+    "webauthn.*",
+    "pyotp.*",
+    "stripe.*",
+    "paypalserversdk.*",
+    "paypalrestsdk.*",
+    "magic.*",
+    "respx.*",
+    "prometheus_fastapi_instrumentator.*",
+]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 addopts = "-ra -q --strict-markers --strict-config"

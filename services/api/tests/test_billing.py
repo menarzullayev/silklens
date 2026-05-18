@@ -49,7 +49,8 @@ async def billing_seed(db_session: AsyncSession) -> dict[str, str]:
             SELECT pr.tenant_id, pr.id, 'premium_monthly',
                    '{"en":"Premium monthly"}'::jsonb, 'monthly', 7, true
             FROM products pr WHERE pr.slug = 'silklens_premium_monthly'
-            ON CONFLICT (product_id, slug) DO NOTHING
+            ON CONFLICT (product_id, slug) DO UPDATE
+                SET trial_days = EXCLUDED.trial_days, is_default = EXCLUDED.is_default
             """
         )
     )

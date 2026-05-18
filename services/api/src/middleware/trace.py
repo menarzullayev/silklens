@@ -55,7 +55,7 @@ class TraceContextMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
 
-    async def dispatch(  # type: ignore[override]
+    async def dispatch(
         self,
         request: Request,
         call_next: Callable[[Request], Awaitable[Response]],
@@ -84,7 +84,7 @@ class TraceContextMiddleware(BaseHTTPMiddleware):
             # Resolved route template if FastAPI matched one.
             matched = request.scope.get("route")
             if matched is not None and getattr(matched, "path", None):
-                path_template = matched.path  # type: ignore[assignment]
+                path_template = str(matched.path)
             response.headers["X-Trace-Id"] = trace_id
             return response
         finally:
