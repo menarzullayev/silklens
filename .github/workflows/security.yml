@@ -1,0 +1,202 @@
+# =============================================================================
+# SilkLens — Security scans
+# -----------------------------------------------------------------------------
+# Runs on every pull request (including Dependabot's) and on a weekly cron.
+# The cron deliberately uses an off-peak minute (Monday 07:17 UTC) to dodge
+# GitHub's top-of-the-hour load and reduce false-negative timeouts.
+#
+# Jobs:
+#   * trivy-fs   — filesystem scan: vulnerable deps + leaked secrets.
+#   * bandit     — Python security linter against services/api/src.
+#                  HIGH severity ⇒ build failure; MEDIUM ⇒ warning.
+#   * codeql     — CodeQL for Python + JavaScript/TypeScript.
+#                  (Dart/Flutter is intentionally skipped — CodeQL doesn't
+#                   support it as of 2026.)
+#
+# Dependabot PRs are first-class citizens here: we deliberately don't gate on
+# `github.actor`. Trivy and Bandit run against the diffed code as-is.
+# =============================================================================
+
+name: Security
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+  schedule:
+    # Mondays at 07:17 UTC — off-peak; cron in UTC per crontab semantics.
+    - cron: "17 7 * * 1"
+  workflow_dispatch: {}
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Defaults: read-only. CodeQL widens to `security-events: write` for SARIF.
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Trivy filesystem scan: catches vulnerable deps + secret leaks.
+  # Uploads SARIF to the Security tab so findings have history.
+  # ---------------------------------------------------------------------------
+  trivy-fs:
+    name: Trivy — filesystem (vulns + secrets)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      # SARIF upload needs `security-events: write`.
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Trivy's secret scanner inspects history when available; depth 1 is
+          # cheaper and matches what the runner has anyway after a normal PR.
+          fetch-depth: 1
+
+      - name: Run Trivy filesystem scan
+        # Pinned to a major (v0); a SHA pin would be safer but this action is
+        # widely used and well-maintained by Aqua Security.
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: "."
+          # Combine vuln scanning with secret detection in one pass.
+          scanners: "vuln,secret,misconfig"
+          # Fail the build on HIGH+ findings. CRITICAL is implied.
+          severity: "HIGH,CRITICAL"
+          ignore-unfixed: true
+          exit-code: "1"
+          format: "sarif"
+          output: "trivy-results.sarif"
+          # Honour .trivyignore at repo root if present.
+          trivyignores: ".trivyignore"
+        env:
+          # Speeds up Trivy by pre-caching the vuln DB on the GH runner.
+          TRIVY_TIMEOUT: "10m"
+
+      - name: Upload Trivy SARIF
+        # Always attempt upload so partial findings still show up.
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-fs
+
+  # ---------------------------------------------------------------------------
+  # Bandit: Python-specific lint for common security antipatterns.
+  # ---------------------------------------------------------------------------
+  bandit:
+    name: Bandit — Python security lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: services/api/pyproject.toml
+
+      - name: Install Bandit
+        # Bandit is already declared as a dev dep in pyproject.toml; install
+        # just bandit + sarif formatter to avoid pulling the full stack.
+        run: |
+          python -m pip install --upgrade pip
+          pip install "bandit[sarif,toml]>=1.7.0"
+
+      - name: Bandit — fail on HIGH severity
+        # `-lll` = report severity LOW+, `-iii` = report confidence LOW+;
+        # combined with `--severity-level high` only HIGH+ failures exit 1.
+        run: |
+          bandit \
+            -r src \
+            --severity-level high \
+            --confidence-level medium \
+            -f sarif \
+            -o bandit-high.sarif
+
+      - name: Bandit — warn on MEDIUM severity (non-blocking)
+        # Same scan with a relaxed severity gate; emits warnings to the
+        # job summary but does not fail the build.
+        if: always()
+        continue-on-error: true
+        run: |
+          set +e
+          bandit \
+            -r src \
+            --severity-level medium \
+            --confidence-level medium \
+            -f txt \
+            -o bandit-medium.txt
+          rc=$?
+          {
+            echo "### Bandit — MEDIUM findings (advisory)"
+            echo ""
+            echo '```'
+            cat bandit-medium.txt || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          # Don't propagate failure for MEDIUM; the HIGH job above is the gate.
+          exit 0
+
+      - name: Upload Bandit SARIF (HIGH)
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: services/api/bandit-high.sarif
+          category: bandit-high
+
+  # ---------------------------------------------------------------------------
+  # CodeQL — Python + JavaScript/TypeScript.
+  # Dart is unsupported by CodeQL; mobile relies on `flutter analyze` in ci.yml
+  # plus the static-analysis tooling shipped with Dart itself.
+  # ---------------------------------------------------------------------------
+  codeql:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+      # `actions: read` is required by CodeQL when scanning private repos.
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # Single source of truth: add languages here, not in three places.
+        language: ["python", "javascript-typescript"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # `security-extended` adds high-signal queries beyond the defaults
+          # (e.g. SSRF, command injection variants) without overwhelming noise.
+          queries: security-extended
+
+      - name: Autobuild
+        # Python + JS/TS need no compile step; Autobuild is a no-op that
+        # satisfies CodeQL's expected pipeline shape.
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

@@ -1,0 +1,63 @@
+{
+  "common": {
+    "appName": "SilkLens Admin",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "loading": "Загрузка…",
+    "search": "Поиск",
+    "comingSoon": "Скоро",
+    "language": "Язык",
+    "theme": "Тема",
+    "themeLight": "Светлая",
+    "themeDark": "Тёмная",
+    "themeSystem": "Системная",
+    "signOut": "Выйти",
+    "tenant": "Тенант"
+  },
+  "nav": {
+    "overview": "Обзор",
+    "heritage": "Памятники",
+    "users": "Пользователи",
+    "moderation": "Модерация",
+    "aiModels": "AI модели",
+    "monetization": "Монетизация",
+    "tenants": "Тенанты",
+    "branding": "Брендинг",
+    "analytics": "Аналитика",
+    "settings": "Настройки"
+  },
+  "auth": {
+    "loginTitle": "Войти",
+    "loginSubtitle": "Доступ к панели управления SilkLens.",
+    "email": "Электронная почта",
+    "password": "Пароль",
+    "signIn": "Войти",
+    "signInWithGoogle": "Продолжить с Google",
+    "signInWithApple": "Продолжить с Apple",
+    "signInWithTelegram": "Продолжить с Telegram"
+  },
+  "dashboard": {
+    "title": "Обзор",
+    "subtitle": "Сегодняшний операционный срез SilkLens.",
+    "metricUsers24h": "Активные пользователи (24ч)",
+    "metricUsers7d": "Активные пользователи (7д)",
+    "metricHeritageViews": "Просмотры памятников (24ч)",
+    "metricPremium": "Премиум-подписчики",
+    "metricRevenueMtd": "Выручка за месяц"
+  },
+  "branding": {
+    "title": "Брендинг",
+    "subtitle": "Настройте бренд для каждого тенанта — white-label.",
+    "appName": "Название приложения",
+    "logoUrl": "URL логотипа",
+    "primaryColor": "Основной цвет",
+    "splashImage": "URL splash-изображения",
+    "saved": "Черновик брендинга сохранён локально (бэкенда пока нет)."
+  },
+  "rbac": {
+    "denied": "У вас нет прав на просмотр этого раздела.",
+    "deniedSubtitle": "Попросите администратора предоставить нужный доступ."
+  }
+}

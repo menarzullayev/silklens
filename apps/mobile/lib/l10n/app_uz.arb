@@ -1,0 +1,24 @@
+{
+  "@@locale": "uz",
+  "appName": "SilkLens",
+  "appTagline": "Ipak yo‘lini linzangiz orqali ko‘ring",
+
+  "onboardingTitle": "Kamera orqali madaniy merosni kashf eting",
+  "onboardingSubtitle": "Istalgan obidaga moslang — uning hikoyasi darhol ochiladi.",
+  "onboardingCta": "Kashf etishni boshlash",
+  "onboardingSkip": "O‘tkazib yuborish",
+
+  "navMap": "Xarita",
+  "navCamera": "Kamera",
+  "navProfile": "Profil",
+
+  "cameraPlaceholderTitle": "Kamera",
+  "cameraPlaceholderBody": "Vision pipeline FAZA 2 — Hafta 3’da chiqadi.",
+
+  "mapPlaceholderTitle": "Xarita",
+  "mapPlaceholderBody": "Mapbox / OSM integratsiyasi FAZA 2 — Hafta 3’da chiqadi.",
+
+  "profileTitle": "Profil",
+  "profileLanguage": "Til",
+  "profileTheme": "Mavzu"
+}

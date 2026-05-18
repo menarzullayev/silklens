@@ -1,0 +1,24 @@
+{
+  "@@locale": "zh",
+  "appName": "SilkLens",
+  "appTagline": "用镜头看丝绸之路",
+
+  "onboardingTitle": "用相机探索文化遗产",
+  "onboardingSubtitle": "对准任何古迹,立刻了解它的故事。",
+  "onboardingCta": "开始探索",
+  "onboardingSkip": "跳过",
+
+  "navMap": "地图",
+  "navCamera": "相机",
+  "navProfile": "个人资料",
+
+  "cameraPlaceholderTitle": "相机",
+  "cameraPlaceholderBody": "视觉识别将在 FAZA 2 — 第3周 发布。",
+
+  "mapPlaceholderTitle": "地图",
+  "mapPlaceholderBody": "Mapbox / OSM 集成将在 FAZA 2 — 第3周 发布。",
+
+  "profileTitle": "个人资料",
+  "profileLanguage": "语言",
+  "profileTheme": "主题"
+}

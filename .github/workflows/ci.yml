@@ -1,0 +1,480 @@
+# =============================================================================
+# SilkLens — Continuous Integration
+# -----------------------------------------------------------------------------
+# Runs on every pull request and every push to `main`.
+#
+# Architecture:
+#   * `changes` (dorny/paths-filter) computes per-area flags so we only run the
+#     jobs that matter. Backend-only PRs don't pay for Flutter / Next.js boot.
+#   * `api-lint`  — ruff + mypy (pure Python; no services needed)
+#   * `api-test`  — pytest with Postgres 16 + pgvector as a service container.
+#                   The same extensions/database that `infra/docker/postgres/
+#                   init.sql` creates are applied here, then migrations run
+#                   via the test conftest's autouse fixture.
+#   * `api-migrations-roundtrip` — alembic upgrade head ⇄ downgrade base ⇄
+#                   upgrade head; guards against irreversible migrations.
+#   * `mobile-lint` — dart format + flutter analyze (soft-fail: project lands
+#                   in FAZA 1 Hafta 2; see docs/HANDOFF.md).
+#   * `admin-lint`  — pnpm lint + tsc --noEmit (soft-fail for same reason).
+#   * `ci-summary`  — fan-in gate so branch protection can require *one* check.
+#
+# Caching strategy:
+#   * pip cache keyed on OS + pyproject.toml hash so dependency edits invalidate.
+#   * uv binary is small; we pin a version to avoid surprises.
+#   * Flutter + Node caches are provided by their setup actions.
+#
+# Concurrency: in-flight runs on the same ref are cancelled the moment a new
+# commit lands. Saves a lot of minutes during rapid PR iteration.
+# =============================================================================
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+
+# Cancel superseded runs on the same branch / PR.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Default least-privilege; specific jobs widen as needed.
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  # Mirror the dev container; keep this in sync with services/api/Dockerfile.
+  UV_VERSION: "0.4.30"
+  # SILKLENS_ prefix per services/api/src/core/settings.py.
+  SILKLENS_ENV: test
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Path filter — every downstream job uses these outputs as gates.
+  # ---------------------------------------------------------------------------
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      mobile: ${{ steps.filter.outputs.mobile }}
+      admin: ${{ steps.filter.outputs.admin }}
+      ci: ${{ steps.filter.outputs.ci }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # We only need history to compute the diff; shallow is fine.
+          fetch-depth: 1
+
+      - name: Compute per-area change flags
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          # On push events (no base ref), fall back to comparing the prior
+          # commit; on PRs the action uses the base branch automatically.
+          filters: |
+            api:
+              - 'services/api/**'
+              - 'infra/docker/postgres/**'
+              - '.github/workflows/ci.yml'
+            mobile:
+              - 'apps/mobile/**'
+              - '.github/workflows/ci.yml'
+            admin:
+              - 'apps/admin/**'
+              - '.github/workflows/ci.yml'
+            ci:
+              - '.github/workflows/**'
+
+  # ---------------------------------------------------------------------------
+  # API: lint + type check. Fast, no services needed.
+  # ---------------------------------------------------------------------------
+  api-lint:
+    name: API — lint (ruff + mypy)
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          # Built-in pip cache keyed on the lockfile we use (pyproject.toml).
+          cache: pip
+          cache-dependency-path: services/api/pyproject.toml
+
+      - name: Install uv ${{ env.UV_VERSION }}
+        run: pip install "uv==${{ env.UV_VERSION }}"
+
+      - name: Install dev dependencies (system site-packages)
+        # `--system` avoids the venv overhead in CI and matches our Dockerfile.
+        run: uv pip install --system -e ".[dev]"
+
+      - name: Ruff — lint
+        run: ruff check src tests
+
+      - name: Ruff — formatting
+        run: ruff format --check src tests
+
+      - name: Mypy — strict type check
+        run: mypy src
+
+  # ---------------------------------------------------------------------------
+  # API: test suite against Postgres 16 + pgvector.
+  # ---------------------------------------------------------------------------
+  api-test:
+    name: API — tests (pytest + coverage)
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: services/api
+
+    # Postgres 16 with pgvector preinstalled — the same image we use locally
+    # via infra/docker/docker-compose.yml. The init.sql can't run here (service
+    # containers don't accept entrypoint scripts the same way), so we apply it
+    # manually in a setup step further down.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: silklens
+          POSTGRES_PASSWORD: silklens_dev
+          POSTGRES_DB: silklens
+        ports:
+          # Map the runner's 5434 → container's 5432 to match dev settings.
+          - 5434:5432
+        options: >-
+          --health-cmd="pg_isready -U silklens -d silklens"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=20
+
+    env:
+      # The conftest sets these too, but we want failures to surface fast if
+      # the conftest changes its defaults.
+      SILKLENS_DATABASE_URL: postgresql+psycopg://silklens:silklens_dev@localhost:5434/silklens_test
+      SILKLENS_REDIS_URL: redis://localhost:6379/0
+      PGPASSWORD: silklens_dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: services/api/pyproject.toml
+
+      - name: Install uv ${{ env.UV_VERSION }}
+        run: pip install "uv==${{ env.UV_VERSION }}"
+
+      - name: Install API + dev dependencies
+        run: uv pip install --system -e ".[dev]"
+
+      - name: Install psql client for init.sql
+        # Ubuntu 24.04 ships postgresql-client-16 in apt, which can talk to
+        # the service container without complaint.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Apply infra/docker/postgres/init.sql to the service container
+        # This creates the extensions and the silklens_test database that
+        # tests/conftest.py expects. Mirrors what the local Docker stack does
+        # automatically on first boot.
+        working-directory: ${{ github.workspace }}
+        run: |
+          psql "postgresql://silklens:silklens_dev@localhost:5434/silklens" \
+               -v ON_ERROR_STOP=1 \
+               -f infra/docker/postgres/init.sql
+
+      - name: Run pytest with coverage
+        run: |
+          pytest \
+            --cov=src \
+            --cov-report=xml \
+            --cov-report=term \
+            --junitxml=pytest-report.xml \
+            -ra
+
+      - name: Publish coverage to job summary
+        if: always()
+        # `coverage report` writes a markdown-friendly table; we append it to
+        # the GitHub Actions job summary so reviewers see numbers at a glance.
+        run: |
+          {
+            echo "### Coverage"
+            echo ""
+            echo '```'
+            coverage report --skip-covered || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage XML as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-coverage-xml
+          path: services/api/coverage.xml
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload pytest junit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-pytest-report
+          path: services/api/pytest-report.xml
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # API: Alembic round-trip — protects against irreversible migrations.
+  # ---------------------------------------------------------------------------
+  api-migrations-roundtrip:
+    name: API — Alembic round-trip
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: services/api
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: silklens
+          POSTGRES_PASSWORD: silklens_dev
+          POSTGRES_DB: silklens
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd="pg_isready -U silklens -d silklens"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=20
+
+    env:
+      # Use the primary DB for round-trip (not silklens_test) — this is a
+      # destructive exercise we want isolated from the test suite.
+      SILKLENS_DATABASE_URL: postgresql+psycopg://silklens:silklens_dev@localhost:5434/silklens
+      PGPASSWORD: silklens_dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: services/api/pyproject.toml
+
+      - name: Install uv ${{ env.UV_VERSION }}
+        run: pip install "uv==${{ env.UV_VERSION }}"
+
+      - name: Install API dependencies
+        run: uv pip install --system -e ".[dev]"
+
+      - name: Install psql client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Apply extensions (init.sql)
+        working-directory: ${{ github.workspace }}
+        run: |
+          psql "postgresql://silklens:silklens_dev@localhost:5434/silklens" \
+               -v ON_ERROR_STOP=1 \
+               -f infra/docker/postgres/init.sql
+
+      - name: Alembic upgrade head (forward)
+        run: alembic upgrade head
+
+      - name: Alembic downgrade base (reverse)
+        # If any migration is one-way (e.g. forgets a `downgrade()` body), this
+        # step fails loudly with the migration name in the trace.
+        run: alembic downgrade base
+
+      - name: Alembic upgrade head (re-apply)
+        # Re-applying after a full teardown shakes out idempotency bugs in
+        # CREATE EXTENSION / CREATE FUNCTION statements.
+        run: alembic upgrade head
+
+  # ---------------------------------------------------------------------------
+  # Mobile: dart format + flutter analyze. Soft-fail until the Flutter
+  # project lands (apps/mobile is empty as of 2026-05-18).
+  # ---------------------------------------------------------------------------
+  mobile-lint:
+    name: Mobile — dart format + flutter analyze
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    # Don't block the build while the project doesn't exist yet. Flip to
+    # `false` once apps/mobile has a `pubspec.yaml`.
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Skip if Flutter project not yet present
+        id: probe
+        # Avoids spinning up Flutter if the workspace has no pubspec.
+        run: |
+          if [ ! -f pubspec.yaml ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::apps/mobile/pubspec.yaml not found — soft-skipping (FAZA 1 Hafta 2)."
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Flutter (stable)
+        if: steps.probe.outputs.present == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Pub get
+        if: steps.probe.outputs.present == 'true'
+        run: flutter pub get
+
+      - name: Dart format check
+        if: steps.probe.outputs.present == 'true'
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Flutter analyze
+        if: steps.probe.outputs.present == 'true'
+        run: flutter analyze
+
+  # ---------------------------------------------------------------------------
+  # Admin: pnpm lint + tsc --noEmit. Soft-fail until apps/admin is wired.
+  # ---------------------------------------------------------------------------
+  admin-lint:
+    name: Admin — lint + typecheck
+    needs: changes
+    if: needs.changes.outputs.admin == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: apps/admin
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Skip if Next.js project not yet present
+        id: probe
+        run: |
+          if [ ! -f package.json ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::apps/admin/package.json not found — soft-skipping (FAZA 1 Hafta 2)."
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install pnpm
+        if: steps.probe.outputs.present == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node 20
+        if: steps.probe.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: apps/admin/pnpm-lock.yaml
+
+      - name: Install dependencies (frozen)
+        if: steps.probe.outputs.present == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        if: steps.probe.outputs.present == 'true'
+        run: pnpm lint
+
+      - name: Typecheck (tsc --noEmit)
+        if: steps.probe.outputs.present == 'true'
+        run: pnpm exec tsc --noEmit
+
+  # ---------------------------------------------------------------------------
+  # Fan-in gate. Branch protection should require *only* this check so it
+  # automatically picks up future jobs without re-configuring GitHub.
+  # ---------------------------------------------------------------------------
+  ci-summary:
+    name: CI Summary
+    if: always()
+    needs:
+      - changes
+      - api-lint
+      - api-test
+      - api-migrations-roundtrip
+      - mobile-lint
+      - admin-lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    steps:
+      - name: Verify all required jobs succeeded or were skipped
+        # `cancelled` is treated as failure; `skipped` is OK because of the
+        # path filters. `success` is the only happy state for non-soft jobs.
+        run: |
+          set -euo pipefail
+          declare -A results=(
+            [api-lint]="${{ needs.api-lint.result }}"
+            [api-test]="${{ needs.api-test.result }}"
+            [api-migrations-roundtrip]="${{ needs.api-migrations-roundtrip.result }}"
+          )
+          failed=0
+          for job in "${!results[@]}"; do
+            r="${results[$job]}"
+            echo "::group::$job=$r"
+            case "$r" in
+              success|skipped) echo "OK" ;;
+              *) echo "::error::$job did not succeed (result=$r)"; failed=1 ;;
+            esac
+            echo "::endgroup::"
+          done
+          # Mobile + Admin are advisory until their projects exist; record
+          # their state but don't fail the build on them.
+          echo "Mobile: ${{ needs.mobile-lint.result }} (advisory)"
+          echo "Admin:  ${{ needs.admin-lint.result }} (advisory)"
+          exit "$failed"

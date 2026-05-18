@@ -1,0 +1,24 @@
+{
+  "@@locale": "ru",
+  "appName": "SilkLens",
+  "appTagline": "Шёлковый путь через объектив",
+
+  "onboardingTitle": "Исследуйте наследие с помощью камеры",
+  "onboardingSubtitle": "Наведите камеру на памятник — узнайте его историю мгновенно.",
+  "onboardingCta": "Начать исследование",
+  "onboardingSkip": "Пропустить",
+
+  "navMap": "Карта",
+  "navCamera": "Камера",
+  "navProfile": "Профиль",
+
+  "cameraPlaceholderTitle": "Камера",
+  "cameraPlaceholderBody": "Распознавание появится в FAZA 2 — неделя 3.",
+
+  "mapPlaceholderTitle": "Карта",
+  "mapPlaceholderBody": "Интеграция Mapbox / OSM появится в FAZA 2 — неделя 3.",
+
+  "profileTitle": "Профиль",
+  "profileLanguage": "Язык",
+  "profileTheme": "Тема"
+}

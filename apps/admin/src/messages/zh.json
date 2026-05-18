@@ -1,0 +1,63 @@
+{
+  "common": {
+    "appName": "SilkLens 管理后台",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "loading": "加载中…",
+    "search": "搜索",
+    "comingSoon": "即将推出",
+    "language": "语言",
+    "theme": "主题",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "themeSystem": "系统",
+    "signOut": "退出",
+    "tenant": "租户"
+  },
+  "nav": {
+    "overview": "概览",
+    "heritage": "文化遗产",
+    "users": "用户",
+    "moderation": "审核",
+    "aiModels": "AI 模型",
+    "monetization": "营收",
+    "tenants": "租户",
+    "branding": "品牌",
+    "analytics": "分析",
+    "settings": "设置"
+  },
+  "auth": {
+    "loginTitle": "登录",
+    "loginSubtitle": "访问 SilkLens 控制面板。",
+    "email": "邮箱",
+    "password": "密码",
+    "signIn": "登录",
+    "signInWithGoogle": "使用 Google 继续",
+    "signInWithApple": "使用 Apple 继续",
+    "signInWithTelegram": "使用 Telegram 继续"
+  },
+  "dashboard": {
+    "title": "概览",
+    "subtitle": "SilkLens 今日运营概况。",
+    "metricUsers24h": "活跃用户（24小时）",
+    "metricUsers7d": "活跃用户（7天）",
+    "metricHeritageViews": "遗产浏览量（24小时）",
+    "metricPremium": "高级订阅用户",
+    "metricRevenueMtd": "本月营收"
+  },
+  "branding": {
+    "title": "品牌",
+    "subtitle": "按租户自定义品牌 —— white-label。",
+    "appName": "应用名称",
+    "logoUrl": "Logo URL",
+    "primaryColor": "主色调",
+    "splashImage": "启动画面 URL",
+    "saved": "品牌草稿已本地保存（后端尚未就绪）。"
+  },
+  "rbac": {
+    "denied": "您没有查看该模块的权限。",
+    "deniedSubtitle": "请联系管理员授予对应权限。"
+  }
+}

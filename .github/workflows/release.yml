@@ -1,0 +1,465 @@
+# =============================================================================
+# SilkLens — Release pipeline
+# -----------------------------------------------------------------------------
+# Triggered when a semver-shaped tag (vMAJOR.MINOR.PATCH, with optional
+# pre-release / build metadata) is pushed.
+#
+# Outputs:
+#   1. API container image at `ghcr.io/menarzullayev/silklens-api:<tag>`
+#      plus a moving `:latest` tag for stable releases.
+#   2. Flutter Android APK + iOS .ipa as workflow artifacts (soft-fail until
+#      apps/mobile lands — FAZA 1 Hafta 2).
+#   3. Next.js admin build as a tarball artifact.
+#   4. A GitHub Release with an auto-generated changelog from commits since
+#      the previous tag.
+#
+# Signing / provenance: image digests are recorded in the release notes and
+# can be verified with `cosign verify` once we wire keyless signing (TODO).
+# =============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      # Match semver: v1.2.3, v1.2.3-alpha.1, v1.2.3+build.42, etc.
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v0.1.0). Must already exist on the repo."
+        required: true
+        type: string
+
+concurrency:
+  # Only one release pipeline per tag — preventing double-pushes on retries.
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+# Default tight; specific jobs widen as needed.
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: menarzullayev/silklens-api
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Resolve the tag and produce shared outputs for downstream jobs.
+  # ---------------------------------------------------------------------------
+  prepare:
+    name: Prepare release metadata
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+      is_prerelease: ${{ steps.meta.outputs.is_prerelease }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Manual dispatch: check out the supplied tag explicitly.
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Resolve tag + pre-release flag
+        id: meta
+        run: |
+          set -euo pipefail
+          if [ -n "${{ inputs.tag }}" ]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="${GITHUB_REF##refs/tags/}"
+          fi
+          version="${tag#v}"
+          # Pre-release if the version has a `-` after the patch (e.g. -alpha.1).
+          if [[ "$version" == *-* ]]; then
+            is_prerelease="true"
+          else
+            is_prerelease="false"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "is_prerelease=$is_prerelease" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Release metadata"
+            echo "- **Tag:** \`$tag\`"
+            echo "- **Version:** \`$version\`"
+            echo "- **Pre-release:** \`$is_prerelease\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
+  # Build + push the API container image to GHCR with buildx caching.
+  # ---------------------------------------------------------------------------
+  api-image:
+    name: API — build & push image
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      # `packages: write` is required to push to GHCR.
+      packages: write
+      # OIDC token enables future cosign keyless signing without long-lived keys.
+      id-token: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+      tags: ${{ steps.docker-meta.outputs.tags }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+
+      - name: Set up QEMU (for multi-arch builds in future)
+        # Pinned to SHA — this action runs as a privileged step and is a
+        # natural target for supply-chain attacks.
+        # docker/setup-qemu-action v3.2.0
+        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf
+
+      - name: Set up Docker Buildx
+        # docker/setup-buildx-action v3.8.0
+        uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5
+
+      - name: Log in to GHCR
+        # docker/login-action v3.3.0 — pinned to SHA (publishes credentials).
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          # GITHUB_TOKEN is implicit; we use it instead of a PAT for least
+          # privilege (the workflow already has `packages: write`).
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags + OCI labels
+        id: docker-meta
+        # docker/metadata-action v5.6.1
+        uses: docker/metadata-action@b53be03109c4ef6f6cc7aa545b84b17a7fe51c1e
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ needs.prepare.outputs.version }}
+            type=raw,value=${{ needs.prepare.outputs.tag }}
+            type=raw,value=latest,enable=${{ needs.prepare.outputs.is_prerelease == 'false' }}
+            type=sha,format=long
+          labels: |
+            org.opencontainers.image.title=silklens-api
+            org.opencontainers.image.description=SilkLens FastAPI backend
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.licenses=Proprietary
+
+      - name: Restore Docker layer cache
+        # GHA cache keeps layers across builds; a fresh cache key per tag
+        # ensures cold-tag builds are still fast (we restore from `latest`).
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: buildx-${{ runner.os }}-${{ hashFiles('services/api/Dockerfile', 'services/api/pyproject.toml') }}
+          restore-keys: |
+            buildx-${{ runner.os }}-
+
+      - name: Build & push image
+        id: build
+        # docker/build-push-action v6.10.0 — SHA-pinned.
+        uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355
+        with:
+          context: services/api
+          file: services/api/Dockerfile
+          # Single platform for now; multi-arch (linux/arm64) can be added
+          # once we validate the slim image on ARM runners.
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.docker-meta.outputs.tags }}
+          labels: ${{ steps.docker-meta.outputs.labels }}
+          # `mode=max` exports all layers including intermediate ones — best
+          # cache hit rate on subsequent builds.
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          provenance: true
+          sbom: true
+
+      - name: Rotate buildx cache
+        # Necessary workaround for GHA cache's lack of in-place updates:
+        # https://github.com/docker/build-push-action/issues/252
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Record image digest in job summary
+        if: always()
+        run: |
+          {
+            echo "### API image published"
+            echo ""
+            echo "**Digest:** \`${{ steps.build.outputs.digest }}\`"
+            echo ""
+            echo "**Tags:**"
+            echo '```'
+            echo "${{ steps.docker-meta.outputs.tags }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
+  # Flutter — Android APK + iOS .ipa. Soft-fail until apps/mobile lands.
+  # ---------------------------------------------------------------------------
+  mobile-android:
+    name: Mobile — Android APK
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+
+      - name: Probe for Flutter project
+        id: probe
+        run: |
+          if [ ! -f pubspec.yaml ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::apps/mobile/pubspec.yaml not found — soft-skipping Android build."
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up JDK 17 (Android Gradle plugin requirement)
+        if: steps.probe.outputs.present == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        if: steps.probe.outputs.present == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Pub get
+        if: steps.probe.outputs.present == 'true'
+        run: flutter pub get
+
+      - name: Build APK (release, unsigned)
+        # Signed builds will land once we wire ANDROID_KEYSTORE_BASE64 secrets;
+        # tracked as a TODO in the workflow header.
+        if: steps.probe.outputs.present == 'true'
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
+        if: steps.probe.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: silklens-android-${{ needs.prepare.outputs.version }}
+          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: warn
+          retention-days: 90
+
+  mobile-ios:
+    name: Mobile — iOS .ipa
+    needs: prepare
+    # iOS builds must run on macOS. `macos-14` is Apple Silicon by default.
+    runs-on: macos-14
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+
+      - name: Probe for Flutter project
+        id: probe
+        run: |
+          if [ ! -f pubspec.yaml ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::apps/mobile/pubspec.yaml not found — soft-skipping iOS build."
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Flutter
+        if: steps.probe.outputs.present == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Pub get
+        if: steps.probe.outputs.present == 'true'
+        run: flutter pub get
+
+      - name: Build .ipa (release, no codesign)
+        # Codesigning needs APPLE_CERTIFICATE_BASE64 + provisioning profiles.
+        # Until those secrets are in place, build without signing to validate
+        # the toolchain.
+        if: steps.probe.outputs.present == 'true'
+        run: flutter build ipa --release --no-codesign
+
+      - name: Upload .ipa artifact
+        if: steps.probe.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: silklens-ios-${{ needs.prepare.outputs.version }}
+          path: apps/mobile/build/ios/ipa/*.ipa
+          if-no-files-found: warn
+          retention-days: 90
+
+  # ---------------------------------------------------------------------------
+  # Admin (Next.js) — build and upload as a tarball artifact.
+  # ---------------------------------------------------------------------------
+  admin-build:
+    name: Admin — Next.js build
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: apps/admin
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+
+      - name: Probe for Next.js project
+        id: probe
+        run: |
+          if [ ! -f package.json ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::apps/admin/package.json not found — soft-skipping admin build."
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install pnpm
+        if: steps.probe.outputs.present == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node 20
+        if: steps.probe.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: apps/admin/pnpm-lock.yaml
+
+      - name: Install dependencies (frozen)
+        if: steps.probe.outputs.present == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        if: steps.probe.outputs.present == 'true'
+        run: pnpm build
+
+      - name: Pack standalone output
+        if: steps.probe.outputs.present == 'true'
+        # Next.js 14's `output: 'standalone'` mode emits `.next/standalone/`.
+        # We tarball the whole `.next` dir for safety (works for either mode).
+        run: tar -czf admin-build.tar.gz .next public package.json
+
+      - name: Upload admin artifact
+        if: steps.probe.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: silklens-admin-${{ needs.prepare.outputs.version }}
+          path: apps/admin/admin-build.tar.gz
+          if-no-files-found: warn
+          retention-days: 90
+
+  # ---------------------------------------------------------------------------
+  # GitHub Release — auto-generated changelog from commits since last tag.
+  # Runs after the image is published so the release notes can reference it.
+  # ---------------------------------------------------------------------------
+  github-release:
+    name: Publish GitHub Release
+    needs: [prepare, api-image, mobile-android, mobile-ios, admin-build]
+    # We deliberately don't require mobile/admin to succeed (they soft-fail);
+    # only the API image is load-bearing. Use `always()` + explicit gate.
+    if: always() && needs.api-image.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout (full history for changelog)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.prepare.outputs.tag }}
+
+      - name: Compute previous tag
+        id: prev
+        # `git describe --abbrev=0` finds the nearest ancestor tag; if there
+        # isn't one (first release), fall back to the root commit.
+        run: |
+          set -euo pipefail
+          current="${{ needs.prepare.outputs.tag }}"
+          prev=$(git tag --sort=-v:refname | grep -Fv "$current" | head -n1 || true)
+          if [ -z "$prev" ]; then
+            prev=$(git rev-list --max-parents=0 HEAD | head -n1)
+            echo "No previous tag — using root commit ($prev) as baseline."
+          fi
+          echo "previous=$prev" >> "$GITHUB_OUTPUT"
+
+      - name: Generate changelog body
+        id: changelog
+        run: |
+          set -euo pipefail
+          current="${{ needs.prepare.outputs.tag }}"
+          previous="${{ steps.prev.outputs.previous }}"
+          {
+            echo "## What's changed"
+            echo ""
+            git log \
+              --pretty=format:'- %s ([%h](https://github.com/${{ github.repository }}/commit/%H)) by @%an' \
+              --no-merges \
+              "${previous}..${current}"
+            echo ""
+            echo ""
+            echo "## Artifacts"
+            echo ""
+            echo "- **API image:** \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}\`"
+            echo "  - Digest: \`${{ needs.api-image.outputs.digest }}\`"
+            echo "- **Android APK:** see workflow artifacts (\`silklens-android-${{ needs.prepare.outputs.version }}\`)"
+            echo "- **iOS .ipa:** see workflow artifacts (\`silklens-ios-${{ needs.prepare.outputs.version }}\`)"
+            echo "- **Admin build:** see workflow artifacts (\`silklens-admin-${{ needs.prepare.outputs.version }}\`)"
+            echo ""
+            echo "**Full diff:** https://github.com/${{ github.repository }}/compare/${previous}...${current}"
+          } > release-notes.md
+          # Persist as a step output for downstream steps via file upload.
+          echo "notes_path=$(pwd)/release-notes.md" >> "$GITHUB_OUTPUT"
+
+      - name: Create or update GitHub Release
+        # softprops/action-gh-release v2.0.9 — SHA-pinned (writes to the repo).
+        uses: softprops/action-gh-release@e7a8f85e1c67a31e6ed99a94b41bd0b71bbee6b8
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: SilkLens ${{ needs.prepare.outputs.tag }}
+          body_path: release-notes.md
+          prerelease: ${{ needs.prepare.outputs.is_prerelease == 'true' }}
+          # Don't draft — we want the release live the moment artifacts upload.
+          draft: false
+          fail_on_unmatched_files: false

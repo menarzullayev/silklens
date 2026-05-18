@@ -1,0 +1,28 @@
+{
+  "@@locale": "en",
+  "appName": "SilkLens",
+  "@appName": {
+    "description": "User-visible product name. Per Project-Decisions §1 the canonical source for this string is the admin panel — this ARB key is the fallback when remote tenant branding is unavailable."
+  },
+  "appTagline": "See the Silk Road through your lens",
+  "@appTagline": {},
+
+  "onboardingTitle": "Discover heritage with your camera",
+  "onboardingSubtitle": "Point at any monument to instantly learn its story.",
+  "onboardingCta": "Start exploring",
+  "onboardingSkip": "Skip",
+
+  "navMap": "Map",
+  "navCamera": "Camera",
+  "navProfile": "Profile",
+
+  "cameraPlaceholderTitle": "Camera",
+  "cameraPlaceholderBody": "Vision pipeline ships in FAZA 2 — Hafta 3.",
+
+  "mapPlaceholderTitle": "Map",
+  "mapPlaceholderBody": "Mapbox / OSM integration ships in FAZA 2 — Hafta 3.",
+
+  "profileTitle": "Profile",
+  "profileLanguage": "Language",
+  "profileTheme": "Theme"
+}

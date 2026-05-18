@@ -1,0 +1,99 @@
+name: silklens
+description: SilkLens — AI-powered global cultural heritage platform (Flutter client).
+publish_to: "none"
+
+# Per Project-Decisions §1 ilova nomi admin paneldan dinamik boshqariladi —
+# the user-facing app name comes from the localization key `app_name` /
+# remote tenant branding, never from this manifest at runtime.
+
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management (per Project-Decisions §13 — Clean Architecture seams)
+  hooks_riverpod: ^2.5.0
+  flutter_hooks: ^0.20.5
+  riverpod_annotation: ^2.3.0
+
+  # Navigation (per Project-Decisions §23 — Shazam-style camera-centered nav)
+  go_router: ^14.0.0
+
+  # HTTP
+  dio: ^5.4.0
+  retrofit: ^4.1.0
+  pretty_dio_logger: ^1.4.0
+
+  # Offline DB (Project-Decisions §7, Master Arch §8 L1/L2 caching)
+  isar: ^3.1.0
+  isar_flutter_libs: ^3.1.0
+
+  # Token / secret storage
+  flutter_secure_storage: ^9.0.0
+
+  # Data classes
+  freezed_annotation: ^2.4.0
+  json_annotation: ^4.8.0
+
+  # i18n (4 ARB files: uz / en / ru / zh, dynamic per Project-Decisions §8)
+  intl: any
+
+  # Config & ops
+  flutter_dotenv: ^5.1.0
+  sentry_flutter: ^8.0.0
+  logger: ^2.0.0
+  path_provider: ^2.1.0
+  package_info_plus: ^8.0.0
+
+  # Utility
+  collection: ^1.18.0
+  meta: ^1.12.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+
+  # Linting (strict Very Good Analysis preset)
+  very_good_analysis: ^6.0.0
+
+  # Code generation
+  build_runner: ^2.4.9
+  freezed: ^2.4.7
+  json_serializable: ^6.7.1
+  riverpod_generator: ^2.4.0
+  retrofit_generator: ^9.0.0
+  isar_generator: ^3.1.0
+  custom_lint: ^0.6.0
+  riverpod_lint: ^2.3.0
+
+  # Testing
+  mocktail: ^1.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - assets/.env
+    - assets/branding/
+    - assets/onboarding/
+
+  # Bundled fonts are loaded dynamically once admin panel ships font tokens
+  # (see Project-Decisions §21 Design Token architecture). Keep this block ready.
+  # fonts:
+  #   - family: Inter
+  #     fonts:
+  #       - asset: assets/fonts/Inter-Regular.ttf
+  #       - asset: assets/fonts/Inter-Medium.ttf
+  #         weight: 500
+  #       - asset: assets/fonts/Inter-Bold.ttf
+  #         weight: 700

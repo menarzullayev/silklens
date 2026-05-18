@@ -1,0 +1,63 @@
+{
+  "common": {
+    "appName": "SilkLens Admin",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading…",
+    "search": "Search",
+    "comingSoon": "Coming soon",
+    "language": "Language",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "signOut": "Sign out",
+    "tenant": "Tenant"
+  },
+  "nav": {
+    "overview": "Overview",
+    "heritage": "Heritage",
+    "users": "Users",
+    "moderation": "Moderation",
+    "aiModels": "AI models",
+    "monetization": "Monetization",
+    "tenants": "Tenants",
+    "branding": "Branding",
+    "analytics": "Analytics",
+    "settings": "Settings"
+  },
+  "auth": {
+    "loginTitle": "Sign in",
+    "loginSubtitle": "Access the SilkLens control plane.",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign in",
+    "signInWithGoogle": "Continue with Google",
+    "signInWithApple": "Continue with Apple",
+    "signInWithTelegram": "Continue with Telegram"
+  },
+  "dashboard": {
+    "title": "Overview",
+    "subtitle": "Today’s SilkLens operational snapshot.",
+    "metricUsers24h": "Active users (24h)",
+    "metricUsers7d": "Active users (7d)",
+    "metricHeritageViews": "Heritage views (24h)",
+    "metricPremium": "Premium subscribers",
+    "metricRevenueMtd": "Revenue MTD"
+  },
+  "branding": {
+    "title": "Branding",
+    "subtitle": "Customise the app brand per tenant — white-label.",
+    "appName": "App name",
+    "logoUrl": "Logo URL",
+    "primaryColor": "Primary color",
+    "splashImage": "Splash image URL",
+    "saved": "Branding draft saved locally (no backend yet)."
+  },
+  "rbac": {
+    "denied": "You don’t have permission to view this section.",
+    "deniedSubtitle": "Ask a workspace admin to grant the right scope."
+  }
+}
