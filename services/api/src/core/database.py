@@ -78,9 +78,32 @@ async def session_scope() -> AsyncIterator[AsyncSession]:
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
-    """FastAPI dependency variant."""
+    """FastAPI dependency that yields an AsyncSession with per-request context.
+
+    Two session-local settings are bound here (fixes SEC-002, SEC-006, CRIT-1):
+
+    - ``app.audit_hmac_key`` — secret consumed by ``app.audit()`` for the
+      hash-chained tamper-evident log. Without this, the function silently
+      falls back to a public constant.
+    - ``app.tenant_id`` — used by RLS policies introduced in migration 0054.
+      The :class:`TenantContextMiddleware` (api.middleware.tenant) refreshes
+      this when an authenticated request carries a different tenant claim.
+
+    Both settings are scoped via ``SET LOCAL`` so they're released at the end
+    of the implicit transaction.
+    """
+    from sqlalchemy import text  # local to avoid circular import in tests
+
+    from src.core.settings import get_settings
+
     factory = get_sessionmaker()
+    settings = get_settings()
     async with factory() as session:
+        # Always bind the HMAC key so app.audit() never falls back to a constant.
+        await session.execute(
+            text("SELECT set_config('app.audit_hmac_key', :k, true)"),
+            {"k": settings.audit_hmac_key.get_secret_value()},
+        )
         try:
             yield session
         finally:

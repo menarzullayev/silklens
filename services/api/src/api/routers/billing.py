@@ -345,6 +345,11 @@ async def list_my_entitlements(ctx: CurrentUserDep, db: SessionDep) -> Entitleme
 # --- Routes: webhooks ------------------------------------------------------
 
 
+_VALID_WEBHOOK_PROVIDERS: frozenset[str] = frozenset(
+    {"stripe", "payme", "click", "apple_iap", "google_iap"}
+)
+
+
 @router.post("/webhooks/{provider}", response_model=WebhookResult)
 async def receive_webhook(
     provider: str,
@@ -353,13 +358,41 @@ async def receive_webhook(
 ) -> WebhookResult:
     """Provider webhook ingress.
 
-    Signature verification lands in FAZA 4 (per-provider). For now we accept
-    the body, derive a synthetic `provider_event_id` from headers/body if the
-    provider didn't supply one, and store the row idempotently.
+    Per-provider signature verification (Stripe-Signature header, Apple ASN
+    JWS, Google Play Pub/Sub signature) lands with the real-provider work in
+    FAZA 4. Until then we hard-require a shared secret header so the endpoint
+    is not openly exploitable. Fixes CRIT-3 / SEC-001.
     """
-    body_bytes = await request.body()
+    import hmac as _hmac
     import json
 
+    from src.core.settings import get_settings
+
+    settings = get_settings()
+
+    # Provider allow-list — any other value would let an attacker create
+    # rows for synthetic providers we'll never reconcile against.
+    if provider not in _VALID_WEBHOOK_PROVIDERS:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "billing.webhook_unknown_provider", "message": "unknown provider"},
+        )
+
+    # Shared-secret gate. Caller MUST present a header that constant-time-equals
+    # SILKLENS_WEBHOOK_SHARED_SECRET. In production this is replaced with the
+    # per-provider signature verification.
+    presented = request.headers.get("X-Silklens-Webhook-Secret", "")
+    expected = settings.webhook_shared_secret.get_secret_value()
+    if not expected or not _hmac.compare_digest(presented, expected):
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "code": "billing.webhook_unauthorized",
+                "message": "shared secret missing or invalid",
+            },
+        )
+
+    body_bytes = await request.body()
     try:
         payload = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
     except Exception as exc:

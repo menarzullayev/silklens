@@ -66,18 +66,29 @@ class SqlMediaRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def get_by_id(self, asset_id: UUID) -> MediaAsset | None:
-        result = await self._session.execute(
-            text(
-                f"""
-                SELECT {_SELECT_COLUMNS}
-                FROM media_assets
-                WHERE id = :id
-                LIMIT 1
-                """  # noqa: S608
-            ),
-            {"id": asset_id},
+    async def get_by_id(
+        self,
+        asset_id: UUID,
+        *,
+        tenant_id: UUID | None = None,
+    ) -> MediaAsset | None:
+        """Fetch a media asset.
+
+        When ``tenant_id`` is provided, the row is only returned if it belongs
+        to that tenant. Fixes SEC-003 (BOLA on /v1/media/{asset_id}).
+        Callers that legitimately cross tenants (admin moderators, sockpuppet
+        detection) MUST pass ``tenant_id=None`` explicitly.
+        """
+        # _SELECT_COLUMNS is a module-level constant; tenant filter uses bind
+        # parameters. The two string fragments are both compile-time constants.
+        sql = (
+            f"SELECT {_SELECT_COLUMNS} FROM media_assets "  # noqa: S608
+            "WHERE id = :id" + (" AND tenant_id = :tid" if tenant_id else "") + " LIMIT 1"
         )
+        params: dict[str, object] = {"id": asset_id}
+        if tenant_id is not None:
+            params["tid"] = tenant_id
+        result = await self._session.execute(text(sql), params)
         row = result.one_or_none()
         return _row_to_entity(row) if row else None
 

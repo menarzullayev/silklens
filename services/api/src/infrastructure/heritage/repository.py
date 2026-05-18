@@ -97,7 +97,7 @@ class SqlHeritageRepository:
                 f"""
                 SELECT {_SELECT_COLUMNS}
                 FROM heritage_objects
-                WHERE pub_id = :pub_id
+                WHERE pub_id = :pub_id AND deleted_at IS NULL
                 LIMIT 1
                 """  # noqa: S608 — _SELECT_COLUMNS is a constant, not user input
             ),
@@ -112,7 +112,7 @@ class SqlHeritageRepository:
                 f"""
                 SELECT {_SELECT_COLUMNS}
                 FROM heritage_objects
-                WHERE id = :id
+                WHERE id = :id AND deleted_at IS NULL
                 LIMIT 1
                 """  # noqa: S608
             ),

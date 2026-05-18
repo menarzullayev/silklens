@@ -125,8 +125,20 @@ class MediaService:
         signed_url = self._storage.presigned_get(self._bucket, storage_key, 3600)
         return UploadResult(asset=asset, signed_get_url=signed_url)
 
-    async def get(self, asset_id: UUID) -> MediaAsset:
-        asset = await self._repo.get_by_id(asset_id)
+    async def get(
+        self,
+        asset_id: UUID,
+        *,
+        caller_tenant_id: UUID | None = None,
+        bypass_tenant_check: bool = False,
+    ) -> MediaAsset:
+        """Fetch a media asset for a caller scoped to ``caller_tenant_id``.
+
+        Fixes SEC-003 / BOLA: cross-tenant metadata leakage. Callers from the
+        admin/moderation path pass ``bypass_tenant_check=True`` explicitly.
+        """
+        repo_tenant = None if bypass_tenant_check else caller_tenant_id
+        asset = await self._repo.get_by_id(asset_id, tenant_id=repo_tenant)
         if asset is None or asset.deleted_at is not None:
             raise MediaNotFound(str(asset_id))
         return asset
@@ -136,11 +148,16 @@ class MediaService:
         *,
         asset_id: UUID,
         requester_id: UUID,
+        caller_tenant_id: UUID,
         is_moderator: bool,
         client_ip: str | None,
         ttl_seconds: int = 3600,
     ) -> MediaSignedUrl:
-        asset = await self.get(asset_id)
+        asset = await self.get(
+            asset_id,
+            caller_tenant_id=caller_tenant_id,
+            bypass_tenant_check=is_moderator,
+        )
         if asset.owner_user_id != requester_id and not is_moderator:
             raise MediaForbidden("requester does not own asset")
         url = self._storage.presigned_get(asset.storage_bucket, asset.storage_key, ttl_seconds)
@@ -156,9 +173,15 @@ class MediaService:
         return MediaSignedUrl(asset_id=asset.id, url=url, expires_at=expires_at)
 
     async def soft_delete(
-        self, *, asset_id: UUID, requester_id: UUID, is_moderator: bool
+        self,
+        *,
+        asset_id: UUID,
+        requester_id: UUID,
+        caller_tenant_id: UUID,
+        is_moderator: bool,
     ) -> MediaAsset:
-        asset = await self._repo.get_by_id(asset_id)
+        repo_tenant = None if is_moderator else caller_tenant_id
+        asset = await self._repo.get_by_id(asset_id, tenant_id=repo_tenant)
         if asset is None:
             raise MediaNotFound(str(asset_id))
         if asset.deleted_at is not None:

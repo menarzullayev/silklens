@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     # --- Audit chain HMAC key (rotated via KMS in prod) ---
     audit_hmac_key: SecretStr = SecretStr("dev-only-audit-hmac-key")
 
+    # --- Webhook shared secret (FAZA 4 → replaced with per-provider signature) ---
+    webhook_shared_secret: SecretStr = SecretStr("dev-only-webhook-shared-secret")
+
     # --- API ---
     api_host: str = "0.0.0.0"
     api_port: int = 8000

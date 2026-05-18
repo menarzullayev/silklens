@@ -165,10 +165,16 @@ async def upload_media(
 async def get_media(
     asset_id: UUID,
     db: SessionDep,
-    _ctx: Annotated[object, Depends(require_user)],
+    ctx: Annotated[object, Depends(require_user)],
 ) -> MediaOut:
+    # SEC-003 fix: enforce tenant scope; moderators bypass.
+    is_moderator = await _has_perm(db, ctx, "heritage:moderate")
     try:
-        asset = await _service(db).get(asset_id)
+        asset = await _service(db).get(
+            asset_id,
+            caller_tenant_id=ctx.tenant_id,
+            bypass_tenant_check=is_moderator,
+        )
     except MediaError as exc:
         _raise_media_error(exc)
     return _to_out(asset)
@@ -187,6 +193,7 @@ async def get_signed_url(
         grant = await _service(db).request_signed_url(
             asset_id=asset_id,
             requester_id=ctx.user_id,
+            caller_tenant_id=ctx.tenant_id,
             is_moderator=is_moderator,
             client_ip=client_ip,
         )
@@ -210,6 +217,7 @@ async def delete_media(
         await _service(db).soft_delete(
             asset_id=asset_id,
             requester_id=ctx.user_id,
+            caller_tenant_id=ctx.tenant_id,
             is_moderator=is_moderator,
         )
     except MediaError as exc:

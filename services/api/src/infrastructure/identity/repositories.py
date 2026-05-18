@@ -487,35 +487,53 @@ class SqlSessionRepository:
         new_token_hash: bytes,
         new_expires_at: datetime,
     ) -> Session | None:
-        # Look up the old refresh token; if already used → replay → revoke family
+        # Atomic mark-used: one UPDATE that succeeds only on the first concurrent
+        # rotation attempt. Fixes CRIT-2 / SEC-012 — eliminates the TOCTOU race
+        # in the previous SELECT-then-UPDATE flow.
+        new_id = uuid4()
         result = await self._db.execute(
             text(
                 """
-                SELECT id, session_id, session_residency, user_id, residency_region,
-                       tenant_id, family_id, used_at, revoked_at
-                FROM refresh_tokens
+                UPDATE refresh_tokens
+                SET used_at = now(), replaced_by_id = :new_id
                 WHERE token_hash = :hash
-                LIMIT 1
+                  AND used_at IS NULL
+                  AND revoked_at IS NULL
+                RETURNING id, session_id, session_residency, user_id,
+                          residency_region, tenant_id, family_id
                 """
             ),
-            {"hash": old_token_hash},
+            {"hash": old_token_hash, "new_id": new_id},
         )
         row = result.one_or_none()
         if row is None:
-            return None
-        m = row._mapping  # type: ignore[attr-defined]
-        if m["used_at"] is not None or m["revoked_at"] is not None:
-            # Replay attempt: revoke the entire family.
+            # Either the token is unknown OR a concurrent request already
+            # consumed it — both are replay. Look up the family for revocation.
+            replay_row = await self._db.execute(
+                text(
+                    """
+                    SELECT family_id, session_id, session_residency
+                    FROM refresh_tokens
+                    WHERE token_hash = :hash
+                    LIMIT 1
+                    """
+                ),
+                {"hash": old_token_hash},
+            )
+            replay = replay_row.one_or_none()
+            if replay is None:
+                # Truly unknown token. Nothing to revoke.
+                return None
+            rm = replay._mapping  # type: ignore[attr-defined]
             await self._db.execute(
                 text(
                     """
                     UPDATE refresh_tokens
-                    SET revoked_at = now(),
-                        revoke_reason = 'token_replay'
+                    SET revoked_at = now(), revoke_reason = 'token_replay'
                     WHERE family_id = :fam AND revoked_at IS NULL
                     """
                 ),
-                {"fam": m["family_id"]},
+                {"fam": rm["family_id"]},
             )
             await self._db.execute(
                 text(
@@ -526,27 +544,12 @@ class SqlSessionRepository:
                       AND revoked_at IS NULL
                     """
                 ),
-                {"sid": m["session_id"], "region": m["session_residency"]},
+                {"sid": rm["session_id"], "region": rm["session_residency"]},
             )
             await self._db.commit()
             return None
 
-        new_id = uuid4()
-        # Mark old used + insert new in same transaction
-        await self._db.execute(
-            text(
-                """
-                UPDATE refresh_tokens
-                SET used_at = now(), replaced_by_id = :new_id
-                WHERE id = :old_id AND residency_region = :region
-                """
-            ),
-            {
-                "new_id": new_id,
-                "old_id": m["id"],
-                "region": m["residency_region"],
-            },
-        )
+        m = row._mapping  # type: ignore[attr-defined]
         await self._db.execute(
             text(
                 """

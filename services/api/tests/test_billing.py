@@ -301,12 +301,18 @@ async def test_entitlements_materialised_after_subscribe(
 
 # --- Webhooks idempotency -------------------------------------------------
 
+# Shared-secret header guards the endpoint until per-provider signature
+# verification lands in FAZA 4. Matches SILKLENS_WEBHOOK_SHARED_SECRET default
+# in src/core/settings.py.
+_WEBHOOK_HEADERS = {"X-Silklens-Webhook-Secret": "dev-only-webhook-shared-secret"}
+
 
 @pytest.mark.asyncio
 async def test_webhook_first_call_records(http: AsyncClient) -> None:
     response = await http.post(
         "/v1/billing/webhooks/stripe",
         json={"id": f"evt_{uuid.uuid4().hex}", "type": "payment_intent.succeeded"},
+        headers=_WEBHOOK_HEADERS,
     )
     assert response.status_code == 200, response.text
     assert response.json() == {"received": True, "duplicate": False}
@@ -316,8 +322,8 @@ async def test_webhook_first_call_records(http: AsyncClient) -> None:
 async def test_webhook_replay_is_idempotent(http: AsyncClient) -> None:
     event_id = f"evt_{uuid.uuid4().hex}"
     payload = {"id": event_id, "type": "payment_intent.succeeded"}
-    first = await http.post("/v1/billing/webhooks/stripe", json=payload)
-    second = await http.post("/v1/billing/webhooks/stripe", json=payload)
+    first = await http.post("/v1/billing/webhooks/stripe", json=payload, headers=_WEBHOOK_HEADERS)
+    second = await http.post("/v1/billing/webhooks/stripe", json=payload, headers=_WEBHOOK_HEADERS)
     assert first.status_code == 200
     assert second.status_code == 200
     assert second.json()["duplicate"] is True
@@ -328,9 +334,21 @@ async def test_webhook_unknown_provider_rejected(http: AsyncClient) -> None:
     response = await http.post(
         "/v1/billing/webhooks/madeup",
         json={"id": "evt_x", "type": "foo"},
+        headers=_WEBHOOK_HEADERS,
     )
-    assert response.status_code == 422
-    assert response.json()["detail"]["code"] == "billing.invalid_webhook_provider"
+    # Provider allow-list rejects with 404 (unknown provider).
+    assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "billing.webhook_unknown_provider"
+
+
+@pytest.mark.asyncio
+async def test_webhook_rejects_missing_secret(http: AsyncClient) -> None:
+    response = await http.post(
+        "/v1/billing/webhooks/stripe",
+        json={"id": "evt_z", "type": "payment_intent.succeeded"},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"]["code"] == "billing.webhook_unauthorized"
 
 
 # --- Subscription endpoint -------------------------------------------------

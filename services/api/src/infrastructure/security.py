@@ -6,7 +6,6 @@ protocols ``PasswordHasher`` and ``TokenIssuer``.
 
 from __future__ import annotations
 
-import hashlib
 import secrets
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
@@ -100,10 +99,15 @@ class JwtTokenIssuer:
         return plain, hashed, expires_at
 
     def hash_refresh(self, plaintext: str) -> bytes:
-        # HMAC-style hash with JWT secret so a DB leak alone doesn't yield
-        # usable tokens — but we use plain sha256 for FAZA 1 simplicity.
-        # Will upgrade to HMAC when audit_hmac_key is in KMS (see ADR pending).
-        return hashlib.sha256(plaintext.encode("utf-8")).digest()
+        # HMAC-SHA256 keyed with the JWT secret: a DB leak of token_hash alone
+        # cannot yield usable refresh tokens without the secret. Fixes SEC-004.
+        import hmac as _hmac
+
+        return _hmac.new(
+            self._secret.encode("utf-8"),
+            plaintext.encode("utf-8"),
+            "sha256",
+        ).digest()
 
     def decode_access(self, token: str) -> dict[str, object]:
         """Used by auth middleware. Raises jwt.PyJWTError on invalid tokens."""
