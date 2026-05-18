@@ -235,9 +235,7 @@ class SqlMediaRepository:
         # Re-read so license_id is populated in the returned entity.
         fresh = await self.get_by_id(asset.id)
         if fresh is None:
-            raise RuntimeError(
-                f"media_assets row vanished immediately after insert id={asset.id}"
-            )
+            raise RuntimeError(f"media_assets row vanished immediately after insert id={asset.id}")
         return fresh
 
     async def soft_delete(self, *, asset_id: UUID, actor: UUID) -> MediaAsset:

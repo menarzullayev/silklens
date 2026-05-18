@@ -70,14 +70,37 @@ class Settings(BaseSettings):
     # --- Webhook shared secret (dev/staging fallback for non-Stripe providers) ---
     webhook_shared_secret: SecretStr = SecretStr("dev-only-webhook-shared-secret")
 
-    # --- Payment provider selection (FAZA 4) ---
+    # --- Payment provider selection (FAZA 4 / FAZA 5) ---
     # ``mock`` keeps the deterministic in-memory adapter (dev/test/CI default).
-    # ``stripe`` activates the real Stripe API path provided keys are populated.
-    # If the keys are absent BillingService.factory soft-falls-back to MockProvider
-    # so the system never crashes mid-request because of a misconfigured env.
-    payment_provider: Literal["mock", "stripe"] = "mock"
+    # ``stripe``  → real Stripe (USD/EUR card path)
+    # ``payme``   → Uzbek Payme (UZS, JSON-RPC, Basic-Auth webhook)
+    # ``click``   → Uzbek Click (UZS, form-encoded, HMAC-SHA1 webhook)
+    # ``paypal``  → PayPal (multi-currency, signed-webhook verification)
+    # If the matching keys are absent BillingService.factory soft-falls-back to
+    # MockProvider so the system never crashes mid-request on a partial env.
+    payment_provider: Literal["mock", "stripe", "payme", "click", "paypal"] = "mock"
     stripe_secret_key: SecretStr = SecretStr("")
     stripe_webhook_secret: SecretStr = SecretStr("")
+
+    # Payme — Uzbek payment provider. Amounts travel in tiyin (1 UZS = 100 tiyin).
+    # Webhook auth: ``Authorization: Basic <base64(merchant_id:secret)>``.
+    payme_merchant_id: str = ""
+    payme_secret_key: SecretStr = SecretStr("")
+    payme_endpoint: str = "https://checkout.paycom.uz"
+
+    # Click — Uzbek payment provider. Webhook is form-encoded, HMAC-SHA1 over
+    # click_trans_id+service_id+click_paydoc_id+amount+action+sign_time+merchant_user_id+secret_key.
+    click_service_id: str = ""
+    click_merchant_id: str = ""
+    click_secret_key: SecretStr = SecretStr("")
+    click_endpoint: str = "https://my.click.uz/services/pay"
+
+    # PayPal — multi-currency, official SDK (``paypalserversdk``). When
+    # client_id/secret are absent the factory soft-falls back to MockProvider.
+    paypal_client_id: str = ""
+    paypal_client_secret: SecretStr = SecretStr("")
+    paypal_webhook_id: str = ""
+    paypal_environment: Literal["sandbox", "live"] = "sandbox"
 
     # --- API ---
     api_host: str = "0.0.0.0"
@@ -99,6 +122,21 @@ class Settings(BaseSettings):
     login_lockout_max_failures: int = 5
     login_lockout_window_seconds: int = 600  # 10 minutes
     login_lockout_duration_seconds: int = 900  # 15 minutes
+
+    # --- MFA (FAZA 5) ---
+    # Symmetric key used by pgcrypto's ``pgp_sym_encrypt`` to wrap TOTP shared
+    # secrets and other at-rest MFA material. Live key lives in KMS; the dev
+    # default is just enough to keep the migration round-trip green.
+    mfa_at_rest_key: SecretStr = SecretStr("dev-only-mfa-rest-key")
+    # WebAuthn relying-party identifiers. The RP ID must be a registrable
+    # domain or its subdomain (FIDO2 §5.4). Origin list is admin + mobile.
+    webauthn_rp_id: str = "localhost"
+    webauthn_rp_name: str = "SilkLens"
+    webauthn_origin: str = "http://localhost:3000"
+    # MFA challenge TTL (seconds). Architecture §8.5 calls for 5 minutes.
+    mfa_challenge_ttl_seconds: int = 300
+    # How long a satisfied MFA challenge stays "fresh" for step-up gating.
+    mfa_step_up_freshness_seconds: int = 300
 
     # --- AI ---
     # When true, the provider resolver always returns deterministic mock

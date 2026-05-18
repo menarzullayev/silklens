@@ -22,6 +22,7 @@ from src.domain.identity.entities import (
 )
 from src.domain.identity.errors import AccountLocked, IdentityError
 from src.domain.identity.service import AuthService
+from src.domain.mfa.errors import MfaRequired
 from src.infrastructure.identity.repositories import (
     SqlLoginAttemptRepository,
     SqlSessionRepository,
@@ -87,6 +88,10 @@ class LoginResponse(BaseModel):
 
 def _service(session: AsyncSession) -> AuthService:
     settings = get_settings()
+    # Local import to keep AuthService' domain layer free of API dependencies
+    # at definition time — the gate adapter sits in the API router file.
+    from src.api.routers.mfa import MfaGateAdapter
+
     return AuthService(
         users=SqlUserRepository(session),
         sessions=SqlSessionRepository(session),
@@ -96,6 +101,7 @@ def _service(session: AsyncSession) -> AuthService:
         lockout_max_failures=settings.login_lockout_max_failures,
         lockout_window_seconds=settings.login_lockout_window_seconds,
         lockout_duration_seconds=settings.login_lockout_duration_seconds,
+        mfa_gate=MfaGateAdapter(session),
     )
 
 
@@ -199,6 +205,16 @@ async def login(
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
         )
+    except MfaRequired as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail={
+                "code": exc.code,
+                "message": str(exc),
+                "challenge_id": exc.challenge_id,
+                "available_methods": exc.available_methods,
+            },
+        ) from exc
     except IdentityError as exc:
         _raise_identity_error(exc)
 

@@ -59,9 +59,9 @@ jobs:
           fetch-depth: 1
 
       - name: Run Trivy filesystem scan
-        # Pinned to a major (v0); a SHA pin would be safer but this action is
-        # widely used and well-maintained by Aqua Security.
-        uses: aquasecurity/trivy-action@0.28.0
+        # Pinned to a known-good tag. 0.30.0 shipped 2025-12; verify at
+        # https://github.com/aquasecurity/trivy-action/releases before bumping.
+        uses: aquasecurity/trivy-action@0.30.0
         with:
           scan-type: fs
           scan-ref: "."
@@ -82,7 +82,7 @@ jobs:
       - name: Upload Trivy SARIF
         # Always attempt upload so partial findings still show up.
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-results.sarif
           category: trivy-fs
@@ -155,7 +155,7 @@ jobs:
 
       - name: Upload Bandit SARIF (HIGH)
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: services/api/bandit-high.sarif
           category: bandit-high
@@ -184,7 +184,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           # `security-extended` adds high-signal queries beyond the defaults
@@ -194,9 +194,9 @@ jobs:
       - name: Autobuild
         # Python + JS/TS need no compile step; Autobuild is a no-op that
         # satisfies CodeQL's expected pipeline shape.
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v4
 
       - name: Analyze
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{ matrix.language }}"

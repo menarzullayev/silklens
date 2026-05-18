@@ -389,9 +389,7 @@ async def test_invoice_number_generated_by_trigger(
     user_pub_id = auth["user"]["pub_id"]
     user_row = (
         await db_session.execute(
-            text(
-                "SELECT id, residency_region FROM users WHERE pub_id = :p"
-            ),
+            text("SELECT id, residency_region FROM users WHERE pub_id = :p"),
             {"p": user_pub_id},
         )
     ).one()

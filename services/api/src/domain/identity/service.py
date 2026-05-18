@@ -46,12 +46,29 @@ class PasswordHasher(Protocol):
 class TokenIssuer(Protocol):
     """JWT issuer + opaque-refresh hashing — implementation in infrastructure."""
 
-    def issue_access(self, *, user: User, session_id: UUID) -> tuple[str, datetime]: ...
+    def issue_access(
+        self,
+        *,
+        user: User,
+        session_id: UUID,
+        mfa: bool = False,
+    ) -> tuple[str, datetime]: ...
     def issue_refresh(self) -> tuple[str, bytes, datetime]:
         """Return (plaintext, hashed, expires_at). Plaintext returned ONCE to caller."""
 
     def hash_refresh(self, plaintext: str) -> bytes:
         """Used during refresh: hash incoming token to compare with stored hash."""
+
+
+class MfaGate(Protocol):
+    """Optional hook called by ``AuthService.login`` after password verification.
+
+    If the user has any active MFA method, the gate creates a challenge and
+    raises :class:`MfaRequired`. The API layer maps this to a 401 carrying
+    ``challenge_id`` so the client can complete MFA via /v1/auth/mfa/verify.
+    """
+
+    async def require_if_enrolled(self, *, user: User) -> None: ...
 
 
 class Clock(Protocol):
@@ -93,6 +110,7 @@ class AuthService:
         lockout_max_failures: int = 5,
         lockout_window_seconds: int = 600,
         lockout_duration_seconds: int = 900,
+        mfa_gate: MfaGate | None = None,
     ) -> None:
         self._users = users
         self._sessions = sessions
@@ -103,6 +121,7 @@ class AuthService:
         self._lockout_max_failures = lockout_max_failures
         self._lockout_window_seconds = lockout_window_seconds
         self._lockout_duration_seconds = lockout_duration_seconds
+        self._mfa_gate = mfa_gate
 
     # --- registration ---------------------------------------------------
 
@@ -207,6 +226,12 @@ class AuthService:
             user_agent=user_agent,
             failure_reason=None,
         )
+        # MFA gate: if the user has any active MFA factor, the gate raises
+        # ``MfaRequired`` carrying a challenge_id. The API layer maps that to
+        # a 401 so the client can complete MFA via /v1/auth/mfa/verify and
+        # then exchange the verification for elevated tokens.
+        if self._mfa_gate is not None:
+            await self._mfa_gate.require_if_enrolled(user=user)
         return await self._issue_session(user, ip_address=ip_address, user_agent=user_agent)
 
     # --- refresh -------------------------------------------------------

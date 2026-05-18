@@ -42,7 +42,7 @@ from src.domain.compliance.errors import ComplianceError
 from src.domain.compliance.service import ComplianceService
 from src.infrastructure.compliance.repository import SqlComplianceRepository
 from src.infrastructure.compliance.tasks import InMemoryTaskQueue
-from src.middleware.auth import CurrentUserDep, require_permission
+from src.middleware.auth import CurrentUserDep, require_permission, require_recent_mfa
 
 router = APIRouter(tags=["compliance"])
 
@@ -382,6 +382,7 @@ async def get_data_export(request_id: UUID, ctx: CurrentUserDep, db: SessionDep)
     "/v1/me/account/delete",
     response_model=GdprRequestOut,
     status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(require_recent_mfa(seconds=300, allow_first_setup=True))],
 )
 async def schedule_account_deletion(
     payload: DeletionRequestIn,
@@ -467,6 +468,7 @@ async def record_cookie_consent(
 @router.post(
     "/v1/admin/gdpr-requests/{request_id}/process",
     response_model=GdprRequestOut,
+    dependencies=[Depends(require_recent_mfa(seconds=300, allow_first_setup=True))],
 )
 async def admin_process_request(
     request_id: UUID,

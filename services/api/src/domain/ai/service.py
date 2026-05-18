@@ -265,9 +265,7 @@ class AiService:
 
     async def _daily_requests(self, user_id: UUID, task_type: AiTaskType) -> int:
         today = datetime.now(UTC).date()
-        return await self._repo.daily_request_count(
-            user_id=user_id, day=today, task_type=task_type
-        )
+        return await self._repo.daily_request_count(user_id=user_id, day=today, task_type=task_type)
 
     # ------------------------------------------------------------------
     # Public API

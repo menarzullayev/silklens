@@ -607,6 +607,7 @@ class SqlHeritageRepository:
         await self._session.commit()
         return entity
 
+
 def _json(payload: object) -> str:
     """Serialize a Python value as a JSON string for jsonb casting."""
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))

@@ -130,9 +130,7 @@ async def test_award_xp_atomic_idempotency_single_round_trip(
     # And exactly one xp_events row was written.
     cnt = (
         await db_session.execute(
-            text(
-                "SELECT count(*) FROM xp_events WHERE user_id = :u AND idempotency_key = :k"
-            ),
+            text("SELECT count(*) FROM xp_events WHERE user_id = :u AND idempotency_key = :k"),
             {"u": uuid.UUID(user_id), "k": key},
         )
     ).scalar_one()

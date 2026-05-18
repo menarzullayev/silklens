@@ -76,7 +76,13 @@ class JwtTokenIssuer:
         self._refresh_ttl = refresh_ttl or settings.jwt_refresh_token_ttl_seconds
         self._issuer = issuer
 
-    def issue_access(self, *, user: User, session_id: UUID) -> tuple[str, datetime]:
+    def issue_access(
+        self,
+        *,
+        user: User,
+        session_id: UUID,
+        mfa: bool = False,
+    ) -> tuple[str, datetime]:
         now = datetime.now(UTC)
         expires_at = now + timedelta(seconds=self._access_ttl)
         claims = {
@@ -86,6 +92,7 @@ class JwtTokenIssuer:
             "tenant": str(user.tenant_id),
             "residency": user.residency_region.value,
             "trust_tier": user.trust_tier.value,
+            "mfa": bool(mfa),
             "iat": int(now.timestamp()),
             "exp": int(expires_at.timestamp()),
         }

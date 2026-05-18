@@ -124,6 +124,9 @@ jobs:
         # `--system` avoids the venv overhead in CI and matches our Dockerfile.
         run: uv pip install --system -e ".[dev]"
 
+      - name: Install libmagic1 (needed for python-magic import at lint time)
+        run: sudo apt-get install -y --no-install-recommends libmagic1
+
       - name: Ruff — lint
         run: ruff check src tests
 
@@ -148,10 +151,7 @@ jobs:
       run:
         working-directory: services/api
 
-    # Postgres 16 with pgvector preinstalled — the same image we use locally
-    # via infra/docker/docker-compose.yml. The init.sql can't run here (service
-    # containers don't accept entrypoint scripts the same way), so we apply it
-    # manually in a setup step further down.
+    # Postgres 16 with pgvector + Redis (for slowapi rate-limiter and caching).
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -160,19 +160,30 @@ jobs:
           POSTGRES_PASSWORD: silklens_dev
           POSTGRES_DB: silklens
         ports:
-          # Map the runner's 5434 → container's 5432 to match dev settings.
           - 5434:5432
         options: >-
           --health-cmd="pg_isready -U silklens -d silklens"
           --health-interval=5s
           --health-timeout=3s
           --health-retries=20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
 
     env:
       # The conftest sets these too, but we want failures to surface fast if
       # the conftest changes its defaults.
       SILKLENS_DATABASE_URL: postgresql+psycopg://silklens:silklens_dev@localhost:5434/silklens_test
       SILKLENS_REDIS_URL: redis://localhost:6379/0
+      # Rate-limiter is disabled for test runs — the rate-limit test file sets
+      # SILKLENS_RATE_LIMIT_ENABLED=true for its own scope via monkeypatch.
+      SILKLENS_RATE_LIMIT_ENABLED: "false"
       PGPASSWORD: silklens_dev
 
     steps:
@@ -192,12 +203,12 @@ jobs:
       - name: Install API + dev dependencies
         run: uv pip install --system -e ".[dev]"
 
-      - name: Install psql client for init.sql
-        # Ubuntu 24.04 ships postgresql-client-16 in apt, which can talk to
-        # the service container without complaint.
+      - name: Install system deps (psql + libmagic1 for python-magic)
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends postgresql-client
+          sudo apt-get install -y --no-install-recommends \
+            postgresql-client \
+            libmagic1
 
       - name: Apply infra/docker/postgres/init.sql to the service container
         # This creates the extensions and the silklens_test database that
@@ -302,10 +313,12 @@ jobs:
       - name: Install API dependencies
         run: uv pip install --system -e ".[dev]"
 
-      - name: Install psql client
+      - name: Install system deps (psql + libmagic1)
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends postgresql-client
+          sudo apt-get install -y --no-install-recommends \
+            postgresql-client \
+            libmagic1
 
       - name: Apply extensions (init.sql)
         working-directory: ${{ github.workspace }}

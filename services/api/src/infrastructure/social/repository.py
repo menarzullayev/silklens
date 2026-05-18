@@ -343,9 +343,7 @@ class SqlFriendshipRepository:
         # accepter_id is currently unused; reserved for future audit log.
         _ = accepter_id
         if updated is None:
-            raise RuntimeError(
-                f"friend_invitations row vanished after accept token={token!r}"
-            )
+            raise RuntimeError(f"friend_invitations row vanished after accept token={token!r}")
         return updated
 
     async def upsert_block(

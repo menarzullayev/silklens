@@ -144,3 +144,82 @@ def require_permission(permission_slug: str):
         return ctx
 
     return _checker
+
+
+def require_recent_mfa(seconds: int = 300, *, allow_first_setup: bool = False):
+    """Factory: dependency that 403s when ``users.last_mfa_at`` is stale.
+
+    ``allow_first_setup=True`` lets a user who has never satisfied MFA reach
+    enrollment endpoints (otherwise they could never bootstrap their first
+    factor). For destructive actions keep it ``False``.
+    """
+
+    async def _checker(
+        ctx: CurrentUserDep,
+        db: Annotated[AsyncSession, Depends(get_session)],
+    ) -> AuthContext:
+        result = await db.execute(
+            text(
+                """
+                SELECT last_mfa_at,
+                       EXISTS (
+                           SELECT 1 FROM mfa_methods m
+                           WHERE m.user_id = users.id
+                             AND m.residency_region = users.residency_region
+                             AND m.status = 'active'
+                       ) AS has_active
+                FROM users
+                WHERE id = :uid AND residency_region = :region
+                """
+            ),
+            {"uid": ctx.user_id, "region": ctx.residency_region.value},
+        )
+        row = result.one_or_none()
+        if row is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "identity.user_not_found", "message": "user not found"},
+            )
+        last_mfa_at = row[0]
+        has_active = bool(row[1])
+        # If the user has no active MFA factor yet, allow only when explicitly
+        # permitted (bootstrap routes like generate-backup-codes).
+        if not has_active:
+            if allow_first_setup:
+                return ctx
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": "identity.mfa_step_up_required",
+                    "message": "step-up MFA proof required for this action",
+                    "freshness_seconds": seconds,
+                },
+            )
+        if last_mfa_at is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": "identity.mfa_step_up_required",
+                    "message": "step-up MFA proof required for this action",
+                    "freshness_seconds": seconds,
+                },
+            )
+        from datetime import UTC, datetime
+
+        now = datetime.now(UTC)
+        if last_mfa_at.tzinfo is None:
+            last_mfa_at = last_mfa_at.replace(tzinfo=UTC)
+        elapsed = (now - last_mfa_at).total_seconds()
+        if elapsed > seconds:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": "identity.mfa_step_up_required",
+                    "message": "step-up MFA proof required for this action",
+                    "freshness_seconds": seconds,
+                    "elapsed_seconds": int(elapsed),
+                },
+            )
+        return ctx
+
+    return _checker

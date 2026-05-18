@@ -285,9 +285,7 @@ class SqlGamificationRepository:
             )
         balance = await self.get_balance(user_id)
         if balance is None:
-            raise RuntimeError(
-                f"xp_balances row vanished after upsert for user_id={user_id}"
-            )
+            raise RuntimeError(f"xp_balances row vanished after upsert for user_id={user_id}")
         return balance
 
     # --- Levels ----------------------------------------------------------
@@ -461,9 +459,7 @@ class SqlGamificationRepository:
         )
         streak = await self.get_streak(user_id)
         if streak is None:
-            raise RuntimeError(
-                f"streaks row vanished after upsert for user_id={user_id}"
-            )
+            raise RuntimeError(f"streaks row vanished after upsert for user_id={user_id}")
         return streak
 
     # --- Leaderboards ----------------------------------------------------

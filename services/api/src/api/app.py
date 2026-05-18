@@ -24,8 +24,10 @@ from src.api.routers import (
     health,
     heritage,
     media,
+    mfa,
     notifications,
     public_meta,
+    reseller,
     reviews,
     search,
     social,
@@ -129,6 +131,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(auth.router)
+    app.include_router(mfa.router)
     app.include_router(heritage.router)
     app.include_router(ai.router)
     app.include_router(media.router)
@@ -141,5 +144,6 @@ def create_app() -> FastAPI:
     app.include_router(public_meta.router)
     app.include_router(compliance.router)
     app.include_router(search.router)
+    app.include_router(reseller.router)
 
     return app

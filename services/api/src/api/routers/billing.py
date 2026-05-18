@@ -29,6 +29,9 @@ from src.domain.billing.errors import BillingError
 from src.domain.billing.service import BillingService
 from src.infrastructure.billing.factory import (
     build_billing_service,
+    build_click_provider_from_settings,
+    build_payme_provider_from_settings,
+    build_paypal_provider_from_settings,
     build_stripe_provider_from_settings,
     is_real_stripe_active,
 )
@@ -347,18 +350,16 @@ async def receive_webhook(
     request: Request,
     db: SessionDep,
 ) -> WebhookResult:
-    """Provider webhook ingress.
+    """Provider webhook ingress with per-provider signature verification.
 
-    Two verification paths:
+    Verification paths (selected by ``provider`` path-param):
 
-    * **Stripe-real:** when ``SILKLENS_PAYMENT_PROVIDER=stripe`` and
-      ``SILKLENS_STRIPE_WEBHOOK_SECRET`` is populated we verify the
-      ``Stripe-Signature`` header via ``stripe.Webhook.construct_event``.
-      A verified event bypasses the shared-secret gate and we route it to
-      the typed ``BillingService`` handlers.
-    * **Shared-secret fallback:** dev / staging / non-Stripe providers
-      keep the ``X-Silklens-Webhook-Secret`` HMAC-compare gate from
-      Agent A's prior delivery.
+    * **stripe** — ``Stripe-Signature`` header verified via SDK.
+    * **payme**  — ``Authorization: Basic <base64(merchant_id:secret)>``.
+    * **click**  — form-encoded body, MD5 sign-string over fixed field list.
+    * **paypal** — five ``PayPal-*`` headers + SDK ``verify-webhook-signature``.
+    * **shared-secret fallback** — dev / staging / non-configured providers
+      keep the ``X-Silklens-Webhook-Secret`` HMAC-compare gate.
 
     Idempotency is enforced by ``payment_webhook_events.UNIQUE(provider,
     provider_event_id)``; replays return ``{"duplicate": true}``.
@@ -382,9 +383,12 @@ async def receive_webhook(
 
     body_bytes = await request.body()
     stripe_event: dict[str, Any] | None = None
-    verified_by_stripe = False
+    payme_event: Any | None = None
+    click_event: Any | None = None
+    paypal_event: Any | None = None
+    verified = False
 
-    # 1. Stripe signature verification path (preferred when configured).
+    # --- 1. Stripe signature verification path ---
     if provider == "stripe" and is_real_stripe_active(settings):
         stripe_provider = build_stripe_provider_from_settings(settings)
         sig_header = request.headers.get("Stripe-Signature", "")
@@ -393,7 +397,7 @@ async def receive_webhook(
                 stripe_event = stripe_provider.verify_webhook(
                     payload=body_bytes, signature=sig_header
                 )
-                verified_by_stripe = True
+                verified = True
             except InvalidWebhookSignature as exc:
                 raise HTTPException(
                     status_code=401,
@@ -403,8 +407,82 @@ async def receive_webhook(
                     },
                 ) from exc
 
-    # 2. Shared-secret gate for the non-verified path.
-    if not verified_by_stripe:
+    # --- 2. Payme JSON-RPC + Basic-auth verification path ---
+    if provider == "payme":
+        payme_provider = build_payme_provider_from_settings(settings)
+        if payme_provider is not None:
+            try:
+                body_json = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
+            except Exception as exc:
+                raise HTTPException(
+                    status_code=400,
+                    detail={"code": "billing.webhook_invalid_json", "message": str(exc)},
+                ) from exc
+            try:
+                payme_event = payme_provider.verify_webhook(
+                    headers=dict(request.headers), body=body_json
+                )
+                verified = True
+            except InvalidWebhookSignature as exc:
+                raise HTTPException(
+                    status_code=401,
+                    detail={
+                        "code": "billing.webhook_invalid_signature",
+                        "message": f"payme verification failed: {exc}",
+                    },
+                ) from exc
+
+    # --- 3. Click form-encoded + MD5 sign-string verification path ---
+    if provider == "click":
+        click_provider = build_click_provider_from_settings(settings)
+        if click_provider is not None:
+            try:
+                form = await request.form()
+                form_data = {k: str(v) for k, v in form.items()}
+            except Exception as exc:
+                raise HTTPException(
+                    status_code=400,
+                    detail={"code": "billing.webhook_invalid_form", "message": str(exc)},
+                ) from exc
+            try:
+                click_event = click_provider.verify_webhook(form_data)
+                verified = True
+            except InvalidWebhookSignature as exc:
+                raise HTTPException(
+                    status_code=401,
+                    detail={
+                        "code": "billing.webhook_invalid_signature",
+                        "message": f"click verification failed: {exc}",
+                    },
+                ) from exc
+
+    # --- 4. PayPal signed-webhook verification path ---
+    if provider == "paypal":
+        paypal_provider = build_paypal_provider_from_settings(settings)
+        if paypal_provider is not None:
+            try:
+                body_json = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
+            except Exception as exc:
+                raise HTTPException(
+                    status_code=400,
+                    detail={"code": "billing.webhook_invalid_json", "message": str(exc)},
+                ) from exc
+            try:
+                paypal_event = paypal_provider.verify_webhook(
+                    headers=dict(request.headers), body=body_json
+                )
+                verified = True
+            except InvalidWebhookSignature as exc:
+                raise HTTPException(
+                    status_code=401,
+                    detail={
+                        "code": "billing.webhook_invalid_signature",
+                        "message": f"paypal verification failed: {exc}",
+                    },
+                ) from exc
+
+    # --- 5. Shared-secret gate for the non-verified path. ---
+    if not verified:
         presented = request.headers.get("X-Silklens-Webhook-Secret", "")
         expected = settings.webhook_shared_secret.get_secret_value()
         if not expected or not _hmac.compare_digest(presented, expected):
@@ -416,10 +494,26 @@ async def receive_webhook(
                 },
             )
 
-    # Parse JSON body once for downstream handlers. Stripe path already has
-    # a parsed Event dict; for the shared-secret path we decode the body.
+    # --- 6. Normalise the payload for the persisted webhook row. ---
+    payload: dict[str, Any]
+    provider_event_id: str
+    event_type: str
     if stripe_event is not None:
-        payload: dict[str, Any] = stripe_event
+        payload = stripe_event
+        provider_event_id = str(payload.get("id") or "")
+        event_type = str(payload.get("type") or "unknown")
+    elif payme_event is not None:
+        payload = {"method": payme_event.method, "params": payme_event.params}
+        provider_event_id = payme_event.provider_event_id
+        event_type = payme_event.event_type
+    elif click_event is not None:
+        payload = dict(click_event.raw)
+        provider_event_id = click_event.provider_event_id
+        event_type = click_event.event_type
+    elif paypal_event is not None:
+        payload = dict(paypal_event.raw)
+        provider_event_id = paypal_event.provider_event_id
+        event_type = paypal_event.event_type
     else:
         try:
             payload = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
@@ -428,31 +522,29 @@ async def receive_webhook(
                 status_code=400,
                 detail={"code": "billing.webhook_invalid_json", "message": str(exc)},
             ) from exc
-
-    provider_event_id = (
-        payload.get("id")
-        or request.headers.get("X-Provider-Event-Id")
-        or payload.get("event_id")
-        or f"evt_{request.headers.get('X-Request-Id', 'unknown')}"
-    )
-    event_type = payload.get("type") or payload.get("event") or "unknown"
+        provider_event_id = str(
+            payload.get("id")
+            or request.headers.get("X-Provider-Event-Id")
+            or payload.get("event_id")
+            or f"evt_{request.headers.get('X-Request-Id', 'unknown')}"
+        )
+        event_type = str(payload.get("type") or payload.get("event") or "unknown")
 
     service = _service(db)
     try:
         stored = await service.record_webhook(
             provider=provider,
-            provider_event_id=str(provider_event_id),
-            event_type=str(event_type),
+            provider_event_id=provider_event_id,
+            event_type=event_type,
             payload=payload if isinstance(payload, dict) else {"raw": payload},
         )
     except BillingError as exc:
         _raise(exc)
         raise
 
-    # 3. Verified Stripe events are routed to typed service handlers so the
-    #    intent → payment row finalisation runs in the same transaction.
-    if verified_by_stripe and stored and stripe_event is not None:
-        await _dispatch_stripe_event(service, str(event_type), stripe_event, _Decimal)
+    # --- 7. Route verified Stripe events to typed service handlers. ---
+    if stored and stripe_event is not None:
+        await _dispatch_stripe_event(service, event_type, stripe_event, _Decimal)
 
     return WebhookResult(received=True, duplicate=not stored)
 
