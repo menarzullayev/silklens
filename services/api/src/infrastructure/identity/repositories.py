@@ -592,3 +592,81 @@ class SqlSessionRepository:
         )
         await self._db.commit()
         return await self.get_session(m["session_id"], ResidencyRegion(m["session_residency"]))
+
+
+class SqlLoginAttemptRepository:
+    """SQLAlchemy-backed login_attempts ledger (migration 0070).
+
+    The lookback query is index-covered by ``idx_login_attempts_identifier_at``
+    and naturally pruned to the most recent partition because
+    ``attempted_at >= now() - interval`` is a partition-pruning predicate.
+    """
+
+    def __init__(self, db_session: AsyncSession) -> None:
+        self._db = db_session
+
+    async def record_attempt(
+        self,
+        *,
+        identifier: str,
+        succeeded: bool,
+        ip_address: str | None,
+        user_agent: str | None,
+        failure_reason: str | None,
+    ) -> None:
+        await self._db.execute(
+            text(
+                """
+                INSERT INTO login_attempts (
+                    identifier, succeeded, ip_address, user_agent, failure_reason
+                ) VALUES (
+                    :identifier, :succeeded, CAST(:ip AS inet), :ua, :reason
+                )
+                """
+            ),
+            {
+                "identifier": identifier,
+                "succeeded": succeeded,
+                "ip": ip_address,
+                "ua": user_agent,
+                "reason": failure_reason,
+            },
+        )
+        await self._db.commit()
+
+    async def count_recent_failures(
+        self,
+        *,
+        identifier: str,
+        ip_address: str | None,
+        within_seconds: int,
+    ) -> int:
+        # Two-clause filter: identifier always; IP optional. Same window for
+        # both so the lockout follows the user across IP changes inside the
+        # 10-minute pane (best-effort defence against IP rotation).
+        if ip_address is None:
+            result = await self._db.execute(
+                text(
+                    """
+                    SELECT count(*) FROM login_attempts
+                    WHERE identifier = :identifier
+                      AND succeeded = false
+                      AND attempted_at >= now() - make_interval(secs => :win)
+                    """
+                ),
+                {"identifier": identifier, "win": within_seconds},
+            )
+        else:
+            result = await self._db.execute(
+                text(
+                    """
+                    SELECT count(*) FROM login_attempts
+                    WHERE identifier = :identifier
+                      AND ip_address = CAST(:ip AS inet)
+                      AND succeeded = false
+                      AND attempted_at >= now() - make_interval(secs => :win)
+                    """
+                ),
+                {"identifier": identifier, "ip": ip_address, "win": within_seconds},
+            )
+        return int(result.scalar_one())

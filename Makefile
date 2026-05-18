@@ -22,7 +22,7 @@ ps: ## Show dev stack status
 
 # --- API service ---
 
-api-install: ## Install API service deps into a local .venv
+api-install: ## Install API service deps into a local .venv (requires libmagic1 + libpq-dev system pkgs)
 	cd services/api && python -m venv .venv && .venv/bin/pip install -U pip && .venv/bin/pip install -e ".[dev]"
 
 api-run: ## Run the API locally (foreground)

@@ -94,8 +94,10 @@ def _default_tenant() -> uuid.UUID:
 
 
 def _make_service(db: AsyncSession, *, media: InMemoryMediaBridge | None = None) -> AiService:
+    from src.infrastructure.ai.repository import SqlAiRepository
+
     return AiService(
-        session=db,
+        repository=SqlAiRepository(db),
         resolver=_MemoryResolver(),
         media=media or InMemoryMediaBridge(),
         tenant_id=_default_tenant(),
@@ -428,6 +430,29 @@ async def test_translate_rejects_same_source_and_target(
 
     with pytest.raises(AiValidationError):
         await service.translate(text_input="hi", source_lang="en", target_lang="en")
+
+
+def test_vector_literal_rejects_non_float_components() -> None:
+    """SEC-014: ``_vector_literal`` must refuse anything not a Python float.
+
+    Provider responses are typed as ``tuple[float, ...]`` but the type
+    system can't enforce that at runtime — a malformed mock could slip in
+    an ``int`` or a string and we'd format it directly into a SQL literal.
+    The guard short-circuits those cases with ``AiValidationError`` before
+    any SQL is generated.
+    """
+    from src.domain.ai.errors import AiValidationError
+    from src.domain.ai.service import _vector_literal
+
+    # Happy path stays unchanged.
+    assert _vector_literal((0.1, -0.5, 0.0)).startswith("[")
+
+    with pytest.raises(AiValidationError):
+        _vector_literal((1, 2, 3))  # type: ignore[arg-type]
+    with pytest.raises(AiValidationError):
+        _vector_literal(("0.1', INJECTED --",))  # type: ignore[arg-type]
+    with pytest.raises(AiValidationError):
+        _vector_literal(())
 
 
 # --- HTTP-level (router) tests --------------------------------------------

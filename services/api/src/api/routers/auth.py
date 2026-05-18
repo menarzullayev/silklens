@@ -6,7 +6,7 @@ provider secrets are wired (per [[reference-ai-providers]]).
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, NoReturn
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -20,14 +20,16 @@ from src.domain.identity.entities import (
     RegistrationRequest,
     ResidencyRegion,
 )
-from src.domain.identity.errors import IdentityError
+from src.domain.identity.errors import AccountLocked, IdentityError
 from src.domain.identity.service import AuthService
 from src.infrastructure.identity.repositories import (
+    SqlLoginAttemptRepository,
     SqlSessionRepository,
     SqlUserRepository,
 )
 from src.infrastructure.security import Argon2PasswordHasher, JwtTokenIssuer
 from src.middleware.auth import CurrentUserDep
+from src.middleware.ratelimit import rate_limit
 
 router = APIRouter(prefix="/v1/auth", tags=["auth"])
 
@@ -84,11 +86,16 @@ class LoginResponse(BaseModel):
 
 
 def _service(session: AsyncSession) -> AuthService:
+    settings = get_settings()
     return AuthService(
         users=SqlUserRepository(session),
         sessions=SqlSessionRepository(session),
         hasher=Argon2PasswordHasher(),
         tokens=JwtTokenIssuer(),
+        login_attempts=SqlLoginAttemptRepository(session),
+        lockout_max_failures=settings.login_lockout_max_failures,
+        lockout_window_seconds=settings.login_lockout_window_seconds,
+        lockout_duration_seconds=settings.login_lockout_duration_seconds,
     )
 
 
@@ -113,13 +120,30 @@ def _token_bundle(auth: object, *, ttl: int) -> TokenBundle:
     )
 
 
+def _raise_identity_error(exc: IdentityError) -> NoReturn:
+    """Translate domain errors → HTTPException; attach ``Retry-After`` on 423."""
+    headers: dict[str, str] | None = None
+    if isinstance(exc, AccountLocked):
+        headers = {"Retry-After": str(exc.retry_after_seconds)}
+    raise HTTPException(
+        status_code=exc.status_code,
+        detail={"code": exc.code, "message": str(exc)},
+        headers=headers,
+    ) from exc
+
+
 # --- Routes ------------------------------------------------------------------
+
+# Per-route rate-limit dependencies. SEC-005: prevents credential-stuffing /
+# enumeration and protects Argon2 CPU cost. Keys on IP because these
+# endpoints are reachable without a bearer.
 
 
 @router.post(
     "/register",
     response_model=LoginResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit("3/minute", per="ip", scope="auth:register"))],
 )
 async def register(
     payload: RegisterRequest,
@@ -141,10 +165,7 @@ async def register(
             )
         )
     except IdentityError as exc:
-        raise HTTPException(
-            status_code=exc.status_code,
-            detail={"code": exc.code, "message": str(exc)},
-        ) from exc
+        _raise_identity_error(exc)
 
     # Auto-login after registration so the client gets tokens immediately.
     auth = await service.login(
@@ -159,7 +180,11 @@ async def register(
     )
 
 
-@router.post("/login", response_model=LoginResponse)
+@router.post(
+    "/login",
+    response_model=LoginResponse,
+    dependencies=[Depends(rate_limit("5/minute", per="ip", scope="auth:login"))],
+)
 async def login(
     payload: LoginRequest,
     request: Request,
@@ -175,10 +200,7 @@ async def login(
             user_agent=request.headers.get("user-agent"),
         )
     except IdentityError as exc:
-        raise HTTPException(
-            status_code=exc.status_code,
-            detail={"code": exc.code, "message": str(exc)},
-        ) from exc
+        _raise_identity_error(exc)
 
     return LoginResponse(
         user=_user_out(auth.user),
@@ -186,17 +208,18 @@ async def login(
     )
 
 
-@router.post("/refresh", response_model=LoginResponse)
+@router.post(
+    "/refresh",
+    response_model=LoginResponse,
+    dependencies=[Depends(rate_limit("20/minute", per="ip", scope="auth:refresh"))],
+)
 async def refresh(payload: RefreshRequest, db: SessionDep) -> LoginResponse:
     settings = get_settings()
     service = _service(db)
     try:
         auth = await service.refresh(payload.refresh_token)
     except IdentityError as exc:
-        raise HTTPException(
-            status_code=exc.status_code,
-            detail={"code": exc.code, "message": str(exc)},
-        ) from exc
+        _raise_identity_error(exc)
 
     return LoginResponse(
         user=_user_out(auth.user),

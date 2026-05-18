@@ -342,7 +342,10 @@ class SqlFriendshipRepository:
         updated = await self.get_invitation_by_token(token)
         # accepter_id is currently unused; reserved for future audit log.
         _ = accepter_id
-        assert updated is not None
+        if updated is None:
+            raise RuntimeError(
+                f"friend_invitations row vanished after accept token={token!r}"
+            )
         return updated
 
     async def upsert_block(

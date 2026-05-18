@@ -25,6 +25,7 @@ from src.core.settings import get_settings
 from src.domain.ai.errors import AiError
 from src.domain.ai.service import AiService
 from src.infrastructure.ai.media_bridge import SqlMediaBridge
+from src.infrastructure.ai.repository import SqlAiRepository
 from src.infrastructure.ai.resolver import ProviderResolver
 from src.middleware.auth import (
     AuthContext,
@@ -32,6 +33,7 @@ from src.middleware.auth import (
     require_permission,
     require_user,
 )
+from src.middleware.ratelimit import rate_limit
 
 router = APIRouter(prefix="/v1/ai", tags=["ai"])
 
@@ -45,7 +47,12 @@ def _build_service(db: AsyncSession, *, tenant_id: UUID, attach_media: bool = Tr
     settings = get_settings()
     resolver = ProviderResolver(db, use_mocks=settings.ai_use_mock_providers)
     media = SqlMediaBridge(db) if attach_media else None
-    return AiService(session=db, resolver=resolver, media=media, tenant_id=tenant_id)
+    return AiService(
+        repository=SqlAiRepository(db),
+        resolver=resolver,
+        media=media,
+        tenant_id=tenant_id,
+    )
 
 
 def _raise_ai(exc: AiError) -> None:
@@ -175,7 +182,11 @@ class ChainOut(BaseModel):
 # --- Routes ---------------------------------------------------------------
 
 
-@router.post("/recognize", response_model=RecognizeOut)
+@router.post(
+    "/recognize",
+    response_model=RecognizeOut,
+    dependencies=[Depends(rate_limit("10/minute", per="user", scope="ai:recognize"))],
+)
 async def recognize(
     payload: RecognizeIn,
     db: SessionDep,
@@ -202,7 +213,11 @@ async def recognize(
     )
 
 
-@router.post("/chat", response_model=ChatOut)
+@router.post(
+    "/chat",
+    response_model=ChatOut,
+    dependencies=[Depends(rate_limit("30/minute", per="user", scope="ai:chat"))],
+)
 async def chat(
     payload: ChatIn,
     db: SessionDep,
@@ -227,7 +242,11 @@ async def chat(
     )
 
 
-@router.post("/translate", response_model=TranslateOut)
+@router.post(
+    "/translate",
+    response_model=TranslateOut,
+    dependencies=[Depends(rate_limit("60/minute", per="user", scope="ai:translate"))],
+)
 async def translate(
     payload: TranslateIn,
     db: SessionDep,
@@ -255,7 +274,11 @@ async def translate(
     )
 
 
-@router.post("/tts", response_model=TtsOut)
+@router.post(
+    "/tts",
+    response_model=TtsOut,
+    dependencies=[Depends(rate_limit("10/minute", per="user", scope="ai:tts"))],
+)
 async def tts(
     payload: TtsIn,
     db: SessionDep,
@@ -357,53 +380,31 @@ async def list_models(db: SessionDep) -> list[ModelOut]:
     dependencies=[Depends(require_permission("ai:configure"))],
 )
 async def list_fallback_chains(db: SessionDep) -> list[ChainOut]:
-    chain_rows = (
-        await db.execute(
-            text(
-                """
-                SELECT id, slug, task_type, name, is_active
-                FROM ai_fallback_chains
-                ORDER BY task_type, slug
-                """
-            )
-        )
-    ).all()
+    """List every chain + its ordered steps in a single round-trip (HIGH-6).
 
-    out: list[ChainOut] = []
-    for chain in chain_rows:
-        cm = chain._mapping
-        steps = (
-            await db.execute(
-                text(
-                    """
-                    SELECT s.step_order, m.slug, s.max_latency_ms, s.conditions
-                    FROM ai_fallback_chain_steps s
-                    JOIN ai_models m ON m.id = s.model_id
-                    WHERE s.chain_id = :cid
-                    ORDER BY s.step_order
-                    """
-                ),
-                {"cid": cm["id"]},
-            )
-        ).all()
-        out.append(
-            ChainOut(
-                slug=cm["slug"],
-                task_type=cm["task_type"],
-                name=cm["name"] or {},
-                is_active=cm["is_active"],
-                steps=[
-                    ChainStepOut(
-                        step_order=s._mapping["step_order"],
-                        model_slug=s._mapping["slug"],
-                        max_latency_ms=s._mapping["max_latency_ms"],
-                        conditions=s._mapping["conditions"] or {},
-                    )
-                    for s in steps
-                ],
-            )
+    Previously this iterated over chains and issued one ``SELECT … steps``
+    per chain (classic 1+N). The repository now does a single LEFT JOIN +
+    ``json_agg`` so the response time is constant regardless of N.
+    """
+    chains = await SqlAiRepository(db).list_fallback_chains()
+    return [
+        ChainOut(
+            slug=c["slug"],
+            task_type=c["task_type"],
+            name=c["name"],
+            is_active=c["is_active"],
+            steps=[
+                ChainStepOut(
+                    step_order=s["step_order"],
+                    model_slug=s["model_slug"],
+                    max_latency_ms=s["max_latency_ms"],
+                    conditions=s["conditions"],
+                )
+                for s in c["steps"]
+            ],
         )
-    return out
+        for c in chains
+    ]
 
 
 @router.patch(

@@ -27,14 +27,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_session
 from src.domain.billing.errors import BillingError
 from src.domain.billing.service import BillingService
-from src.infrastructure.billing.mock_provider import MockPaymentProvider
-from src.infrastructure.billing.repository import (
-    SqlEntitlementRepository,
-    SqlInvoiceRepository,
-    SqlPaymentRepository,
-    SqlPlanRepository,
-    SqlSubscriptionRepository,
+from src.infrastructure.billing.factory import (
+    build_billing_service,
+    build_stripe_provider_from_settings,
+    is_real_stripe_active,
 )
+from src.infrastructure.billing.repository import SqlEntitlementRepository
 from src.middleware.auth import CurrentUserDep
 
 router = APIRouter(prefix="/v1/billing", tags=["billing"])
@@ -43,14 +41,7 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 def _service(db: AsyncSession) -> BillingService:
-    return BillingService(
-        plans=SqlPlanRepository(db),
-        subscriptions=SqlSubscriptionRepository(db),
-        payments=SqlPaymentRepository(db),
-        invoices=SqlInvoiceRepository(db),
-        entitlements=SqlEntitlementRepository(db),
-        provider=MockPaymentProvider(),
-    )
+    return build_billing_service(db)
 
 
 # --- Schemas ---------------------------------------------------------------
@@ -358,15 +349,26 @@ async def receive_webhook(
 ) -> WebhookResult:
     """Provider webhook ingress.
 
-    Per-provider signature verification (Stripe-Signature header, Apple ASN
-    JWS, Google Play Pub/Sub signature) lands with the real-provider work in
-    FAZA 4. Until then we hard-require a shared secret header so the endpoint
-    is not openly exploitable. Fixes CRIT-3 / SEC-001.
+    Two verification paths:
+
+    * **Stripe-real:** when ``SILKLENS_PAYMENT_PROVIDER=stripe`` and
+      ``SILKLENS_STRIPE_WEBHOOK_SECRET`` is populated we verify the
+      ``Stripe-Signature`` header via ``stripe.Webhook.construct_event``.
+      A verified event bypasses the shared-secret gate and we route it to
+      the typed ``BillingService`` handlers.
+    * **Shared-secret fallback:** dev / staging / non-Stripe providers
+      keep the ``X-Silklens-Webhook-Secret`` HMAC-compare gate from
+      Agent A's prior delivery.
+
+    Idempotency is enforced by ``payment_webhook_events.UNIQUE(provider,
+    provider_event_id)``; replays return ``{"duplicate": true}``.
     """
     import hmac as _hmac
     import json
+    from decimal import Decimal as _Decimal
 
     from src.core.settings import get_settings
+    from src.domain.billing.errors import InvalidWebhookSignature
 
     settings = get_settings()
 
@@ -378,39 +380,66 @@ async def receive_webhook(
             detail={"code": "billing.webhook_unknown_provider", "message": "unknown provider"},
         )
 
-    # Shared-secret gate. Caller MUST present a header that constant-time-equals
-    # SILKLENS_WEBHOOK_SHARED_SECRET. In production this is replaced with the
-    # per-provider signature verification.
-    presented = request.headers.get("X-Silklens-Webhook-Secret", "")
-    expected = settings.webhook_shared_secret.get_secret_value()
-    if not expected or not _hmac.compare_digest(presented, expected):
-        raise HTTPException(
-            status_code=401,
-            detail={
-                "code": "billing.webhook_unauthorized",
-                "message": "shared secret missing or invalid",
-            },
-        )
-
     body_bytes = await request.body()
-    try:
-        payload = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
-    except Exception as exc:
-        raise HTTPException(
-            status_code=400,
-            detail={"code": "billing.webhook_invalid_json", "message": str(exc)},
-        ) from exc
+    stripe_event: dict[str, Any] | None = None
+    verified_by_stripe = False
+
+    # 1. Stripe signature verification path (preferred when configured).
+    if provider == "stripe" and is_real_stripe_active(settings):
+        stripe_provider = build_stripe_provider_from_settings(settings)
+        sig_header = request.headers.get("Stripe-Signature", "")
+        if stripe_provider is not None and sig_header:
+            try:
+                stripe_event = stripe_provider.verify_webhook(
+                    payload=body_bytes, signature=sig_header
+                )
+                verified_by_stripe = True
+            except InvalidWebhookSignature as exc:
+                raise HTTPException(
+                    status_code=401,
+                    detail={
+                        "code": "billing.webhook_invalid_signature",
+                        "message": "stripe-signature verification failed",
+                    },
+                ) from exc
+
+    # 2. Shared-secret gate for the non-verified path.
+    if not verified_by_stripe:
+        presented = request.headers.get("X-Silklens-Webhook-Secret", "")
+        expected = settings.webhook_shared_secret.get_secret_value()
+        if not expected or not _hmac.compare_digest(presented, expected):
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "code": "billing.webhook_unauthorized",
+                    "message": "shared secret missing or invalid",
+                },
+            )
+
+    # Parse JSON body once for downstream handlers. Stripe path already has
+    # a parsed Event dict; for the shared-secret path we decode the body.
+    if stripe_event is not None:
+        payload: dict[str, Any] = stripe_event
+    else:
+        try:
+            payload = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
+        except Exception as exc:
+            raise HTTPException(
+                status_code=400,
+                detail={"code": "billing.webhook_invalid_json", "message": str(exc)},
+            ) from exc
 
     provider_event_id = (
-        request.headers.get("X-Provider-Event-Id")
-        or payload.get("id")
+        payload.get("id")
+        or request.headers.get("X-Provider-Event-Id")
         or payload.get("event_id")
         or f"evt_{request.headers.get('X-Request-Id', 'unknown')}"
     )
     event_type = payload.get("type") or payload.get("event") or "unknown"
 
+    service = _service(db)
     try:
-        stored = await _service(db).record_webhook(
+        stored = await service.record_webhook(
             provider=provider,
             provider_event_id=str(provider_event_id),
             event_type=str(event_type),
@@ -419,4 +448,64 @@ async def receive_webhook(
     except BillingError as exc:
         _raise(exc)
         raise
+
+    # 3. Verified Stripe events are routed to typed service handlers so the
+    #    intent → payment row finalisation runs in the same transaction.
+    if verified_by_stripe and stored and stripe_event is not None:
+        await _dispatch_stripe_event(service, str(event_type), stripe_event, _Decimal)
+
     return WebhookResult(received=True, duplicate=not stored)
+
+
+async def _dispatch_stripe_event(
+    service: BillingService,
+    event_type: str,
+    event: dict[str, Any],
+    decimal_cls: Any,
+) -> None:
+    """Route a verified Stripe event to the right ``BillingService`` handler.
+
+    Errors here are swallowed-then-logged on purpose: the webhook row is
+    already persisted, so a later reconciliation job can retry.
+    """
+    from src.core.logging import get_logger
+
+    log = get_logger("silklens.billing.webhook.stripe")
+    data_obj = (event.get("data") or {}).get("object") or {}
+    try:
+        if event_type == "payment_intent.succeeded":
+            amount_minor = int(data_obj.get("amount_received") or data_obj.get("amount") or 0)
+            currency = str(data_obj.get("currency") or "usd").upper()
+            metadata = data_obj.get("metadata") or {}
+            charge_id = str(data_obj.get("id") or "")
+            await service.handle_payment_succeeded(
+                provider="stripe",
+                provider_charge_id=charge_id,
+                amount=decimal_cls(amount_minor) / decimal_cls(100),
+                currency=currency,
+                metadata=dict(metadata),
+            )
+        elif event_type == "payment_intent.payment_failed":
+            last_error = data_obj.get("last_payment_error") or {}
+            failure_code = str(last_error.get("code") or "payment_failed")
+            metadata = data_obj.get("metadata") or {}
+            await service.mark_payment_failed(
+                provider_charge_id=str(data_obj.get("id") or ""),
+                failure_code=failure_code,
+                metadata=dict(metadata),
+            )
+        elif event_type == "customer.subscription.deleted":
+            await service.mark_subscription_canceled_external(
+                provider_subscription_id=str(data_obj.get("id") or ""),
+            )
+        elif event_type in {"invoice.payment_succeeded", "invoice.payment_failed"}:
+            await service.handle_invoice_event(
+                provider_invoice_id=str(data_obj.get("id") or ""),
+                succeeded=event_type == "invoice.payment_succeeded",
+            )
+    except Exception as exc:  # webhook stays idempotent on retry
+        log.warning(
+            "billing.webhook.stripe.dispatch_failed",
+            event_type=event_type,
+            error=str(exc),
+        )

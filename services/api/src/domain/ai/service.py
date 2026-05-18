@@ -1,9 +1,8 @@
 """AI application service.
 
-Coordinates provider resolution, persistence to ``ai_generations`` +
-``ai_cost_ledger`` + ``ai_translation_memory``, and the heritage vector-search
-join. All DB I/O is hand-written SQL (asyncpg-safe via SQLAlchemy text bindings)
-so we don't fight an ORM mapping for partitioned / vector tables.
+Coordinates provider resolution and persistence to the AI catalog tables.
+All DB I/O goes through :class:`src.domain.ai.repository.AiRepository`
+(ADR-0003: domain layer must not import SQLAlchemy).
 
 The service is provider-agnostic: callers inject a ``ProviderResolver`` (or any
 object exposing ``async def resolve(task_type) -> list[provider]``). Mock-only
@@ -14,13 +13,9 @@ test wiring passes an in-memory resolver; production wiring resolves against
 from __future__ import annotations
 
 import hashlib
-import json
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Protocol
 from uuid import UUID
-
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.ai.entities import (
     AiTaskType,
@@ -42,6 +37,7 @@ from src.domain.ai.errors import (
     AiQuotaExceeded,
     AiValidationError,
 )
+from src.domain.ai.repository import AiRepository
 
 if TYPE_CHECKING:
     from src.domain.ai.providers import (
@@ -94,13 +90,22 @@ def _sha256(text_input: str) -> bytes:
     return hashlib.sha256(text_input.encode("utf-8")).digest()
 
 
-def _jsonb(payload: object) -> str:
-    return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+def _vector_literal(embedding: tuple[float, ...]) -> str:
+    """Format a pgvector text literal (``[0.1,0.2,…]``).
 
-
-def _vector_literal(vector: tuple[float, ...]) -> str:
-    """pgvector parses ``[0.1, 0.2, ...]`` text literals; safer than asyncpg binding."""
-    return "[" + ",".join(f"{v:.6f}" for v in vector) + "]"
+    Float-only guard (SEC-014): callers built ``embedding`` from a provider
+    response and we never want a non-numeric to escape into the formatted
+    SQL literal. The check is cheap (one ``isinstance`` per dim) and removes
+    a class of injection-by-mistake bugs.
+    """
+    if not embedding:
+        raise AiValidationError("embedding", "must be non-empty")
+    for v in embedding:
+        if not isinstance(v, float):
+            raise AiValidationError(
+                "embedding", f"expected float component, got {type(v).__name__}"
+            )
+    return "[" + ",".join(f"{v:.6f}" for v in embedding) + "]"
 
 
 # --- Service ---------------------------------------------------------------
@@ -121,12 +126,12 @@ class AiService:
     def __init__(
         self,
         *,
-        session: AsyncSession,
+        repository: AiRepository,
         resolver: ProviderResolverProtocol,
         media: MediaRepositoryProtocol | None = None,
         tenant_id: UUID,
     ) -> None:
-        self._session = session
+        self._repo = repository
         self._resolver = resolver
         self._media = media
         self._tenant_id = tenant_id
@@ -156,48 +161,6 @@ class AiService:
     # Persistence helpers
     # ------------------------------------------------------------------
 
-    async def _resolve_model_version_id(self, model_slug: str) -> UUID | None:
-        row = (
-            await self._session.execute(
-                text(
-                    """
-                    SELECT mv.id
-                    FROM ai_model_versions mv
-                    JOIN ai_models m ON m.id = mv.model_id
-                    WHERE m.slug = :slug AND mv.is_current
-                    LIMIT 1
-                    """
-                ),
-                {"slug": model_slug},
-            )
-        ).scalar_one_or_none()
-        if row is not None:
-            return row
-        # Fallback: any version of that model.
-        return (
-            await self._session.execute(
-                text(
-                    """
-                    SELECT mv.id
-                    FROM ai_model_versions mv
-                    JOIN ai_models m ON m.id = mv.model_id
-                    WHERE m.slug = :slug
-                    ORDER BY mv.created_at DESC
-                    LIMIT 1
-                    """
-                ),
-                {"slug": model_slug},
-            )
-        ).scalar_one_or_none()
-
-    async def _resolve_model_id(self, model_slug: str) -> UUID | None:
-        return (
-            await self._session.execute(
-                text("SELECT id FROM ai_models WHERE slug = :slug"),
-                {"slug": model_slug},
-            )
-        ).scalar_one_or_none()
-
     async def _log_generation(
         self,
         *,
@@ -212,110 +175,85 @@ class AiService:
         output_text: str | None = None,
         output_jsonb: dict | None = None,
     ) -> None:
-        mv_id = await self._resolve_model_version_id(model_slug)
+        # Observability — record inference latency + token usage. The slug
+        # is split provider/model so the Grafana panel can group either way.
+        # Failures are non-fatal; this is observability, not the contract.
+        try:
+            from src.core.metrics import (
+                ai_inference_duration_seconds,
+                ai_tokens_used_total,
+            )
+
+            if "/" in model_slug:
+                provider, model_name = model_slug.split("/", 1)
+            else:
+                provider, model_name = "unknown", model_slug
+            ai_inference_duration_seconds.labels(
+                provider=provider, model=model_name, task_type=task_type.value
+            ).observe(max(latency_ms, 0) / 1000.0)
+            if input_tokens:
+                ai_tokens_used_total.labels(
+                    provider=provider, model=model_name, direction="in"
+                ).inc(input_tokens)
+            if output_tokens:
+                ai_tokens_used_total.labels(
+                    provider=provider, model=model_name, direction="out"
+                ).inc(output_tokens)
+        except Exception:  # noqa: S110
+            # Observability is best-effort — never break a real inference call.
+            pass
+
+        mv_id = await self._repo.resolve_model_version_id(model_slug)
         if mv_id is None:
             # Skip the log row rather than raise: the call itself succeeded
             # and persistence is observability, not part of the contract.
             return
-        await self._session.execute(
-            text(
-                """
-                INSERT INTO ai_generations (
-                    tenant_id, user_id, model_version_id, task_type,
-                    input_hash, input_summary, output_text, output_jsonb,
-                    input_tokens, output_tokens, latency_ms, cost_estimate, status
-                )
-                VALUES (
-                    :tenant, :uid, :mv_id, :task,
-                    :ih, :summary, :out_text, CAST(:out_json AS jsonb),
-                    :in_tok, :out_tok, :latency, :cost, 'ok'
-                )
-                """
-            ),
-            {
-                "tenant": self._tenant_id,
-                "uid": user_id,
-                "mv_id": mv_id,
-                "task": task_type.value,
-                "ih": _sha256(input_summary),
-                "summary": input_summary[:512],
-                "out_text": output_text,
-                "out_json": _jsonb(output_jsonb) if output_jsonb is not None else None,
-                "in_tok": input_tokens,
-                "out_tok": output_tokens,
-                "latency": latency_ms,
-                "cost": cost,
-            },
+        await self._repo.insert_generation(
+            tenant_id=self._tenant_id,
+            user_id=user_id,
+            model_version_id=mv_id,
+            task_type=task_type,
+            input_hash=_sha256(input_summary),
+            input_summary=input_summary,
+            output_text=output_text,
+            output_jsonb=output_jsonb,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            latency_ms=latency_ms,
+            cost_estimate=cost,
         )
 
-        model_id = await self._resolve_model_id(model_slug)
+        model_id = await self._repo.resolve_model_id(model_slug)
         if model_id is not None:
-            await self._session.execute(
-                text(
-                    """
-                    INSERT INTO ai_cost_ledger (
-                        tenant_id, user_id, model_id, kind,
-                        tokens_in, tokens_out, cost
-                    )
-                    VALUES (:tenant, :uid, :mid, :kind, :tin, :tout, :cost)
-                    """
-                ),
-                {
-                    "tenant": self._tenant_id,
-                    "uid": user_id,
-                    "mid": model_id,
-                    "kind": task_type.value,
-                    "tin": input_tokens,
-                    "tout": output_tokens,
-                    "cost": cost,
-                },
+            await self._repo.insert_cost_ledger(
+                tenant_id=self._tenant_id,
+                user_id=user_id,
+                model_id=model_id,
+                kind=task_type,
+                tokens_in=input_tokens,
+                tokens_out=output_tokens,
+                cost=cost,
             )
             if user_id is not None:
                 today = datetime.now(UTC).date()
-                await self._session.execute(
-                    text(
-                        """
-                        INSERT INTO ai_token_usage (
-                            user_id, model_id, day,
-                            input_tokens, output_tokens, cost, request_count
-                        )
-                        VALUES (:uid, :mid, :day, :tin, :tout, :cost, 1)
-                        ON CONFLICT (user_id, model_id, day) DO UPDATE
-                        SET input_tokens  = ai_token_usage.input_tokens  + EXCLUDED.input_tokens,
-                            output_tokens = ai_token_usage.output_tokens + EXCLUDED.output_tokens,
-                            cost          = ai_token_usage.cost          + EXCLUDED.cost,
-                            request_count = ai_token_usage.request_count + 1,
-                            updated_at    = now()
-                        """
-                    ),
-                    {
-                        "uid": user_id,
-                        "mid": model_id,
-                        "day": today,
-                        "tin": input_tokens,
-                        "tout": output_tokens,
-                        "cost": cost,
-                    },
+                await self._repo.upsert_daily_token_usage(
+                    user_id=user_id,
+                    model_id=model_id,
+                    day=today,
+                    tokens_in=input_tokens,
+                    tokens_out=output_tokens,
+                    cost=cost,
                 )
 
     async def _emit_event(
         self, *, name: str, aggregate_kind: str, aggregate_id: UUID, payload: dict
     ) -> None:
-        await self._session.execute(
-            text(
-                """
-                SELECT app.emit_event(
-                    :tenant, :name, :kind, :aid, CAST(:payload AS jsonb)
-                )
-                """
-            ),
-            {
-                "tenant": self._tenant_id,
-                "name": name,
-                "kind": aggregate_kind,
-                "aid": aggregate_id,
-                "payload": _jsonb(payload),
-            },
+        await self._repo.emit_event(
+            tenant_id=self._tenant_id,
+            name=name,
+            aggregate_kind=aggregate_kind,
+            aggregate_id=aggregate_id,
+            payload=payload,
         )
 
     # ------------------------------------------------------------------
@@ -323,41 +261,13 @@ class AiService:
     # ------------------------------------------------------------------
 
     async def _has_premium_entitlement(self, user_id: UUID, feature_key: str) -> bool:
-        row = (
-            await self._session.execute(
-                text(
-                    """
-                    SELECT 1 FROM entitlements
-                    WHERE user_id = :uid
-                      AND feature_key = :fk
-                      AND granted
-                      AND (effective_until IS NULL OR effective_until > now())
-                    LIMIT 1
-                    """
-                ),
-                {"uid": user_id, "fk": feature_key},
-            )
-        ).one_or_none()
-        return row is not None
+        return await self._repo.has_premium_entitlement(user_id, feature_key)
 
     async def _daily_requests(self, user_id: UUID, task_type: AiTaskType) -> int:
         today = datetime.now(UTC).date()
-        row = (
-            await self._session.execute(
-                text(
-                    """
-                    SELECT COALESCE(SUM(u.request_count), 0)
-                    FROM ai_token_usage u
-                    JOIN ai_models m ON m.id = u.model_id
-                    WHERE u.user_id = :uid
-                      AND u.day = :day
-                      AND m.task_type = :task
-                    """
-                ),
-                {"uid": user_id, "day": today, "task": task_type.value},
-            )
-        ).scalar_one_or_none()
-        return int(row or 0)
+        return await self._repo.daily_request_count(
+            user_id=user_id, day=today, task_type=task_type
+        )
 
     # ------------------------------------------------------------------
     # Public API
@@ -470,77 +380,39 @@ class AiService:
             raise AiValidationError("target_lang", "must differ from source_lang")
 
         source_hash = _sha256(text_input)
-        # Look up TM
-        hit = (
-            await self._session.execute(
-                text(
-                    """
-                    SELECT tm.target_text, tm.confidence, m.slug
-                    FROM ai_translation_memory tm
-                    JOIN ai_model_versions mv ON mv.id = tm.model_version_id
-                    JOIN ai_models m ON m.id = mv.model_id
-                    WHERE tm.source_hash = :h
-                      AND tm.source_lang = :s
-                      AND tm.target_lang = :t
-                    ORDER BY tm.last_hit_at DESC NULLS LAST, tm.created_at DESC
-                    LIMIT 1
-                    """
-                ),
-                {"h": source_hash, "s": source_lang, "t": target_lang},
-            )
-        ).one_or_none()
-
+        hit = await self._repo.lookup_translation_memory(
+            source_hash=source_hash,
+            source_lang=source_lang,
+            target_lang=target_lang,
+        )
         if hit is not None:
-            mapping = hit._mapping
-            # Bump hit_count
-            await self._session.execute(
-                text(
-                    """
-                    UPDATE ai_translation_memory
-                    SET hit_count = hit_count + 1,
-                        last_hit_at = now()
-                    WHERE source_hash = :h
-                      AND source_lang = :s
-                      AND target_lang = :t
-                    """
-                ),
-                {"h": source_hash, "s": source_lang, "t": target_lang},
-            )
-            return TranslationResponse(
-                text=mapping["target_text"],
+            await self._repo.bump_translation_memory_hit(
+                source_hash=source_hash,
                 source_lang=source_lang,
                 target_lang=target_lang,
-                confidence=int(mapping["confidence"]),
-                model_slug=str(mapping["slug"]),
+            )
+            return TranslationResponse(
+                text=hit.target_text,
+                source_lang=source_lang,
+                target_lang=target_lang,
+                confidence=hit.confidence,
+                model_slug=hit.model_slug,
             )
 
         providers = await self._resolver.resolve_translation()
         req = TranslationRequest(text=text_input, source_lang=source_lang, target_lang=target_lang)
         resp: TranslationResponse = await self._walk_providers(providers, req)  # type: ignore[assignment]
 
-        mv_id = await self._resolve_model_version_id(resp.model_slug)
+        mv_id = await self._repo.resolve_model_version_id(resp.model_slug)
         if mv_id is not None:
-            await self._session.execute(
-                text(
-                    """
-                    INSERT INTO ai_translation_memory (
-                        source_hash, source_lang, target_lang, model_version_id,
-                        source_text, target_text, confidence, hit_count, last_hit_at
-                    )
-                    VALUES (:h, :s, :t, :mv, :src, :tgt, :conf, 0, NULL)
-                    ON CONFLICT (source_hash, source_lang, target_lang, model_version_id)
-                    DO NOTHING
-                    """
-                ),
-                {
-                    "h": source_hash,
-                    "s": source_lang,
-                    "t": target_lang,
-                    "mv": mv_id,
-                    "src": text_input,
-                    "tgt": resp.text,
-                    "conf": resp.confidence,
-                },
+            await self._repo.insert_translation_memory(
+                source_hash=source_hash,
+                source_lang=source_lang,
+                target_lang=target_lang,
+                model_version_id=mv_id,
+                source_text=text_input,
+                target_text=resp.text,
+                confidence=resp.confidence,
             )
 
         await self._log_generation(
@@ -574,25 +446,14 @@ class AiService:
 
         # Injection log if classifier says > 0.5
         if resp.injection_score > 0.5:
-            mv_id = await self._resolve_model_version_id(resp.model_slug)
+            mv_id = await self._repo.resolve_model_version_id(resp.model_slug)
             if mv_id is not None:
-                await self._session.execute(
-                    text(
-                        """
-                        INSERT INTO ai_prompt_injection_log (
-                            user_id, session_id, input_text, score,
-                            classifier_model_version_id, action
-                        )
-                        VALUES (:uid, :sid, :preview, :score, :mv, 'flagged')
-                        """
-                    ),
-                    {
-                        "uid": user_id,
-                        "sid": session_id,
-                        "preview": prompt[:512],
-                        "score": resp.injection_score,
-                        "mv": mv_id,
-                    },
+                await self._repo.insert_prompt_injection_log(
+                    user_id=user_id,
+                    session_id=session_id,
+                    input_text_preview=prompt,
+                    score=resp.injection_score,
+                    classifier_model_version_id=mv_id,
                 )
 
         await self._log_generation(
@@ -633,8 +494,6 @@ class AiService:
         if not query_text.strip():
             raise AiValidationError("query", "must not be empty")
         if kind != "heritage_text":
-            # Phase-1 only ships the heritage text channel; future kinds:
-            # heritage_image (CLIP-768), chunks (RAG).
             raise AiValidationError("kind", f"unsupported kind '{kind}'")
         filters = filters or {}
         limit = max(1, min(limit, 50))
@@ -642,55 +501,21 @@ class AiService:
         emb = await self.embed_text(text_input=query_text, language=language)
         vec_literal = _vector_literal(emb.vector)
 
-        clauses: list[str] = []
-        params: dict[str, object] = {"limit": limit, "lang": language}
-        if filters.get("kind_slug"):
-            clauses.append("h.kind_slug = :kind_slug")
-            params["kind_slug"] = filters["kind_slug"]
-        if filters.get("country_code"):
-            clauses.append("h.country_code = :country_code")
-            params["country_code"] = str(filters["country_code"]).upper()
-
-        where = ""
-        if clauses:
-            where = "AND " + " AND ".join(clauses)
-
-        rows = (
-            await self._session.execute(
-                text(
-                    f"""
-                    SELECT
-                        h.id           AS heritage_id,
-                        h.pub_id       AS pub_id,
-                        h.name         AS name,
-                        h.kind_slug    AS kind_slug,
-                        h.country_code AS country_code,
-                        (e.embedding <=> CAST(:vec AS vector)) AS distance
-                    FROM embeddings_heritage_text_e5_1024 e
-                    JOIN heritage_objects h ON h.id = e.heritage_id
-                    WHERE h.deleted_at IS NULL
-                      AND e.language_tag = :lang
-                      {where}
-                    ORDER BY e.embedding <=> CAST(:vec AS vector)
-                    LIMIT :limit
-                    """  # noqa: S608 — where is built from a closed set of bound params
-                ),
-                {**params, "vec": vec_literal},
+        hits_raw = await self._repo.vector_search_heritage_text(
+            vector_literal=vec_literal,
+            language=language,
+            limit=limit,
+            kind_slug=filters.get("kind_slug"),
+            country_code=filters.get("country_code"),
+        )
+        return [
+            VectorSearchHit(
+                heritage_id=h.heritage_id,
+                heritage_pub_id=h.heritage_pub_id,
+                score=max(0.0, 1.0 - h.distance),
+                name=h.name,
+                kind_slug=h.kind_slug,
+                country_code=h.country_code,
             )
-        ).all()
-
-        hits: list[VectorSearchHit] = []
-        for r in rows:
-            m = r._mapping
-            distance = float(m["distance"])
-            hits.append(
-                VectorSearchHit(
-                    heritage_id=m["heritage_id"],
-                    heritage_pub_id=m["pub_id"],
-                    score=max(0.0, 1.0 - distance),
-                    name=dict(m["name"]) if m["name"] else {},
-                    kind_slug=m["kind_slug"],
-                    country_code=m["country_code"],
-                )
-            )
-        return hits
+            for h in hits_raw
+        ]

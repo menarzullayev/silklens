@@ -56,3 +56,19 @@ class WeakPassword(IdentityError):
     def __init__(self, reason: str) -> None:
         super().__init__(reason)
         self.reason = reason
+
+
+class AccountLocked(IdentityError):
+    """Brute-force defence: too many failed logins from this identifier+IP.
+
+    Maps to HTTP 423 LOCKED. ``retry_after_seconds`` is exposed so the API
+    layer can set a ``Retry-After`` header. Per Agent 2 §4 / SEC-005.
+    """
+
+    code = "identity.account_locked"
+    status_code = 423
+
+    def __init__(self, retry_after_seconds: int, *, reason: str = "too_many_failed_logins") -> None:
+        super().__init__(f"account locked: {reason} (retry after {retry_after_seconds}s)")
+        self.retry_after_seconds = retry_after_seconds
+        self.reason = reason

@@ -358,3 +358,65 @@ async def test_transition_invalid_action_returns_422(
     )
     assert response.status_code == 422
     assert response.json()["detail"]["code"] == "heritage.invalid_transition"
+
+
+# --- SEC-016: PATCH status guarded by heritage:moderate --------------------
+
+
+@pytest.mark.asyncio
+async def test_patch_status_requires_moderate_permission(
+    http: AsyncClient, db_session: AsyncSession
+) -> None:
+    """SEC-016: a contributor (no moderate) cannot advance the FSM via PATCH.
+
+    The role ``contributor`` carries ``heritage:update`` but **not**
+    ``heritage:moderate``; the PATCH endpoint must reject the request with
+    HTTP 403 rather than silently dropping the field or applying it.
+    """
+    admin_token, _ = await _provision_admin(http, db_session)
+    created = await _create_object(http, admin_token)
+    pub_id = created["pub_id"]
+
+    contributor = await _register(http)
+    await _grant_role(db_session, contributor["user"]["pub_id"], "contributor")
+    contributor_token = contributor["tokens"]["access_token"]
+
+    response = await http.patch(
+        f"/v1/heritage/{pub_id}",
+        json={"status": "published"},
+        headers={"Authorization": f"Bearer {contributor_token}"},
+    )
+    assert response.status_code == 403, response.text
+    body = response.json()
+    assert body["detail"]["permission"] == "heritage:moderate"
+
+    # The state on disk is untouched.
+    row_status = (
+        await db_session.execute(
+            text("SELECT status FROM heritage_objects WHERE pub_id = :p"),
+            {"p": pub_id},
+        )
+    ).scalar_one()
+    assert row_status == "draft"
+
+
+@pytest.mark.asyncio
+async def test_patch_without_status_field_still_succeeds_for_contributor(
+    http: AsyncClient, db_session: AsyncSession
+) -> None:
+    """The SEC-016 guard only kicks in when ``status`` is in the request body."""
+    admin_token, _ = await _provision_admin(http, db_session)
+    created = await _create_object(http, admin_token)
+    pub_id = created["pub_id"]
+
+    contributor = await _register(http)
+    await _grant_role(db_session, contributor["user"]["pub_id"], "contributor")
+    contributor_token = contributor["tokens"]["access_token"]
+
+    response = await http.patch(
+        f"/v1/heritage/{pub_id}",
+        json={"tags": ["editable-by-contributor"]},
+        headers={"Authorization": f"Bearer {contributor_token}"},
+    )
+    assert response.status_code == 200
+    assert response.json()["tags"] == ["editable-by-contributor"]

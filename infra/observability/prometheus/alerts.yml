@@ -1,0 +1,108 @@
+# SilkLens Prometheus alert rules.
+#
+# Severity convention:
+#   - severity: page  -> wake someone up (PagerDuty / OnCall)
+#   - severity: warn  -> Slack #ops-warnings, no paging
+#
+# All expressions use the silklens_* custom metrics defined in
+# src/core/metrics.py plus the audit_log row count derived from
+# postgres_exporter (`silklens_audit_log_rows_total` recording rule).
+
+groups:
+  - name: silklens-api
+    interval: 30s
+    rules:
+      - alert: SilkLensApiErrorRate
+        expr: |
+          (
+            sum(rate(silklens_http_requests_total{status=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(silklens_http_requests_total[5m])), 1)
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: page
+          service: silklens-api
+        annotations:
+          summary: "SilkLens API 5xx rate above 1%"
+          description: "Sustained 5xx error ratio is {{ $value | humanizePercentage }} over the last 5 minutes."
+          runbook: "https://docs.silklens.io/runbooks/api-error-rate"
+
+      - alert: SilkLensApiP95Latency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(silklens_http_request_duration_seconds_bucket[5m]))
+          ) > 2
+        for: 10m
+        labels:
+          severity: page
+          service: silklens-api
+        annotations:
+          summary: "SilkLens API p95 latency above 2s"
+          description: "Global p95 has been {{ $value }}s for 10 minutes."
+          runbook: "https://docs.silklens.io/runbooks/api-latency"
+
+  - name: silklens-db
+    interval: 30s
+    rules:
+      - alert: SilkLensDbPoolExhausted
+        expr: |
+          silklens_db_pool_in_use
+          /
+          clamp_min(silklens_db_pool_size, 1) > 0.9
+        for: 5m
+        labels:
+          severity: page
+          service: silklens-api
+          component: db-pool
+        annotations:
+          summary: "SilkLens DB pool >90% saturated"
+          description: "Pool utilisation {{ $value | humanizePercentage }} — new requests will queue."
+          runbook: "https://docs.silklens.io/runbooks/db-pool"
+
+  - name: silklens-ai
+    interval: 1m
+    rules:
+      - alert: SilkLensAiInferenceFailing
+        expr: |
+          (
+            sum(rate(silklens_http_requests_total{route=~"/v1/ai/.*",status=~"5.."}[10m]))
+            /
+            clamp_min(sum(rate(silklens_http_requests_total{route=~"/v1/ai/.*"}[10m])), 1)
+          ) > 0.05
+        for: 10m
+        labels:
+          severity: warn
+          service: silklens-ai
+        annotations:
+          summary: "AI inference failure rate >5%"
+          description: "{{ $value | humanizePercentage }} of /v1/ai/* requests failing. Check provider fallback chain."
+          runbook: "https://docs.silklens.io/runbooks/ai-fallback"
+
+  - name: silklens-audit
+    interval: 1m
+    rules:
+      - alert: SilkLensAuditLogStalled
+        # Audit log row count is exported as the recording rule
+        # `silklens_audit_log_rows_total`. The alert fires when the count is
+        # flat for 10 minutes while incoming HTTP traffic is non-trivial
+        # (>1 req/s) — implying the audit pipeline has stopped writing
+        # despite normal load. Recording rule defined in recording.yml.
+        expr: |
+          (
+            increase(silklens_audit_log_rows_total[10m]) == 0
+          )
+          and
+          (
+            sum(rate(silklens_http_requests_total[5m])) > 1
+          )
+        for: 10m
+        labels:
+          severity: warn
+          service: silklens-api
+          component: audit
+        annotations:
+          summary: "Audit log stalled while traffic is healthy"
+          description: "No new audit rows for 10m despite >1 req/s. Inspect app.audit() chain integrity."
+          runbook: "https://docs.silklens.io/runbooks/audit-stalled"

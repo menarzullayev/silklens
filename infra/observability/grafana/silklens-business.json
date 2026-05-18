@@ -1,0 +1,140 @@
+{
+  "uid": "silklens-business",
+  "title": "SilkLens — Business",
+  "tags": ["silklens", "business"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-7d", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "country",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(silklens_business_heritage_views_total, country)",
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Signups (24h)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(increase(silklens_business_signups_total[24h]))", "legendFormat": "signups" }
+      ],
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "title": "Heritage views (24h)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(increase(silklens_business_heritage_views_total[24h]))", "legendFormat": "views" }
+      ],
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 }
+    },
+    {
+      "id": 3,
+      "title": "Revenue (24h USD)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(increase(silklens_business_revenue_usd_total[24h]))", "legendFormat": "USD" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" } },
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 }
+    },
+    {
+      "id": 4,
+      "title": "Premium conversion (signups → paid, 7d)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "(sum(increase(silklens_business_revenue_usd_total[7d])) > 0) / clamp_min(sum(increase(silklens_business_signups_total[7d])), 1)",
+          "legendFormat": "rate"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 }
+    },
+    {
+      "id": 5,
+      "title": "Signups over time",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(silklens_business_signups_total[1h]))", "legendFormat": "signups/hr" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 }
+    },
+    {
+      "id": 6,
+      "title": "Revenue over time",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(silklens_business_revenue_usd_total[1h])) * 3600", "legendFormat": "USD/hr" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 }
+    },
+    {
+      "id": 7,
+      "title": "Heritage views by country",
+      "type": "bargauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "topk(10, sum by (country) (increase(silklens_business_heritage_views_total{country=~\"$country\"}[24h])))",
+          "legendFormat": "{{country}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 }
+    },
+    {
+      "id": 8,
+      "title": "Heritage view rate by country",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (country) (rate(silklens_business_heritage_views_total{country=~\"$country\"}[15m]))",
+          "legendFormat": "{{country}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 }
+    },
+    {
+      "id": 9,
+      "title": "Views per country (pie)",
+      "type": "piechart",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (country) (increase(silklens_business_heritage_views_total[7d]))",
+          "legendFormat": "{{country}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 }
+    },
+    {
+      "id": 10,
+      "title": "Signups vs revenue (overlay)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(silklens_business_signups_total[1h])) * 3600", "legendFormat": "signups/hr" },
+        { "expr": "sum(rate(silklens_business_revenue_usd_total[1h])) * 3600", "legendFormat": "USD/hr" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 }
+    }
+  ]
+}

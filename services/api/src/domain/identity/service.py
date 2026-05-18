@@ -21,12 +21,17 @@ from src.domain.identity.entities import (
 )
 from src.domain.identity.errors import (
     AccountInactive,
+    AccountLocked,
     EmailAlreadyRegistered,
     InvalidCredentials,
     RefreshTokenReused,
     WeakPassword,
 )
-from src.domain.identity.repositories import SessionRepository, UserRepository
+from src.domain.identity.repositories import (
+    LoginAttemptRepository,
+    SessionRepository,
+    UserRepository,
+)
 
 
 class PasswordHasher(Protocol):
@@ -84,12 +89,20 @@ class AuthService:
         hasher: PasswordHasher,
         tokens: TokenIssuer,
         clock: Clock | None = None,
+        login_attempts: LoginAttemptRepository | None = None,
+        lockout_max_failures: int = 5,
+        lockout_window_seconds: int = 600,
+        lockout_duration_seconds: int = 900,
     ) -> None:
         self._users = users
         self._sessions = sessions
         self._hasher = hasher
         self._tokens = tokens
         self._clock = clock or SystemClock()
+        self._login_attempts = login_attempts
+        self._lockout_max_failures = lockout_max_failures
+        self._lockout_window_seconds = lockout_window_seconds
+        self._lockout_duration_seconds = lockout_duration_seconds
 
     # --- registration ---------------------------------------------------
 
@@ -123,6 +136,16 @@ class AuthService:
             password_hash=password_hash,
             password_algorithm=self._hasher.algorithm,
         )
+        # Business metric: count *successful* signups only — failed validation
+        # / duplicate email never reaches this point so the counter mirrors
+        # the user.registered.v1 emission downstream.
+        try:
+            from src.core.metrics import business_signups_total
+
+            business_signups_total.inc()
+        except Exception:  # noqa: S110
+            # Observability is best-effort — never break a real signup.
+            pass
         return user
 
     # --- login ----------------------------------------------------------
@@ -139,23 +162,51 @@ class AuthService:
             # Phone-OTP login goes through a different flow; not yet implemented.
             raise InvalidCredentials("phone-otp login not yet supported")
 
-        found = await self._users.find_by_email(
-            credentials.email.strip().lower(), tenant_id=tenant_id
-        )
+        normalized_email = credentials.email.strip().lower()
+
+        # Brute-force gate (Agent 2 §4 / SEC-005). Check first so a locked
+        # account never burns Argon2 CPU on subsequent attempts.
+        await self._enforce_lockout(identifier=normalized_email, ip_address=ip_address)
+
+        async def _fail(reason: str) -> None:
+            await self._record_attempt(
+                identifier=normalized_email,
+                succeeded=False,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                failure_reason=reason,
+            )
+            # Re-check immediately: this failure may have crossed the
+            # threshold. We promote to 423 so the next call from the same
+            # ``(identifier, ip)`` short-circuits before Argon2 work.
+            await self._enforce_lockout(identifier=normalized_email, ip_address=ip_address)
+
+        found = await self._users.find_by_email(normalized_email, tenant_id=tenant_id)
         if found is None:
+            await _fail("unknown_email")
             raise InvalidCredentials("email or password is incorrect")
         user, _email_row = found
 
         if not user.is_active:
+            await _fail("account_inactive")
             raise AccountInactive(user.status.value)
 
         password_record = await self._users.get_password_hash(user.id, user.residency_region)
         if password_record is None:
+            await _fail("no_password_set")
             raise InvalidCredentials("no password set for this account")
         password_hash, _algorithm = password_record
         if not self._hasher.verify(password_hash, credentials.password):
+            await _fail("invalid_password")
             raise InvalidCredentials("email or password is incorrect")
 
+        await self._record_attempt(
+            identifier=normalized_email,
+            succeeded=True,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            failure_reason=None,
+        )
         return await self._issue_session(user, ip_address=ip_address, user_agent=user_agent)
 
     # --- refresh -------------------------------------------------------
@@ -220,3 +271,46 @@ class AuthService:
             access_token_expires_at=access_expires,
             refresh_token_expires_at=refresh_expires,
         )
+
+    # --- brute-force defence --------------------------------------------
+
+    async def _record_attempt(
+        self,
+        *,
+        identifier: str,
+        succeeded: bool,
+        ip_address: str | None,
+        user_agent: str | None,
+        failure_reason: str | None,
+    ) -> None:
+        if self._login_attempts is None:
+            return
+        await self._login_attempts.record_attempt(
+            identifier=identifier,
+            succeeded=succeeded,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            failure_reason=failure_reason,
+        )
+
+    async def _enforce_lockout(self, *, identifier: str, ip_address: str | None) -> None:
+        """Raise :class:`AccountLocked` when the identifier has accumulated
+        ``lockout_max_failures`` failures inside ``lockout_window_seconds``.
+
+        Per Agent 2 §4 the canonical key is the identifier (normalized email
+        or phone). ``ip_address`` is recorded for forensics but does NOT
+        narrow the lockout query — that would let an IP-rotating attacker
+        keep guessing forever. The lockout lasts
+        ``lockout_duration_seconds`` (surfaced via ``Retry-After`` at the
+        API layer).
+        """
+        del ip_address  # logged on the row; not used for the threshold check
+        if self._login_attempts is None:
+            return
+        failures = await self._login_attempts.count_recent_failures(
+            identifier=identifier,
+            ip_address=None,
+            within_seconds=self._lockout_window_seconds,
+        )
+        if failures >= self._lockout_max_failures:
+            raise AccountLocked(self._lockout_duration_seconds)

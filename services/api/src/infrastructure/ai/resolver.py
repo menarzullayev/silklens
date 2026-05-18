@@ -10,10 +10,17 @@ The mapping ``model_slug → provider class`` is intentionally explicit (a
 small dict). Adding a new real provider means adding a class to
 ``infrastructure.ai`` and a row to the dict; the resolver picks it up
 automatically once the admin enables the model.
+
+**Real-Anthropic preference (FAZA 4):** when mocks are disabled AND an
+``ANTHROPIC_API_KEY`` is present in the environment the resolver prepends a
+real :class:`AnthropicLlmProvider` to every TEXT-task chain, so it tries the
+real model first and falls through to whatever the DB chain configured (mock
+included). With the key missing the resolver is unchanged.
 """
 
 from __future__ import annotations
 
+import os
 from collections.abc import Callable
 from typing import Any
 
@@ -21,6 +28,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.logging import get_logger
+from src.core.settings import get_settings
 from src.domain.ai.entities import AiTaskType
 from src.infrastructure.ai.anthropic_provider import AnthropicLlmProvider
 from src.infrastructure.ai.mock_providers import (
@@ -102,11 +110,28 @@ class ProviderResolver:
             except Exception as exc:  # pragma: no cover — defensive
                 log.warning("ai.resolver.factory_failed", model_slug=slug, error=str(exc))
                 continue
+
+        # FAZA-4 preference: if mocks are disabled and an ANTHROPIC_API_KEY is
+        # present, ensure a real Anthropic provider is the first choice for
+        # TEXT tasks even when the DB chain hasn't been seeded with it.
+        if task_type is AiTaskType.TEXT and os.environ.get("ANTHROPIC_API_KEY"):
+            model = get_settings().anthropic_model_default
+            already_real = any(isinstance(p, AnthropicLlmProvider) for p in out)
+            if not already_real:
+                try:
+                    out.insert(0, AnthropicLlmProvider(model_id=model))
+                except Exception as exc:  # pragma: no cover — defensive
+                    log.warning("ai.resolver.anthropic_init_failed", error=str(exc))
+
         if not out:
             # Better to fall back to a mock than to fail the whole request when
             # the registry is empty (e.g. fresh install pre-seed).
             log.info("ai.resolver.fallback_to_mock", task_type=task_type.value)
             out.append(_TASK_DEFAULT_MOCK[task_type]())
+        # Always end the chain with a deterministic mock so a transient
+        # Anthropic 5xx doesn't take the whole request down.
+        if task_type is AiTaskType.TEXT and not isinstance(out[-1], MockLlmProvider):
+            out.append(MockLlmProvider())
         return out
 
     async def resolve_vision(self) -> list[Any]:

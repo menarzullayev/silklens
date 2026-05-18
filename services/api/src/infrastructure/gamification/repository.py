@@ -119,38 +119,49 @@ class SqlGamificationRepository:
         context: dict,
         tenant_id: UUID,
     ) -> tuple[XpEvent, bool]:
-        # The unique index covers (user_id, idempotency_key, created_at).
-        # Cross-partition uniqueness is enforced by the application putting
-        # the date in the key itself (Agent 5 §5.1 — "visit:USER:HER:2026-05-18").
-        # We try to upsert by guarding on (user_id, idempotency_key) in the
-        # current partition window; if a row already exists we return it.
-        existing = await self._session.execute(
+        # Idempotent insert in a *single* round-trip. The unique index on
+        # (user_id, idempotency_key, created_at) includes ``created_at`` only
+        # because Postgres requires the partition key on partitioned-table
+        # uniques; the application-level invariant is "one row per
+        # (user, idempotency_key)". A CTE issues the insert when no prior row
+        # matches that pair and returns the surviving row in both cases:
+        #
+        #   * fresh insert → ``ins`` returns the new event, ``created=true``
+        #   * already exists → ``existing`` returns the prior event,
+        #     ``created=false``
+        #
+        # Cross-partition uniqueness still depends on the contract that
+        # **callers embed the date** in ``idempotency_key``
+        # (e.g. "visit:USER:HER:2026-05-18") so retries always land in the
+        # same monthly RANGE partition (Agent 5 §5.1).
+        result = await self._session.execute(
             text(
                 """
-                SELECT id, user_id, residency_region, source_kind, source_id,
-                       delta, idempotency_key, context, created_at
-                FROM xp_events
-                WHERE user_id = :u AND idempotency_key = :k
-                ORDER BY created_at DESC
-                LIMIT 1
-                """
-            ),
-            {"u": user_id, "k": idempotency_key},
-        )
-        existing_row = existing.one_or_none()
-        if existing_row is not None:
-            return _to_event(existing_row), False
-
-        inserted = await self._session.execute(
-            text(
-                """
-                INSERT INTO xp_events (
-                    user_id, residency_region, source_kind, source_id,
-                    delta, idempotency_key, context
+                WITH existing AS (
+                    SELECT id, user_id, residency_region, source_kind, source_id,
+                           delta, idempotency_key, context, created_at,
+                           false AS created
+                    FROM xp_events
+                    WHERE user_id = :u AND idempotency_key = :k
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                ),
+                ins AS (
+                    INSERT INTO xp_events (
+                        user_id, residency_region, source_kind, source_id,
+                        delta, idempotency_key, context
+                    )
+                    SELECT :u, :r, :src, :sid, :d, :k, CAST(:ctx AS jsonb)
+                    WHERE NOT EXISTS (SELECT 1 FROM existing)
+                    ON CONFLICT (user_id, idempotency_key, created_at) DO NOTHING
+                    RETURNING id, user_id, residency_region, source_kind, source_id,
+                              delta, idempotency_key, context, created_at,
+                              true AS created
                 )
-                VALUES (:u, :r, :src, :sid, :d, :k, CAST(:ctx AS jsonb))
-                RETURNING id, user_id, residency_region, source_kind, source_id,
-                          delta, idempotency_key, context, created_at
+                SELECT * FROM ins
+                UNION ALL
+                SELECT * FROM existing
+                LIMIT 1
                 """
             ),
             {
@@ -163,21 +174,49 @@ class SqlGamificationRepository:
                 "ctx": jdump(context),
             },
         )
-        event = _to_event(inserted.one())
+        row = result.one_or_none()
+        if row is None:
+            # Concurrent racer won — fall back to lookup. Possible when two
+            # transactions both saw "not exists" simultaneously and one lost
+            # the ON CONFLICT race in the same monthly partition.
+            existing = await self._session.execute(
+                text(
+                    """
+                    SELECT id, user_id, residency_region, source_kind, source_id,
+                           delta, idempotency_key, context, created_at
+                    FROM xp_events
+                    WHERE user_id = :u AND idempotency_key = :k
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                    """
+                ),
+                {"u": user_id, "k": idempotency_key},
+            )
+            existing_row = existing.one_or_none()
+            if existing_row is None:
+                raise RuntimeError(
+                    "xp_events: insert and lookup both returned nothing for "
+                    f"user_id={user_id} idempotency_key={idempotency_key!r}"
+                )
+            return _to_event(existing_row), False
 
-        await emit_event_if_registered(
-            self._session,
-            tenant_id=tenant_id,
-            event_name="xp.awarded.v1",
-            aggregate_type="user",
-            aggregate_id=user_id,
-            payload={
-                "delta": delta,
-                "source_kind": source_kind.value,
-                "idempotency_key": idempotency_key,
-            },
-        )
-        return event, True
+        created = bool(row._mapping["created"])
+        event = _to_event(row)
+
+        if created:
+            await emit_event_if_registered(
+                self._session,
+                tenant_id=tenant_id,
+                event_name="xp.awarded.v1",
+                aggregate_type="user",
+                aggregate_id=user_id,
+                payload={
+                    "delta": delta,
+                    "source_kind": source_kind.value,
+                    "idempotency_key": idempotency_key,
+                },
+            )
+        return event, created
 
     async def get_balance(self, user_id: UUID) -> XpBalance | None:
         row = await self._session.execute(
@@ -245,7 +284,10 @@ class SqlGamificationRepository:
                 {"u": user_id, "d": delta},
             )
         balance = await self.get_balance(user_id)
-        assert balance is not None
+        if balance is None:
+            raise RuntimeError(
+                f"xp_balances row vanished after upsert for user_id={user_id}"
+            )
         return balance
 
     # --- Levels ----------------------------------------------------------
@@ -418,7 +460,10 @@ class SqlGamificationRepository:
             upsert_params,
         )
         streak = await self.get_streak(user_id)
-        assert streak is not None
+        if streak is None:
+            raise RuntimeError(
+                f"streaks row vanished after upsert for user_id={user_id}"
+            )
         return streak
 
     # --- Leaderboards ----------------------------------------------------

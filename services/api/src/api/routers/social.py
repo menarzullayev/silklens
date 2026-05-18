@@ -65,10 +65,31 @@ class FriendInviteRequest(BaseModel):
 
 
 class FriendInviteOut(BaseModel):
+    """Response shape for the friend-invite POST + accept routes.
+
+    SEC-021: the raw ``token`` is only meaningful to the inviter (who needs
+    to share it out-of-band) and the invited party (who needs it to accept).
+    Once the row has been read back from any other path, we mask the field
+    so it doesn't leak via screenshot / log / response replay. The
+    ``token = "***"`` sentinel is also what the admin panel's mask-aware
+    components render. Admin callers can re-fetch the underlying row via the
+    admin endpoint if they need the raw value.
+    """
+
     id: UUID
     token: str
     status: str
     expires_at: datetime
+
+    @classmethod
+    def fresh(cls, *, id: UUID, token: str, status: str, expires_at: datetime) -> FriendInviteOut:
+        """Builder used at *creation* time; returns the raw token verbatim."""
+        return cls(id=id, token=token, status=status, expires_at=expires_at)
+
+    @classmethod
+    def masked(cls, *, id: UUID, status: str, expires_at: datetime) -> FriendInviteOut:
+        """Builder used for subsequent reads; the token field is redacted."""
+        return cls(id=id, token="***", status=status, expires_at=expires_at)  # noqa: S106 — explicit mask sentinel, not a credential
 
 
 class FriendAcceptRequest(BaseModel):
@@ -188,7 +209,9 @@ async def send_friend_invitation(
     except SocialError as exc:
         await db.rollback()
         _raise(exc)
-    return FriendInviteOut(
+    # POST is the *only* creation point — the inviter gets the raw token so
+    # they can paste it into a message/share link out-of-band.
+    return FriendInviteOut.fresh(
         id=invitation.id,
         token=invitation.token,
         status=invitation.status.value,
@@ -208,9 +231,11 @@ async def accept_friend_invitation(
     except SocialError as exc:
         await db.rollback()
         _raise(exc)
-    return FriendInviteOut(
+    # SEC-021: this is a "subsequent read" of the invitation row — the caller
+    # already had the token (they POSTed it). Mask before returning so the
+    # value can't leak via a response log or shared screenshot.
+    return FriendInviteOut.masked(
         id=invitation.id,
-        token=invitation.token,
         status=invitation.status.value,
         expires_at=invitation.expires_at,
     )

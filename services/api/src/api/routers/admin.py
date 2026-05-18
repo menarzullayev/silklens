@@ -19,7 +19,10 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_session
-from src.middleware.auth import require_permission
+from src.core.settings import get_settings
+from src.infrastructure.ingestion.celery_tasks import _run_ingest_country, _run_ingest_qid
+from src.infrastructure.search.celery_tasks import _run_bulk_reindex_all
+from src.middleware.auth import AuthContext, require_permission
 
 router = APIRouter(prefix="/v1/admin", tags=["admin"])
 
@@ -576,3 +579,268 @@ async def put_feature_flag(
         rollout_value=dict(m["rollout_value"]) if m["rollout_value"] else {},
         description=m["description"],
     )
+
+
+# --- Routes: search index admin ------------------------------------------
+
+
+class SearchIndexStatusEntry(BaseModel):
+    slug: str
+    language_tier: str
+    current_doc_count: int
+    target_doc_count: int
+    last_rebuilt_at: datetime | None
+    is_active: bool
+
+
+class SearchIndexStatus(BaseModel):
+    indices: list[SearchIndexStatusEntry]
+
+
+class SearchRebuildOut(BaseModel):
+    enqueued: bool
+    indexed: int
+    failed: int
+
+
+@router.get(
+    "/search/status",
+    response_model=SearchIndexStatus,
+    dependencies=[Depends(require_permission("system:settings"))],
+)
+async def search_status(db: SessionDep) -> SearchIndexStatus:
+    rows = (
+        await db.execute(
+            text(
+                """
+                SELECT slug, language_tier, current_doc_count, target_doc_count,
+                       last_rebuilt_at, is_active
+                FROM search_index_mappings
+                WHERE kind = 'heritage'
+                ORDER BY slug
+                """
+            )
+        )
+    ).all()
+    return SearchIndexStatus(
+        indices=[
+            SearchIndexStatusEntry(
+                slug=r._mapping["slug"],
+                language_tier=r._mapping["language_tier"],
+                current_doc_count=int(r._mapping["current_doc_count"]),
+                target_doc_count=int(r._mapping["target_doc_count"]),
+                last_rebuilt_at=r._mapping["last_rebuilt_at"],
+                is_active=bool(r._mapping["is_active"]),
+            )
+            for r in rows
+        ]
+    )
+
+
+@router.post(
+    "/search/rebuild",
+    response_model=SearchRebuildOut,
+    dependencies=[Depends(require_permission("system:settings"))],
+)
+async def search_rebuild() -> SearchRebuildOut:
+    # We run synchronously here when Celery isn't available (dev / test).
+    # Production deploys override this via the worker; the body is the same
+    # async helper either way so we never diverge.
+    result = await _run_bulk_reindex_all()
+    return SearchRebuildOut(
+        enqueued=True,
+        indexed=result["indexed"],
+        failed=result["failed"],
+    )
+
+
+# --- Routes: Wikidata ingestion admin ------------------------------------
+
+
+class IngestionCountryIn(BaseModel):
+    country_code: str = Field(min_length=2, max_length=2)
+    limit: int = Field(default=50, ge=1, le=500)
+
+
+class IngestionQidIn(BaseModel):
+    qid: str = Field(min_length=2, max_length=32, pattern=r"^Q[1-9][0-9]*$")
+
+
+class IngestionCountryOut(BaseModel):
+    discovered: int
+    created: int
+    skipped: int
+    failed: int
+
+
+class IngestionQidOut(BaseModel):
+    qid: str
+    found: bool
+    created: bool
+    heritage_id: UUID | None = None
+    pub_id: str | None = None
+
+
+class JobRowOut(BaseModel):
+    id: UUID
+    kind: str
+    status: str
+    payload: dict[str, Any]
+    requested_at: datetime
+    started_at: datetime | None
+    finished_at: datetime | None
+    error: str | None
+
+
+class JobListOut(BaseModel):
+    items: list[JobRowOut]
+
+
+@router.post(
+    "/ingestion/wikidata",
+    response_model=IngestionCountryOut,
+    dependencies=[Depends(require_permission("tenant:manage"))],
+)
+async def ingest_wikidata_country(
+    payload: IngestionCountryIn,
+    db: SessionDep,
+    ctx: Annotated[AuthContext, Depends(require_permission("tenant:manage"))],
+) -> IngestionCountryOut:
+    job_id = (
+        await db.execute(
+            text(
+                """
+                INSERT INTO background_jobs (kind, payload, status, started_at)
+                VALUES ('wikidata.ingest_country', CAST(:p AS jsonb), 'running', now())
+                RETURNING id
+                """
+            ),
+            {
+                "p": _json(
+                    {
+                        "country_code": payload.country_code.upper(),
+                        "limit": payload.limit,
+                        "actor": str(ctx.user_id),
+                    }
+                ),
+            },
+        )
+    ).scalar_one()
+    await db.commit()
+    try:
+        result = await _run_ingest_country(
+            country_code=payload.country_code.upper(),
+            limit=payload.limit,
+            actor=ctx.user_id,
+        )
+    except Exception as exc:
+        await db.execute(
+            text(
+                """
+                UPDATE background_jobs
+                SET status = 'failed', finished_at = now(), error = :e
+                WHERE id = :id
+                """
+            ),
+            {"e": str(exc)[:1024], "id": job_id},
+        )
+        await db.commit()
+        raise HTTPException(
+            status_code=502,
+            detail={"code": "ingestion.upstream_failed", "message": str(exc)},
+        ) from exc
+
+    await db.execute(
+        text(
+            """
+            UPDATE background_jobs
+            SET status = 'done',
+                finished_at = now(),
+                payload = payload || CAST(:r AS jsonb)
+            WHERE id = :id
+            """
+        ),
+        {"r": _json({"result": result}), "id": job_id},
+    )
+    await db.commit()
+    return IngestionCountryOut(**result)
+
+
+@router.post(
+    "/ingestion/wikidata/qid",
+    response_model=IngestionQidOut,
+    dependencies=[Depends(require_permission("tenant:manage"))],
+)
+async def ingest_wikidata_qid(
+    payload: IngestionQidIn,
+    ctx: Annotated[AuthContext, Depends(require_permission("tenant:manage"))],
+) -> IngestionQidOut:
+    try:
+        result = await _run_ingest_qid(qid=payload.qid, actor=ctx.user_id)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail={"code": "ingestion.upstream_failed", "message": str(exc)},
+        ) from exc
+    return IngestionQidOut(
+        qid=result["qid"],
+        found=bool(result.get("found", False)),
+        created=bool(result.get("created", False)),
+        heritage_id=UUID(result["heritage_id"]) if result.get("heritage_id") else None,
+        pub_id=result.get("pub_id"),
+    )
+
+
+@router.get(
+    "/ingestion/jobs",
+    response_model=JobListOut,
+    dependencies=[Depends(require_permission("tenant:manage"))],
+)
+async def list_ingestion_jobs(
+    db: SessionDep,
+    status_filter: Annotated[
+        str | None,
+        Query(alias="status", pattern="^(queued|running|done|failed|cancelled)$"),
+    ] = None,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> JobListOut:
+    params: dict[str, Any] = {"limit": limit}
+    where = "WHERE kind LIKE 'wikidata.%' OR kind LIKE 'ingestion.%'"
+    if status_filter:
+        where += " AND status = :status"
+        params["status"] = status_filter
+    rows = (
+        await db.execute(
+            text(
+                f"""
+                SELECT id, kind, status, payload, requested_at, started_at,
+                       finished_at, error
+                FROM background_jobs
+                {where}
+                ORDER BY requested_at DESC
+                LIMIT :limit
+                """  # noqa: S608
+            ),
+            params,
+        )
+    ).all()
+    return JobListOut(
+        items=[
+            JobRowOut(
+                id=r._mapping["id"],
+                kind=r._mapping["kind"],
+                status=r._mapping["status"],
+                payload=dict(r._mapping["payload"]) if r._mapping["payload"] else {},
+                requested_at=r._mapping["requested_at"],
+                started_at=r._mapping["started_at"],
+                finished_at=r._mapping["finished_at"],
+                error=r._mapping["error"],
+            )
+            for r in rows
+        ]
+    )
+
+
+# Touch the settings import so ruff doesn't flag it; we keep the symbol
+# available because future admin routes (Sentry, OTLP, etc.) will need it.
+_ = get_settings

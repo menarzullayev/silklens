@@ -46,3 +46,21 @@ class UnknownLicenseType(MediaError):
 class MediaStorageError(MediaError):
     code = "media.storage_failed"
     status_code = 502
+
+
+class MediaUnsupportedMime(MediaError):
+    """Raised when claimed MIME mismatches sniffed bytes or isn't allow-listed.
+
+    HTTP 415 Unsupported Media Type per RFC 9110.
+    """
+
+    code = "media.unsupported_mime"
+    status_code = 415
+
+    def __init__(self, claimed: str, sniffed: str | None, reason: str) -> None:
+        super().__init__(
+            f"unsupported media type (claimed={claimed!r}, sniffed={sniffed!r}): {reason}"
+        )
+        self.claimed = claimed
+        self.sniffed = sniffed
+        self.reason = reason

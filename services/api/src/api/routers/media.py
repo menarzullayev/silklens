@@ -28,6 +28,7 @@ from src.domain.media.service import MediaService, MediaStorage
 from src.infrastructure.media.minio_client import get_minio_client
 from src.infrastructure.media.repository import SqlMediaRepository
 from src.middleware.auth import require_user
+from src.middleware.ratelimit import rate_limit
 
 router = APIRouter(prefix="/v1/media", tags=["media"])
 
@@ -132,6 +133,7 @@ async def _has_perm(db: AsyncSession, ctx: object, perm: str) -> bool:
     "/uploads",
     response_model=MediaUploadOut,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit("20/minute", per="user", scope="media:upload"))],
 )
 async def upload_media(
     db: SessionDep,

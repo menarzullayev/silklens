@@ -1,0 +1,164 @@
+{
+  "uid": "silklens-ai",
+  "title": "SilkLens — AI inference",
+  "tags": ["silklens", "ai"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-24h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "model",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(silklens_ai_inference_duration_seconds_count, model)",
+        "includeAll": true,
+        "multi": true
+      },
+      {
+        "name": "task_type",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(silklens_ai_inference_duration_seconds_count, task_type)",
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Inference rate (per minute)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (model) (rate(silklens_ai_inference_duration_seconds_count{model=~\"$model\",task_type=~\"$task_type\"}[1m]))",
+          "legendFormat": "{{model}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "title": "Latency p95 per model",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, model) (rate(silklens_ai_inference_duration_seconds_bucket{task_type=~\"$task_type\"}[5m])))",
+          "legendFormat": "p95 {{model}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    },
+    {
+      "id": 3,
+      "title": "Tokens in / minute",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (model) (rate(silklens_ai_tokens_used_total{direction=\"in\",model=~\"$model\"}[1m]))",
+          "legendFormat": "in {{model}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+    },
+    {
+      "id": 4,
+      "title": "Tokens out / minute",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (model) (rate(silklens_ai_tokens_used_total{direction=\"out\",model=~\"$model\"}[1m]))",
+          "legendFormat": "out {{model}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }
+    },
+    {
+      "id": 5,
+      "title": "Provider mix",
+      "type": "piechart",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (provider) (rate(silklens_ai_inference_duration_seconds_count[15m]))",
+          "legendFormat": "{{provider}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 16 }
+    },
+    {
+      "id": 6,
+      "title": "Latency p99 per model",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (le, model) (rate(silklens_ai_inference_duration_seconds_bucket[5m])))",
+          "legendFormat": "p99 {{model}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 16 }
+    },
+    {
+      "id": 7,
+      "title": "Latency drift (p95 1h vs 24h)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, model) (rate(silklens_ai_inference_duration_seconds_bucket[1h]))) / clamp_min(histogram_quantile(0.95, sum by (le, model) (rate(silklens_ai_inference_duration_seconds_bucket[24h]))), 0.001)",
+          "legendFormat": "{{model}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 }
+    },
+    {
+      "id": 8,
+      "title": "Inference cost proxy (out tokens × rate)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (model) (rate(silklens_ai_tokens_used_total{direction=\"out\"}[5m]))",
+          "legendFormat": "{{model}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 }
+    },
+    {
+      "id": 9,
+      "title": "Inference volume by task type",
+      "type": "bargauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (task_type) (rate(silklens_ai_inference_duration_seconds_count[15m]))",
+          "legendFormat": "{{task_type}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 }
+    },
+    {
+      "id": 10,
+      "title": "Inference total (24h)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(silklens_ai_inference_duration_seconds_count[24h]))",
+          "legendFormat": "calls"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 }
+    }
+  ]
+}

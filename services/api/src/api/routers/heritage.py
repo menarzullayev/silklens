@@ -19,6 +19,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel, Field, field_validator, model_validator
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_session
@@ -252,6 +253,17 @@ async def get_heritage(pub_id: str, db: SessionDep) -> HeritageOut:
         entity = await _service(db).get(pub_id)
     except HeritageError as exc:
         _raise_heritage_error(exc)
+    # Business metric: count detail views by country so the Grafana
+    # `silklens-business` dashboard can pivot on geography. Use a literal
+    # fallback when the heritage object has no country code yet.
+    try:
+        from src.core.metrics import business_heritage_views_total
+
+        country = (getattr(entity, "country_code", None) or "unknown").lower()
+        business_heritage_views_total.labels(country=country).inc()
+    except Exception:  # noqa: S110
+        # Observability — never break the actual response on a metric miss.
+        pass
     return _to_out(entity)
 
 
@@ -300,6 +312,22 @@ async def update_heritage(
         Depends(require_permission("heritage:update")),
     ],
 ) -> HeritageOut:
+    # SEC-016: ``status`` is a moderation FSM field. ``heritage:update`` covers
+    # content edits; only ``heritage:moderate`` may advance the workflow state.
+    # Reject the request outright so callers don't get a silent no-op on a
+    # field they thought was applied.
+    if "status" in payload.model_fields_set and payload.status is not None:
+        granted = await _check_permission(db, ctx, "heritage:moderate")
+        if not granted:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": "identity.permission_denied",
+                    "message": "status field requires heritage:moderate",
+                    "permission": "heritage:moderate",
+                },
+            )
+
     update = HeritageUpdate(
         name=payload.name,
         summary_md=payload.summary_md,
@@ -442,8 +470,6 @@ async def transition_heritage(
 
 
 async def _check_permission(db: AsyncSession, ctx: object, perm: str) -> bool:
-    from sqlalchemy import text
-
     row = await db.execute(
         text("SELECT app.has_permission(:uid, :residency, :perm, :tenant)"),
         {

@@ -63,3 +63,17 @@ class IdempotencyKeyConflict(BillingError):
 
     code = "billing.idempotency_conflict"
     status_code = 409
+
+
+class ProviderUnavailable(BillingError):
+    """Real provider keys not configured or upstream API unreachable."""
+
+    code = "billing.provider_unavailable"
+    status_code = 503
+
+
+class InvalidWebhookSignature(BillingError):
+    """Stripe-Signature header verification failed."""
+
+    code = "billing.webhook_invalid_signature"
+    status_code = 401

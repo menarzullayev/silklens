@@ -96,3 +96,32 @@ class SessionRepository(Protocol):
         Returns None if the old token is unknown or already used (caller MUST
         treat None as ``RefreshTokenReused`` and revoke the family).
         """
+
+
+class LoginAttemptRepository(Protocol):
+    """Append-only brute-force ledger backing the lockout window.
+
+    Per Agent 2 §4: every login attempt — success or failure — is recorded
+    so the auth service can ask, on the next call from the same
+    ``(identifier, ip)``, "how many failures in the last N minutes?".
+    """
+
+    async def record_attempt(
+        self,
+        *,
+        identifier: str,
+        succeeded: bool,
+        ip_address: str | None,
+        user_agent: str | None,
+        failure_reason: str | None,
+    ) -> None: ...
+
+    async def count_recent_failures(
+        self,
+        *,
+        identifier: str,
+        ip_address: str | None,
+        within_seconds: int,
+    ) -> int:
+        """Return the number of failed attempts in the last ``within_seconds``
+        window for this identifier (and IP, when present)."""

@@ -67,8 +67,17 @@ class Settings(BaseSettings):
     # --- Audit chain HMAC key (rotated via KMS in prod) ---
     audit_hmac_key: SecretStr = SecretStr("dev-only-audit-hmac-key")
 
-    # --- Webhook shared secret (FAZA 4 → replaced with per-provider signature) ---
+    # --- Webhook shared secret (dev/staging fallback for non-Stripe providers) ---
     webhook_shared_secret: SecretStr = SecretStr("dev-only-webhook-shared-secret")
+
+    # --- Payment provider selection (FAZA 4) ---
+    # ``mock`` keeps the deterministic in-memory adapter (dev/test/CI default).
+    # ``stripe`` activates the real Stripe API path provided keys are populated.
+    # If the keys are absent BillingService.factory soft-falls-back to MockProvider
+    # so the system never crashes mid-request because of a misconfigured env.
+    payment_provider: Literal["mock", "stripe"] = "mock"
+    stripe_secret_key: SecretStr = SecretStr("")
+    stripe_webhook_secret: SecretStr = SecretStr("")
 
     # --- API ---
     api_host: str = "0.0.0.0"
@@ -78,11 +87,39 @@ class Settings(BaseSettings):
     # --- Tenancy ---
     default_tenant_id: str = "00000000-0000-0000-0000-000000000001"
 
+    # --- Rate limiting (SEC-005) ---
+    # Master switch — unit tests that don't care about 429 behaviour can
+    # set ``SILKLENS_RATE_LIMIT_ENABLED=false`` to skip enforcement
+    # entirely. Production must keep this true.
+    rate_limit_enabled: bool = True
+    # Failed-login lockout window (per Agent 2 §4). After
+    # ``login_lockout_max_failures`` failures from the same identifier+IP
+    # inside ``login_lockout_window_seconds``, the auth service returns
+    # HTTP 423 LOCKED for ``login_lockout_duration_seconds``.
+    login_lockout_max_failures: int = 5
+    login_lockout_window_seconds: int = 600  # 10 minutes
+    login_lockout_duration_seconds: int = 900  # 15 minutes
+
     # --- AI ---
     # When true, the provider resolver always returns deterministic mock
     # providers (LLaVA / Kokoro / NLLB / Anthropic stubs). Set to false in
     # prod once the GPU server is reachable + ANTHROPIC_API_KEY is wired.
     ai_use_mock_providers: bool = True
+    # Default Anthropic model slug. Mirrors the row in ai_models so the
+    # resolver picks up the model_id consistently between code and DB.
+    anthropic_model_default: str = "claude-opus-4-7"
+
+    # --- Observability ---
+    # Empty DSN keeps Sentry as a no-op (dev/test default).
+    sentry_dsn: SecretStr = SecretStr("")
+    # 10% of traces by default; bump in staging, lower in steady-state prod.
+    sentry_traces_rate: float = 0.1
+    # OTLP HTTP collector endpoint (Tempo / OTel collector). HTTP/4318 default.
+    otlp_endpoint: str = "http://localhost:4318"
+    # Toggle to disable /metrics + Prometheus instrumentation entirely.
+    metrics_enabled: bool = True
+    # Hostname tag for Sentry; falls back to socket.gethostname() if unset.
+    server_name: str | None = None
 
     @field_validator("api_cors_origins", mode="before")
     @classmethod

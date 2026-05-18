@@ -33,6 +33,10 @@ os.environ.setdefault(
     "SILKLENS_DATABASE_URL",
     "postgresql+psycopg://silklens:silklens_dev@localhost:5434/silklens_test",
 )
+# Tests fire dozens of /v1/auth/register hits per file; the production-grade
+# 200/min limit would 429 the suite. Tests that specifically assert rate-limit
+# behaviour set this back to "true" inside their own fixture scope.
+os.environ.setdefault("SILKLENS_RATE_LIMIT_ENABLED", "false")
 
 from src.api.app import create_app
 from src.core.database import dispose_engine

@@ -95,11 +95,31 @@ async def _grant_role(db_session: AsyncSession, user_pub_id: str, role_slug: str
 
 
 def _png_bytes(seed: bytes = b"silklens") -> bytes:
-    """Return distinct-but-tiny binary payloads — content doesn't need to be
-    a valid PNG since the upload pipeline does not attempt to decode it
-    (pHash is best-effort and silently no-ops when imagehash is unavailable).
+    """Return distinct, valid PNG payloads.
+
+    Real magic bytes + IHDR/IDAT/IEND chunks are required because the service
+    sniffs the upload via libmagic (HIGH-3). We embed ``seed`` as a tEXt
+    chunk to keep the content_hash distinct across tests without disturbing
+    the magic header.
     """
-    return b"\x89PNG\r\n\x1a\n" + seed + uuid.uuid4().bytes
+    from PIL import Image
+
+    img = Image.new("RGB", (2, 2), color=(seed[0] % 256, seed[-1] % 256, 0))
+    buf = io.BytesIO()
+    img.save(
+        buf,
+        format="PNG",
+        pnginfo=_png_text("seed", seed.hex() + uuid.uuid4().hex),
+    )
+    return buf.getvalue()
+
+
+def _png_text(key: str, value: str) -> Any:
+    from PIL.PngImagePlugin import PngInfo
+
+    info = PngInfo()
+    info.add_text(key, value)
+    return info
 
 
 # --- Tests ------------------------------------------------------------------
@@ -251,6 +271,43 @@ async def test_delete_owner_succeeds_then_marks_status_deleted(
     ).one()
     assert row._mapping["status"] == "deleted"
     assert row._mapping["deleted_at"] is not None
+
+
+@pytest.mark.asyncio
+async def test_upload_rejects_mime_top_level_mismatch(http: AsyncClient) -> None:
+    """HIGH-3 / SEC-011: PDF bytes uploaded as image/png must be rejected.
+
+    The router trusts neither the multipart Content-Type nor the file
+    extension — libmagic sniffs the first 8 KiB and refuses anything whose
+    top-level type diverges from the claim.
+    """
+    auth = await _register(http)
+    token = auth["tokens"]["access_token"]
+    # Minimal PDF header — libmagic reports application/pdf.
+    pdf_bytes = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n1 0 obj\n<< /Type /Catalog >>\nendobj\n"
+    response = await http.post(
+        "/v1/media/uploads",
+        files={"file": ("evil.png", io.BytesIO(pdf_bytes), "image/png")},
+        data={"kind": "image"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 415, response.text
+    assert response.json()["detail"]["code"] == "media.unsupported_mime"
+
+
+@pytest.mark.asyncio
+async def test_upload_rejects_mime_not_in_allow_list(http: AsyncClient) -> None:
+    """HIGH-3: text/html is never accepted, regardless of byte signature."""
+    auth = await _register(http)
+    token = auth["tokens"]["access_token"]
+    response = await http.post(
+        "/v1/media/uploads",
+        files={"file": ("a.html", io.BytesIO(b"<!doctype html><html></html>"), "text/html")},
+        data={"kind": "image"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 415
+    assert response.json()["detail"]["code"] == "media.unsupported_mime"
 
 
 @pytest.mark.asyncio

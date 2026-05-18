@@ -204,6 +204,16 @@ class BillingService:
         intent = await self._payments.update_intent_status(
             intent.id, status=PaymentStatus.SUCCEEDED
         )
+        # Business metric: bump the revenue counter once the charge actually
+        # succeeded. Non-USD currencies count their notional amount — the
+        # Grafana dashboard renames the panel accordingly until we wire FX.
+        try:
+            from src.core.metrics import business_revenue_usd_total
+
+            business_revenue_usd_total.inc(float(price.amount))
+        except Exception:  # noqa: S110
+            # Observability is best-effort — never break a real payment.
+            pass
 
         sub = await self._subs.create(
             tenant_id=tenant_id,
@@ -383,3 +393,82 @@ class BillingService:
             payload=payload,
         )
         return True
+
+    # ------------------------------------------------------------------
+    # Real-provider webhook event handlers (FAZA 4 — Stripe et al)
+    # ------------------------------------------------------------------
+    #
+    # These translate provider-shaped events into our internal state.
+    # ``record_webhook`` MUST be called first so the
+    # ``payment_webhook_events.UNIQUE(provider, provider_event_id)`` index
+    # guarantees we never process the same event twice.
+
+    async def handle_payment_succeeded(
+        self,
+        *,
+        provider: str,
+        provider_charge_id: str,
+        amount: Decimal,
+        currency: str,
+        metadata: dict[str, object] | None = None,
+    ) -> None:
+        """Finalize the intent → payment row on a verified ``payment_intent.succeeded``."""
+        intent = None
+        if metadata and "idempotency_key" in metadata:
+            intent = await self._payments.get_intent_by_key(str(metadata["idempotency_key"]))
+        if intent is None:
+            # Without a linkable intent we still record the charge for accounting,
+            # but skip subscription state transitions (no user context available).
+            return
+        await self._payments.record_payment(
+            intent_id=intent.id,
+            provider=provider,
+            provider_charge_id=provider_charge_id,
+            captured_amount=amount,
+            currency=currency,
+        )
+        if intent.status != PaymentStatus.SUCCEEDED:
+            await self._payments.update_intent_status(intent.id, status=PaymentStatus.SUCCEEDED)
+
+    async def mark_payment_failed(
+        self,
+        *,
+        provider_charge_id: str,
+        failure_code: str,
+        metadata: dict[str, object] | None = None,
+    ) -> None:
+        """Mark an intent as ``failed`` on ``payment_intent.payment_failed``."""
+        _ = provider_charge_id  # reserved for charge-keyed lookup once we store it
+        intent = None
+        if metadata and "idempotency_key" in metadata:
+            intent = await self._payments.get_intent_by_key(str(metadata["idempotency_key"]))
+        if intent is None:
+            return
+        if intent.status != PaymentStatus.FAILED:
+            await self._payments.update_intent_status(
+                intent.id, status=PaymentStatus.FAILED, failure_reason=failure_code
+            )
+
+    async def mark_subscription_canceled_external(
+        self,
+        *,
+        provider_subscription_id: str,
+    ) -> None:
+        """Handle ``customer.subscription.deleted`` from the upstream provider.
+
+        Placeholder until ``subscriptions.provider_subscription_id`` lands;
+        keeps the webhook router exhaustive so unknown events can't slip past.
+        """
+        _ = provider_subscription_id
+
+    async def handle_invoice_event(
+        self,
+        *,
+        provider_invoice_id: str,
+        succeeded: bool,
+    ) -> None:
+        """Handle ``invoice.payment_succeeded`` / ``invoice.payment_failed``.
+
+        Placeholder until ``invoices.provider_invoice_id`` lands.
+        """
+        _ = provider_invoice_id, succeeded

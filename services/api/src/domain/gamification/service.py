@@ -56,7 +56,11 @@ class GamificationService:
         )
         if not created:
             balance = await self._repo.get_balance(user_id)
-            assert balance is not None, "balance must exist for an existing xp event"
+            if balance is None:
+                raise RuntimeError(
+                    "xp_balances missing for an existing xp event "
+                    f"(user_id={user_id}); ledger and projection out of sync"
+                )
             return event, balance
 
         balance = await self._repo.upsert_balance_from_event(

@@ -84,6 +84,62 @@ async def test_award_xp_idempotent(http: AsyncClient, db_session: AsyncSession) 
 
 
 @pytest.mark.asyncio
+async def test_award_xp_atomic_idempotency_single_round_trip(
+    http: AsyncClient, db_session: AsyncSession
+) -> None:
+    """HIGH-2: the CTE-based insert performs the dedupe in a single statement.
+
+    The legacy SELECT-then-INSERT pattern allowed a TOCTOU window between
+    the existence check and the insert. We now combine the two in one
+    statement; a follow-up insert with the same idempotency key
+    deterministically returns the original row with ``created=false`` even
+    after a commit in between.
+    """
+    auth = await _register(http)
+    user_id, residency, tenant_id = await _user_uuid(db_session, auth["user"]["pub_id"])
+    repo = SqlGamificationRepository(db_session)
+
+    key = f"replay:{user_id}:2026-05-18"
+    first, created_first = await repo.record_xp_event(
+        user_id=uuid.UUID(user_id),
+        residency=residency,
+        source_kind=XpSource.VISIT,
+        source_id=None,
+        delta=42,
+        idempotency_key=key,
+        context={},
+        tenant_id=uuid.UUID(tenant_id),
+    )
+    await db_session.commit()
+    assert created_first is True
+
+    second, created_second = await repo.record_xp_event(
+        user_id=uuid.UUID(user_id),
+        residency=residency,
+        source_kind=XpSource.VISIT,
+        source_id=None,
+        delta=42,
+        idempotency_key=key,
+        context={},
+        tenant_id=uuid.UUID(tenant_id),
+    )
+    await db_session.commit()
+    assert created_second is False
+    assert second.id == first.id
+
+    # And exactly one xp_events row was written.
+    cnt = (
+        await db_session.execute(
+            text(
+                "SELECT count(*) FROM xp_events WHERE user_id = :u AND idempotency_key = :k"
+            ),
+            {"u": uuid.UUID(user_id), "k": key},
+        )
+    ).scalar_one()
+    assert int(cnt) == 1
+
+
+@pytest.mark.asyncio
 async def test_level_progression(http: AsyncClient, db_session: AsyncSession) -> None:
     auth = await _register(http)
     user_id, residency, tenant_id = await _user_uuid(db_session, auth["user"]["pub_id"])

@@ -24,12 +24,48 @@ from src.domain.media.errors import (
     MediaAlreadyDeleted,
     MediaForbidden,
     MediaNotFound,
+    MediaUnsupportedMime,
     UnknownLicenseType,
 )
 from src.domain.media.repository import MediaRepository
 
 # 50 MiB cap for now; raise once chunked uploads land.
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+
+# Allow-list of accepted MIME types. Keep in sync with the model/3D viewer
+# pipeline and the audio/video transcoder. Anything else gets a 415.
+ALLOWED_MIME_TYPES: frozenset[str] = frozenset(
+    {
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+        "image/avif",
+        "video/mp4",
+        "video/quicktime",
+        "audio/mpeg",
+        "audio/aac",
+        "audio/ogg",
+        "audio/wav",
+        "application/pdf",
+        "model/gltf-binary",
+    }
+)
+
+# libmagic on glTF / model files reports application/octet-stream; treat that
+# as "unknown" and only diverge when the top-level types actually differ.
+_MIME_SNIFF_BUFFER = 8 * 1024  # first 8 KiB
+
+# audio/wav has multiple historical encodings — libmagic frequently reports
+# audio/x-wav. Normalise via this alias map before the divergence check.
+_MIME_ALIASES: dict[str, str] = {
+    "audio/x-wav": "audio/wav",
+    "audio/wave": "audio/wav",
+    "audio/x-m4a": "audio/aac",
+    "audio/mp4": "audio/aac",
+    "image/jpg": "image/jpeg",
+    "model/gltf+json": "model/gltf-binary",
+}
 
 
 class MediaStorage(Protocol):
@@ -76,6 +112,15 @@ class MediaService:
             raise InvalidMediaPayload("byte_size", "does not match content length")
         if draft.byte_size > MAX_UPLOAD_BYTES:
             raise InvalidMediaPayload("byte_size", "exceeds upload limit")
+
+        # --- MIME magic-byte validation -----------------------------------
+        # Defence against client-supplied content-type spoofing: never trust
+        # the multipart Content-Type. Sniff libmagic against the first 8 KiB,
+        # reject if the claimed type diverges into a different top-level
+        # family (image vs application, etc.), and reject anything outside
+        # the explicit allow-list. See HIGH-3 / SEC-011.
+        _validate_mime(draft.mime_type, draft.content)
+
         if not await self._repo.license_type_exists(draft.license_type_slug):
             raise UnknownLicenseType(draft.license_type_slug)
 
@@ -224,3 +269,64 @@ def _compute_perceptual_hash(content: bytes) -> tuple[str | None, int | None]:
 def _to_signed_16(value: int) -> int:
     """Convert an unsigned 16-bit int to its signed (smallint) representation."""
     return value - 0x10000 if value >= 0x8000 else value
+
+
+def _normalise_mime(mime: str) -> str:
+    base = mime.split(";", 1)[0].strip().lower()
+    return _MIME_ALIASES.get(base, base)
+
+
+def _validate_mime(claimed: str, content: bytes) -> None:
+    """Reject spoofed/disallowed MIME types.
+
+    Raises ``MediaUnsupportedMime`` (HTTP 415) when:
+      * the caller's claimed MIME isn't in :data:`ALLOWED_MIME_TYPES`;
+      * libmagic sniffs a top-level type that diverges from the claim
+        (``image/`` vs ``application/`` etc.). Within-family disagreement is
+        allowed because libmagic regularly reports e.g. ``image/jpeg`` for
+        every JPEG flavour while the browser sends ``image/pjpeg``.
+
+    libmagic is loaded lazily so the rest of the service can still be unit-
+    tested on hosts without ``libmagic1`` installed (CI installs it via the
+    Dockerfile + Makefile note).
+    """
+    claimed_norm = _normalise_mime(claimed)
+    if claimed_norm not in ALLOWED_MIME_TYPES:
+        raise MediaUnsupportedMime(
+            claimed=claimed, sniffed=None, reason="claimed MIME not in allow-list"
+        )
+
+    try:  # pragma: no cover - libmagic absent is exceptional in production
+        import magic  # type: ignore[import-untyped]
+    except ImportError as exc:
+        raise MediaUnsupportedMime(
+            claimed=claimed,
+            sniffed=None,
+            reason="server cannot verify MIME (python-magic unavailable)",
+        ) from exc
+
+    sniffed = magic.from_buffer(content[:_MIME_SNIFF_BUFFER], mime=True) or ""
+    sniffed_norm = _normalise_mime(sniffed)
+
+    # libmagic returns 'application/octet-stream' for unknown formats — that
+    # is not an active divergence, just an absence of signal. Treat it as a
+    # soft pass *only* when the claimed type itself isn't an executable.
+    if sniffed_norm in ("", "application/octet-stream"):
+        # Still allow GLB / glTF binary because the magic database doesn't
+        # always carry it. Anything else with no signature gets rejected.
+        if claimed_norm == "model/gltf-binary":
+            return
+        raise MediaUnsupportedMime(
+            claimed=claimed,
+            sniffed=sniffed or None,
+            reason="unable to sniff a signature from the uploaded bytes",
+        )
+
+    claimed_top = claimed_norm.split("/", 1)[0]
+    sniffed_top = sniffed_norm.split("/", 1)[0]
+    if claimed_top != sniffed_top:
+        raise MediaUnsupportedMime(
+            claimed=claimed,
+            sniffed=sniffed,
+            reason="claimed top-level type does not match sniffed bytes",
+        )

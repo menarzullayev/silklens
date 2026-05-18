@@ -27,7 +27,7 @@ from src.domain.heritage.entities import (
     HeritageStatus,
     HeritageUpdate,
 )
-from src.domain.heritage.errors import DuplicateAlias
+from src.domain.heritage.errors import DuplicateAlias, HeritageNotFound
 
 _SELECT_COLUMNS: Final = """
     id, tenant_id, pub_id, kind_slug,
@@ -407,11 +407,9 @@ class SqlHeritageRepository:
         row = result.one()
         entity = _row_to_entity(row)
 
-        # heritage.deleted.v1 is not in the seeded event_types catalog; insert
-        # idempotently here so the emit_event() guard passes. Migrations are
-        # frozen for this agent.
-        await self._ensure_event_type("heritage.deleted.v1", "Heritage deleted")
-
+        # `heritage.deleted.v1` is seeded by migration 0062 — emit_event now
+        # accepts it directly. The previous runtime ``_ensure_event_type``
+        # bridge has been removed (MED-H1).
         await self._session.execute(
             text(
                 """
@@ -468,11 +466,25 @@ class SqlHeritageRepository:
             )
         except IntegrityError as exc:
             await self._session.rollback()
+            # IntegrityError catches both the alias uniqueness clash and the
+            # heritage_id FK violation (parent soft-deleted between the
+            # service-layer fetch and the insert). Disambiguate via the
+            # SQLSTATE code: 23503 = foreign_key_violation,
+            # 23505 = unique_violation. SQLAlchemy exposes it as ``pgcode``
+            # on the wrapped asyncpg error.
+            pgcode = getattr(exc.orig, "pgcode", "") or getattr(exc.orig, "sqlstate", "") or ""
+            if pgcode == "23503":
+                raise HeritageNotFound(f"heritage_id={heritage_id} not found") from exc
             raise DuplicateAlias(
                 f"alias '{draft.alias}@{draft.language_tag}' already exists"
             ) from exc
 
-        row = result.one()._mapping  # type: ignore[attr-defined]
+        raw = result.one_or_none()
+        if raw is None:
+            # Defensive: the INSERT … RETURNING contract returns the row on
+            # success, so reaching here means another writer raced us out.
+            raise HeritageNotFound(f"heritage_id={heritage_id} not found")
+        row = raw._mapping  # type: ignore[attr-defined]
         alias_entity = HeritageAlias(
             id=row["id"],
             heritage_id=row["heritage_id"],
@@ -562,7 +574,11 @@ class SqlHeritageRepository:
             ),
             {"hid": existing.id, "status": new_status, "actor": actor},
         )
-        row = result.one()
+        row = result.one_or_none()
+        if row is None:
+            # Heritage was soft-deleted between the service-layer fetch and the
+            # status update. Surface a typed 404 instead of a bare NoResultFound.
+            raise HeritageNotFound(f"heritage_id={existing.id} not found")
         entity = _row_to_entity(row)
 
         await self._session.execute(
@@ -590,29 +606,6 @@ class SqlHeritageRepository:
         )
         await self._session.commit()
         return entity
-
-    async def _ensure_event_type(self, event_name: str, display_en: str) -> None:
-        """Idempotently register an event_name so ``app.emit_event`` accepts it.
-
-        Migrations are frozen for this agent; the seed list in 0008 doesn't
-        include ``heritage.deleted.v1``. We insert on conflict do nothing in
-        the same transaction so production deploys converge after the first
-        delete call.
-        """
-        await self._session.execute(
-            text(
-                """
-                INSERT INTO event_types (event_name, display_name, retention_days, kafka_topic)
-                VALUES (:name, CAST(:display AS jsonb), 365, 'silklens.heritage.events')
-                ON CONFLICT (event_name) DO NOTHING
-                """
-            ),
-            {
-                "name": event_name,
-                "display": _json({"en": display_en}),
-            },
-        )
-
 
 def _json(payload: object) -> str:
     """Serialize a Python value as a JSON string for jsonb casting."""

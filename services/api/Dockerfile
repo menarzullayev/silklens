@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
         libpq5 \
+        libmagic1 \
         && rm -rf /var/lib/apt/lists/*
 
 # uv is faster than pip for resolution + install; pinned for reproducibility

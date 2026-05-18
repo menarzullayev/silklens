@@ -164,6 +164,9 @@ async def test_friend_invitation_round_trip(http: AsyncClient) -> None:
     assert invite.status_code == 200, invite.text
     token = invite.json()["token"]
     assert invite.json()["status"] == "pending"
+    # SEC-021: the inviter (creation point) receives the raw token.
+    assert token != "***"
+    assert len(token) >= 16
 
     accept = await http.post(
         "/v1/social/friends/accept",
@@ -172,6 +175,9 @@ async def test_friend_invitation_round_trip(http: AsyncClient) -> None:
     )
     assert accept.status_code == 200
     assert accept.json()["status"] == "accepted"
+    # SEC-021: the accept response is a "subsequent read" — token must be
+    # masked so it doesn't leak via response logs or session replay.
+    assert accept.json()["token"] == "***"
 
 
 @pytest.mark.asyncio
