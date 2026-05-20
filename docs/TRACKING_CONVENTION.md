@@ -55,15 +55,18 @@ Place the emoji immediately after the ticket ID.
 - [STATUS] **SILK-NNNN** PRIORITY Short title — body / context / file refs
 ```
 
-### Examples
+### Examples (use `SILK-NNNN` placeholder — do not write real-looking numbers in docs)
 
 ```markdown
-- [✅] **SILK-0042** 🔴 OTP verify endpoint — `POST /v1/auth/verify-email` + idempotent SqlUserRepository.verify_email()
-- [🔄] **SILK-0089** 🟡 HeritageDetailPage AR overlay — needs ARCore device test
-- [ ] **SILK-0103** 🟢 Refactor `dio_client.dart` interceptor order
-- [❌] **SILK-0120** 🔴 Apple Sign In — BLOCKED on Apple Dev account ($99/yr)
-- [⏭️] **SILK-0150** ⚪ Real LLaVA inference — DEFERRED to FAZA 8 (GPU SSH access)
+- [✅] **SILK-NNNN** 🔴 OTP verify endpoint — `POST /v1/auth/verify-email` + idempotent SqlUserRepository.verify_email()
+- [🔄] **SILK-NNNN** 🟡 HeritageDetailPage AR overlay — needs ARCore device test
+- [ ] **SILK-NNNN** 🟢 Refactor `dio_client.dart` interceptor order
+- [❌] **SILK-NNNN** 🔴 Apple Sign In — BLOCKED on Apple Dev account ($99/yr)
+- [⏭️] **SILK-NNNN** ⚪ Real LLaVA inference — DEFERRED to FAZA 8 (GPU SSH access)
 ```
+
+> Why placeholder: real-looking IDs in docs get picked up by `./scripts/next-ticket-id.sh`
+> as "burned" allocations and skipped forever. Always use `SILK-NNNN` in example text.
 
 ### File / line refs
 
@@ -89,10 +92,10 @@ Cite source locations inside ticket body using `[file.dart:42](path/to/file.dart
 ### Examples
 
 ```
-feat(auth): SILK-0042 — OTP verify endpoint + Redis service
-fix(mobile): SILK-0089, SILK-0090 — confirm password validator + locale strings
-refactor(infra): SILK-0103 — collapse 3 interceptors into single chain
-docs: SILK-0120 — log Apple Sign In blocker
+feat(auth): SILK-NNNN — OTP verify endpoint + Redis service
+fix(mobile): SILK-NNNN, SILK-NNNN — confirm password validator + locale strings
+refactor(infra): SILK-NNNN — collapse 3 interceptors into single chain
+docs: SILK-NNNN — log Apple Sign In blocker
 ```
 
 A single commit can close multiple tickets when the work is naturally atomic. Don't pad commits with unrelated IDs.
@@ -136,6 +139,18 @@ Within a section, order tickets by **status first** (`[🔄]` before `[ ]` befor
 
 - Closed `[✅]` tickets stay in PROGRESS.md as historical record (do not delete)
 - After a FAZA tag (`v0.X.0-beta`) closes, its `[✅]` items can be collapsed into a one-line summary if the section grows past ~50 lines, but the ticket IDs remain searchable via `grep SILK-XXXX` in git history
+
+---
+
+## Retired (burned) ID ranges
+
+The script `./scripts/next-ticket-id.sh` treats any `SILK-NNNN` that ever appeared in working tree or git history as allocated, even if it was only an accidental example.
+
+| Range | Reason | Decision |
+|---|---|---|
+| `SILK-0021`…`SILK-0042` | Burned by example numeric IDs in early CLAUDE.md / TRACKING_CONVENTION.md commit bodies | RETIRED — never allocate |
+
+**Lesson:** in docs, always write `SILK-NNNN` (literal placeholder), never a real-looking number. The git history is immutable, so a single careless example permanently burns IDs.
 
 ---
 

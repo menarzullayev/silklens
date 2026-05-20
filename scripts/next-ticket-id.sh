@@ -10,13 +10,14 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
 
 # Search current tree + git history for SILK-NNNN tokens.
-# Exclude the convention doc itself — its examples are illustrative, not allocations.
+# Exclude docs whose examples are illustrative, not allocations.
 highest=$(
   {
     grep -rhoE 'SILK-[0-9]{4}' \
       --exclude='TRACKING_CONVENTION.md' \
+      --exclude='CLAUDE.md' \
       --exclude='next-ticket-id.sh' \
-      PROGRESS.md docs/ services/ apps/ scripts/ 2>/dev/null || true
+      PROGRESS.md CLAUDE.md docs/ services/ apps/ scripts/ 2>/dev/null || true
     git log --all --pretty=format:'%s%n%b' 2>/dev/null | grep -oE 'SILK-[0-9]{4}' || true
   } \
     | sed 's/^SILK-0*//' \

@@ -122,11 +122,14 @@ Every open work item in PROGRESS.md carries a `SILK-NNNN` ID. Spec: [docs/TRACKI
 **Commit format:** `<type>(<scope>): SILK-NNNN — <subject>`
 
 ```
-feat(auth): SILK-0042 — OTP verify endpoint
-fix(mobile): SILK-0089, SILK-0090 — confirm password validator + locale strings
-refactor(infra): SILK-0103 — collapse interceptors
-docs: SILK-0120 — log Apple Sign In blocker
+feat(auth): SILK-NNNN — OTP verify endpoint
+fix(mobile): SILK-NNNN, SILK-NNNN — confirm password validator + locale strings
+refactor(infra): SILK-NNNN — collapse interceptors
+docs: SILK-NNNN — log Apple Sign In blocker
 ```
+
+> In docs always use `SILK-NNNN` placeholder. Real numeric IDs in docs get picked
+> up by `./scripts/next-ticket-id.sh` as burned allocations.
 
 Trivial changes (typos, single-file lint, comments) don't need a ticket — just commit.
 
