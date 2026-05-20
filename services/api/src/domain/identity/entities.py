@@ -160,3 +160,20 @@ class RegistrationRequest:
     preferred_locale: str = "en"
     preferred_timezone: str = "UTC"
     accepted_legal_versions: tuple[str, ...] = field(default_factory=tuple)
+
+
+@dataclass(slots=True, frozen=True)
+class OAuthProfile:
+    """Normalised user-info payload from any OAuth/OIDC provider.
+
+    The provider verifies the token; the API layer extracts these fields
+    and hands them to AuthService.login_with_oauth so the domain layer
+    stays provider-agnostic.
+    """
+
+    provider_subject: str  # stable 'sub' claim — never changes for the same account
+    email: str
+    email_verified: bool
+    display_name: str | None = None  # provider's 'name' / 'display_name'
+    avatar_url: str | None = None    # provider's 'picture' / 'avatar'
+    raw: dict = field(default_factory=dict)  # full tokeninfo/userinfo payload for audit

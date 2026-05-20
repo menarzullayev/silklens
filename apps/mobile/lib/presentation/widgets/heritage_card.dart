@@ -1,9 +1,9 @@
 // Card widget used by the discover list and the search results page.
 // Hero photo + localized name + period chip + country code.
 
-import "package:flutter/material.dart";
-import "package:silklens/domain/heritage/entities/heritage.dart";
-import "package:silklens/l10n/app_localizations.dart";
+import 'package:flutter/material.dart';
+import 'package:silklens/domain/heritage/entities/heritage.dart';
+import 'package:silklens/l10n/app_localizations.dart';
 
 class HeritageCard extends StatelessWidget {
   const HeritageCard({
@@ -25,7 +25,7 @@ class HeritageCard extends StatelessWidget {
     final hero = heritage.heroMediaUrl;
 
     return Card(
-      key: Key("heritage_card.${heritage.pubId}"),
+      key: Key('heritage_card.${heritage.pubId}'),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -36,12 +36,12 @@ class HeritageCard extends StatelessWidget {
               aspectRatio: 16 / 9,
               child: hero != null && hero.isNotEmpty
                   ? Hero(
-                      tag: "heritage-hero-${heritage.pubId}",
+                      tag: 'heritage-hero-${heritage.pubId}',
                       child: Image.network(
                         hero,
                         fit: BoxFit.cover,
                         errorBuilder: (BuildContext _, Object __,
-                                StackTrace? ___) =>
+                                StackTrace? ___,) =>
                             _PlaceholderImage(theme: theme),
                       ),
                     )
@@ -65,13 +65,12 @@ class HeritageCard extends StatelessWidget {
                     spacing: 6,
                     runSpacing: 6,
                     children: <Widget>[
-                      if (periodLabel != null)
-                        Chip(
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
-                          label: Text(periodLabel),
-                          avatar: const Icon(Icons.history, size: 16),
-                        ),
+                      Chip(
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        label: Text(periodLabel),
+                        avatar: const Icon(Icons.history, size: 16),
+                      ),
                       if (heritage.countryCode != null)
                         Chip(
                           visualDensity: VisualDensity.compact,
@@ -84,7 +83,7 @@ class HeritageCard extends StatelessWidget {
                           visualDensity: VisualDensity.compact,
                           padding: EdgeInsets.zero,
                           label: Text(
-                            l10n?.heritageDetailUnesco ?? "UNESCO",
+                            l10n.heritageDetailUnesco ?? 'UNESCO',
                           ),
                           avatar: const Icon(Icons.star, size: 16),
                         ),

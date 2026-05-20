@@ -3,11 +3,13 @@
 // already imported `IdentityRepository` keeps compiling. Both names point
 // at the same protocol.
 
-export "package:silklens/domain/identity/repositories/auth_repository.dart"
-    show AuthRepository;
+import 'package:silklens/core/utils/result.dart';
+import 'package:silklens/domain/identity/entities/auth_session.dart';
+import 'package:silklens/domain/identity/repositories/auth_repository.dart' show AuthRepository;
+import 'package:silklens/domain/identity/repositories/identity_repository.dart' show AuthRepository;
 
-import "package:silklens/core/utils/result.dart";
-import "package:silklens/domain/identity/entities/auth_session.dart";
+export 'package:silklens/domain/identity/repositories/auth_repository.dart'
+    show AuthRepository;
 
 /// Legacy protocol — same shape as [AuthRepository] but with the older
 /// method names. Use [AuthRepository] in new code.

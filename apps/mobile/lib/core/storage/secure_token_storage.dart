@@ -7,8 +7,8 @@
 //   * user_snapshot — JSON dump of the AuthUser, so cold-boot can render
 //     a logged-in shell before /auth/me has resolved.
 
-import "package:flutter_secure_storage/flutter_secure_storage.dart";
-import "package:hooks_riverpod/hooks_riverpod.dart";
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 abstract class SecureTokenStorage {
   Future<void> writeAccessToken(String token);
@@ -23,9 +23,9 @@ abstract class SecureTokenStorage {
 class FlutterSecureTokenStorage implements SecureTokenStorage {
   FlutterSecureTokenStorage(this._storage);
 
-  static const _accessKey = "sl.auth.access_token";
-  static const _refreshKey = "sl.auth.refresh_token";
-  static const _userKey = "sl.auth.user_snapshot";
+  static const _accessKey = 'sl.auth.access_token';
+  static const _refreshKey = 'sl.auth.refresh_token';
+  static const _userKey = 'sl.auth.user_snapshot';
 
   final FlutterSecureStorage _storage;
 
@@ -98,5 +98,5 @@ final Provider<SecureTokenStorage> secureTokenStorageProvider =
       aOptions: AndroidOptions(encryptedSharedPreferences: true),
     ),
   ),
-  name: "secureTokenStorageProvider",
+  name: 'secureTokenStorageProvider',
 );

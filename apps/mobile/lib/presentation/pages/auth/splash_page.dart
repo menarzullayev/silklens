@@ -1,169 +1,256 @@
-// SplashPage — first frame the user sees on cold start.
-//
-// The splash sits on screen for at most [_maxWait] milliseconds while:
-//   1. [brandingProvider] resolves (so the logo/app-name from the active
-//      tenant paint correctly).
-//   2. [authNotifierProvider] bootstraps and either confirms an
-//      authenticated session (silent refresh) or settles on anonymous.
-//
-// Routing decision after both have settled:
-//   * authenticated → /home/discover (Discover tab is the new default
-//     landing per WAVE-3 spec).
-//   * anonymous → /onboarding.
+import 'dart:async';
 
-import "dart:async";
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:silklens/core/l10n/locale_service.dart';
+import 'package:silklens/presentation/providers/auth_provider.dart';
 
-import "package:flutter/material.dart";
-import "package:flutter_hooks/flutter_hooks.dart";
-import "package:go_router/go_router.dart";
-import "package:hooks_riverpod/hooks_riverpod.dart";
-import "package:silklens/l10n/app_localizations.dart";
-import "package:silklens/presentation/providers/auth_provider.dart";
-import "package:silklens/presentation/providers/branding_provider.dart";
-import "package:silklens/presentation/router/app_router.dart";
-
-class SplashPage extends HookConsumerWidget {
+class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
 
-  static const Duration _minVisible = Duration(milliseconds: 1200);
-  static const Duration _maxWait = Duration(seconds: 6);
-
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final didNavigate = useRef(false);
-
-    ref.listen<AuthState>(authNotifierProvider, (AuthState? prev, AuthState next) {
-      _maybeNavigate(context, next, didNavigate);
-    });
-
-    useEffect(
-      () {
-        final startedAt = DateTime.now();
-        final timer = Timer(_maxWait, () {
-          if (!context.mounted || didNavigate.value) return;
-          // Hard-cap — assume anonymous if nothing has resolved.
-          _navigate(context, isAuthenticated: false, didNavigate: didNavigate);
-        });
-
-        // Force the splash to remain visible for at least _minVisible even
-        // if everything resolves instantly.
-        Future<void>.delayed(_minVisible, () {
-          if (!context.mounted || didNavigate.value) return;
-          final state = ref.read(authNotifierProvider);
-          if (state is! AuthLoading) {
-            final elapsed = DateTime.now().difference(startedAt);
-            if (elapsed >= _minVisible) {
-              _maybeNavigate(context, state, didNavigate);
-            }
-          }
-        });
-        return timer.cancel;
-      },
-      const <Object?>[],
-    );
-
-    final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final branding = ref.watch(brandingValueProvider);
-    final locale = Localizations.localeOf(context);
-
-    return Scaffold(
-      backgroundColor: colorScheme.primary,
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              if (branding.logoUrl != null && branding.logoUrl!.isNotEmpty)
-                _Logo(url: branding.logoUrl!, color: colorScheme.onPrimary)
-              else
-                Icon(
-                  Icons.travel_explore,
-                  key: const Key("splash.logo"),
-                  size: 96,
-                  color: colorScheme.onPrimary,
-                ),
-              const SizedBox(height: 24),
-              Text(
-                branding.localizedAppName(locale.languageCode),
-                key: const Key("splash.app_name"),
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  color: colorScheme.onPrimary,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n?.appTagline ?? "",
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onPrimary.withValues(alpha: 0.8),
-                ),
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    colorScheme.onPrimary.withValues(alpha: 0.7),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _maybeNavigate(
-    BuildContext context,
-    AuthState state,
-    ObjectRef<bool> didNavigate,
-  ) {
-    if (didNavigate.value) return;
-    if (state is AuthLoading) return;
-    _navigate(
-      context,
-      isAuthenticated: state.isAuthenticated,
-      didNavigate: didNavigate,
-    );
-  }
-
-  void _navigate(
-    BuildContext context, {
-    required bool isAuthenticated,
-    required ObjectRef<bool> didNavigate,
-  }) {
-    if (didNavigate.value) return;
-    didNavigate.value = true;
-    if (!context.mounted) return;
-    context.go(
-      isAuthenticated ? AppRoutes.homeDiscover : AppRoutes.onboarding,
-    );
-  }
+  ConsumerState<SplashPage> createState() => _SplashPageState();
 }
 
-class _Logo extends StatelessWidget {
-  const _Logo({required this.url, required this.color});
+class _SplashPageState extends ConsumerState<SplashPage>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _taglineAnimation;
 
-  final String url;
-  final Color color;
+  @override
+  void initState() {
+    super.initState();
+
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Color(0xFF0D2337),
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0, 0.55, curve: Curves.easeIn),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.72, end: 1).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0, 0.55, curve: Curves.easeOutBack),
+      ),
+    );
+
+    _taglineAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.5, 1, curve: Curves.easeIn),
+    );
+
+    _controller.forward();
+    _initAndNavigate();
+  }
+
+  Future<void> _initAndNavigate() async {
+    final (hasLocale, _, authState) = await (
+      _loadPrefs(),
+      Future<void>.delayed(const Duration(milliseconds: 1800)),
+      _waitForAuth(),
+    ).wait;
+
+    if (!mounted) return;
+
+    if (authState is AuthAuthenticated) {
+      context.go('/home');
+    } else {
+      context.go(hasLocale ? '/onboarding' : '/language');
+    }
+  }
+
+  /// Waits until AuthNotifier._init() finishes (state leaves AuthInitial).
+  /// Returns immediately if already resolved.
+  Future<AuthState> _waitForAuth() async {
+    final current = ref.read(authProvider);
+    if (current is! AuthInitial) return current;
+
+    final completer = Completer<AuthState>();
+    final sub = ref.listenManual(
+      authProvider,
+      (_, next) {
+        if (next is! AuthInitial && !completer.isCompleted) {
+          completer.complete(next);
+        }
+      },
+      fireImmediately: false,
+    );
+    final result = await completer.future;
+    sub.close();
+    return result;
+  }
+
+  Future<bool> _loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    await LocaleService.instance.loadFromPrefs();
+    return prefs.containsKey('app_locale');
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Image.network(
-      url,
-      key: const Key("splash.logo"),
-      width: 96,
-      height: 96,
-      errorBuilder: (BuildContext context, Object _, StackTrace? __) => Icon(
-        Icons.travel_explore,
-        size: 96,
-        color: color,
+    return Scaffold(
+      backgroundColor: const Color(0xFF0D2337),
+      body: Stack(
+        children: [
+          // Aurora background layer 1 — blue radial
+          // (placeholder for AuroraBackground widget)
+          Container(
+            decoration: const BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment(-0.3, -0.3),
+                radius: 1.5,
+                colors: [Color(0xFF1F3A93), Color(0xFF0D2337)],
+              ),
+            ),
+          ),
+          // Aurora background layer 2 — warm amber accent
+          Container(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: const Alignment(0.6, 0.3),
+                radius: 1.2,
+                colors: [
+                  const Color(0xFFC2501F).withValues(alpha: 0.5),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+          // Content (FadeTransition + ScaleTransition preserved)
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: ScaleTransition(
+                    scale: _scaleAnimation,
+                    child: Column(
+                      children: [
+                        // Logo with glow rings
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Outer glow ring
+                            Container(
+                              width: 148,
+                              height: 148,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0x20B78628),
+                                ),
+                              ),
+                            ),
+                            // Middle ring
+                            Container(
+                              width: 132,
+                              height: 132,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0x30B78628),
+                                ),
+                              ),
+                            ),
+                            // Main circle
+                            Container(
+                              width: 116,
+                              height: 116,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white.withValues(alpha: 0.12),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.35),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFB78628)
+                                        .withValues(alpha: 0.2),
+                                    blurRadius: 24,
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.explore_rounded,
+                                size: 58,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 36),
+                        // App name — gold color
+                        // (GoldShimmerText widget will replace later)
+                        const Text(
+                          'SilkLens',
+                          style: TextStyle(
+                            color: Color(0xFFE5C97A),
+                            fontSize: 46,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FadeTransition(
+                  opacity: _taglineAnimation,
+                  child: Text(
+                    'Cultural Heritage Explorer',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.65),
+                      fontSize: 15,
+                      letterSpacing: 2,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 88),
+                FadeTransition(
+                  opacity: _taglineAnimation,
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.8,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Colors.white.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,73 +1,133 @@
-// Retrofit-generated REST client. The actual .g.dart file is produced by
-// `dart run build_runner build` on a contributor machine. Until then the
-// abstract class itself is enough to drive imports and let the IDE find
-// symbols.
-//
+// Plain Dio HTTP client — retrofit dependency removed for FAZA 1 device testing.
 // Per ADR-0003: repositories depend on this client. Domain code does not.
 
-import "package:dio/dio.dart";
-import "package:retrofit/retrofit.dart";
-import "package:silklens/core/network/api_endpoints.dart";
-import "package:silklens/data/api/dto/auth_dto.dart";
-import "package:silklens/data/api/dto/branding_dto.dart";
-import "package:silklens/data/api/dto/heritage_dto.dart";
-import "package:silklens/data/api/dto/tenant_branding_dto.dart";
-import "package:silklens/data/api/dto/version_dto.dart";
-import "package:silklens/data/api/dto/vocab_dto.dart";
+import 'package:dio/dio.dart';
+import 'package:silklens/core/network/api_endpoints.dart';
+import 'package:silklens/data/api/dto/auth_dto.dart';
+import 'package:silklens/data/api/dto/branding_dto.dart';
+import 'package:silklens/data/api/dto/heritage_dto.dart';
+import 'package:silklens/data/api/dto/tenant_branding_dto.dart';
+import 'package:silklens/data/api/dto/version_dto.dart';
+import 'package:silklens/data/api/dto/vocab_dto.dart';
 
-part "silklens_api_client.g.dart";
+class SilkLensApiClient {
+  SilkLensApiClient(this._dio);
 
-@RestApi()
-abstract class SilkLensApiClient {
-  factory SilkLensApiClient(Dio dio, {String baseUrl}) = _SilkLensApiClient;
+  final Dio _dio;
 
   // --- Meta ----------------------------------------------------------------
 
-  @GET(ApiEndpoints.version)
-  Future<VersionDto> getVersion();
+  Future<VersionDto> getVersion() async {
+    final r = await _dio.get<Map<String, dynamic>>(ApiEndpoints.version);
+    return VersionDto.fromJson(r.data!);
+  }
 
-  // Legacy alias — kept for the tenant_branding admin endpoint (FAZA 1).
-  // New code uses [getBranding] which hits `/v1/branding`.
-  @GET(ApiEndpoints.tenantBranding)
-  Future<TenantBrandingDto> getTenantBranding();
+  Future<TenantBrandingDto> getTenantBranding() async {
+    final r = await _dio.get<Map<String, dynamic>>(ApiEndpoints.tenantBranding);
+    return TenantBrandingDto.fromJson(r.data!);
+  }
 
-  @GET(ApiEndpoints.branding)
-  Future<BrandingDto> getBranding({
-    @Query("tenant") String? tenantSlug,
-  });
+  Future<BrandingDto> getBranding({String? tenantSlug}) async {
+    final r = await _dio.get<Map<String, dynamic>>(
+      ApiEndpoints.branding,
+      queryParameters: tenantSlug != null ? {'tenant': tenantSlug} : null,
+    );
+    return BrandingDto.fromJson(r.data!);
+  }
 
-  @GET("/v1/vocab/{slug}")
-  Future<VocabDto> getVocabulary(@Path("slug") String slug);
+  Future<VocabDto> getVocabulary(String slug) async {
+    final r = await _dio.get<Map<String, dynamic>>('/v1/vocab/$slug');
+    return VocabDto.fromJson(r.data!);
+  }
 
   // --- Auth ----------------------------------------------------------------
 
-  @POST(ApiEndpoints.authRegister)
-  Future<LoginResponseDto> register(@Body() RegisterRequestDto body);
+  Future<LoginResponseDto> register(RegisterRequestDto body) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      ApiEndpoints.authRegister,
+      data: body.toJson(),
+    );
+    return LoginResponseDto.fromJson(r.data!);
+  }
 
-  @POST(ApiEndpoints.authLogin)
-  Future<LoginResponseDto> login(@Body() LoginRequestDto body);
+  Future<LoginResponseDto> login(LoginRequestDto body) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      ApiEndpoints.authLogin,
+      data: body.toJson(),
+    );
+    return LoginResponseDto.fromJson(r.data!);
+  }
 
-  @POST(ApiEndpoints.authRefresh)
-  Future<LoginResponseDto> refresh(@Body() RefreshRequestDto body);
+  Future<LoginResponseDto> refresh(RefreshRequestDto body) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      ApiEndpoints.authRefresh,
+      data: body.toJson(),
+    );
+    return LoginResponseDto.fromJson(r.data!);
+  }
 
-  @POST(ApiEndpoints.authLogout)
-  Future<LogoutResponseDto> logout();
+  Future<LogoutResponseDto> logout() async {
+    final r = await _dio.post<Map<String, dynamic>>(ApiEndpoints.authLogout);
+    return LogoutResponseDto.fromJson(r.data!);
+  }
 
-  @GET(ApiEndpoints.authMe)
-  Future<MeResponseDto> me();
+  Future<LoginResponseDto> googleSignIn(String accessToken) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '/v1/auth/google',
+      data: {'access_token': accessToken},
+    );
+    return LoginResponseDto.fromJson(r.data!);
+  }
+
+  Future<MeResponseDto> me() async {
+    final r = await _dio.get<Map<String, dynamic>>(ApiEndpoints.authMe);
+    return MeResponseDto.fromJson(r.data!);
+  }
+
+  Future<VerifyEmailResponseDto> verifyEmail(VerifyEmailRequestDto body) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      ApiEndpoints.authVerifyEmail,
+      data: body.toJson(),
+    );
+    return VerifyEmailResponseDto.fromJson(r.data!);
+  }
+
+  Future<ResendVerificationResponseDto> resendVerification(
+    ResendVerificationRequestDto body,
+  ) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      ApiEndpoints.authResendVerification,
+      data: body.toJson(),
+    );
+    return ResendVerificationResponseDto.fromJson(r.data!);
+  }
 
   // --- Heritage ------------------------------------------------------------
 
-  @GET(ApiEndpoints.heritageList)
   Future<HeritagePageDto> listHeritage({
-    @Query("kind") String? kind,
-    @Query("country") String? country,
-    @Query("status") String? status,
-    @Query("search") String? search,
-    @Query("limit") int limit = 20,
-    @Query("offset") int offset = 0,
-  });
+    String? kind,
+    String? country,
+    String? status,
+    String? search,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final r = await _dio.get<Map<String, dynamic>>(
+      ApiEndpoints.heritageList,
+      queryParameters: {
+        if (kind != null) 'kind': kind,
+        if (country != null) 'country': country,
+        if (status != null) 'status': status,
+        if (search != null) 'search': search,
+        'limit': limit,
+        'offset': offset,
+      },
+    );
+    return HeritagePageDto.fromJson(r.data!);
+  }
 
-  @GET("/v1/heritage/{pubId}")
-  Future<HeritageDto> getHeritage(@Path("pubId") String pubId);
+  Future<HeritageDto> getHeritage(String pubId) async {
+    final r = await _dio.get<Map<String, dynamic>>('/v1/heritage/$pubId');
+    return HeritageDto.fromJson(r.data!);
+  }
 }

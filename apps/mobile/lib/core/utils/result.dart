@@ -3,8 +3,8 @@
 // We deliberately avoid pulling in `dartz` or `fpdart` — Dart 3 sealed
 // classes give us exhaustive pattern matching for free.
 
-import "package:meta/meta.dart";
-import "package:silklens/core/error/failures.dart";
+import 'package:meta/meta.dart';
+import 'package:silklens/core/error/failures.dart';
 
 @immutable
 sealed class Result<S> {

@@ -2,8 +2,8 @@
 // The backend OAuth flow ships in a follow-up agent, so for now every
 // button surfaces a localized "Coming soon" snackbar.
 
-import "package:flutter/material.dart";
-import "package:silklens/l10n/app_localizations.dart";
+import 'package:flutter/material.dart';
+import 'package:silklens/l10n/app_localizations.dart';
 
 class SocialProvidersRow extends StatelessWidget {
   const SocialProvidersRow({super.key});
@@ -19,7 +19,7 @@ class SocialProvidersRow extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
-                l10n?.authProvidersDivider ?? "",
+                l10n.authProvidersDivider ?? '',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -28,21 +28,21 @@ class SocialProvidersRow extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _ProviderButton(
-          providerKey: const Key("auth.provider_google"),
+          providerKey: const Key('auth.provider_google'),
           icon: Icons.g_mobiledata,
-          label: l10n?.authProviderGoogle ?? "Google",
+          label: l10n.authProviderGoogle ?? 'Google',
         ),
         const SizedBox(height: 8),
         _ProviderButton(
-          providerKey: const Key("auth.provider_apple"),
+          providerKey: const Key('auth.provider_apple'),
           icon: Icons.apple,
-          label: l10n?.authProviderApple ?? "Apple",
+          label: l10n.authProviderApple ?? 'Apple',
         ),
         const SizedBox(height: 8),
         _ProviderButton(
-          providerKey: const Key("auth.provider_telegram"),
+          providerKey: const Key('auth.provider_telegram'),
           icon: Icons.send,
-          label: l10n?.authProviderTelegram ?? "Telegram",
+          label: l10n.authProviderTelegram ?? 'Telegram',
         ),
       ],
     );
@@ -71,7 +71,7 @@ class _ProviderButton extends StatelessWidget {
         label: Text(label),
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n?.authComingSoon ?? "Coming soon")),
+            SnackBar(content: Text(l10n.authComingSoon ?? 'Coming soon')),
           );
         },
       ),

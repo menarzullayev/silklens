@@ -14,7 +14,9 @@ from uuid import UUID, uuid4
 from src.domain.identity.entities import (
     AuthenticatedSession,
     Credentials,
+    OAuthProfile,
     RegistrationRequest,
+    ResidencyRegion,
     TrustTier,
     User,
     UserStatus,
@@ -232,6 +234,80 @@ class AuthService:
         # then exchange the verification for elevated tokens.
         if self._mfa_gate is not None:
             await self._mfa_gate.require_if_enrolled(user=user)
+        return await self._issue_session(user, ip_address=ip_address, user_agent=user_agent)
+
+    # --- oauth login ----------------------------------------------------
+
+    async def login_with_oauth(
+        self,
+        *,
+        provider_id: UUID,
+        profile: OAuthProfile,
+        tenant_id: UUID,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        preferred_locale: str = "en",
+        preferred_timezone: str = "UTC",
+        residency_region: ResidencyRegion = ResidencyRegion.GLOBAL,
+    ) -> AuthenticatedSession:
+        """Sign in or register a user via an OAuth provider.
+
+        Lookup order:
+          1. user_identities (provider_id + subject) — returning user
+          2. user_emails (email) — existing account, first OAuth link
+          3. create new account with identity linked
+
+        No password is set; the provider's email_verified flag drives
+        immediate email verification.
+        """
+        # 1. Known OAuth identity?
+        found = await self._users.find_by_oauth_identity(
+            provider_id=provider_id, subject=profile.provider_subject
+        )
+
+        # 2. Known email from a different sign-in method?
+        if found is None:
+            found = await self._users.find_by_email(profile.email, tenant_id=tenant_id)
+
+        if found is not None:
+            user, _ = found
+            if not user.is_active:
+                raise AccountInactive(user.status.value)
+            await self._users.upsert_oauth_identity(
+                user=user, provider_id=provider_id, profile=profile
+            )
+            return await self._issue_session(user, ip_address=ip_address, user_agent=user_agent)
+
+        # 3. New user — create without password, identity linked in same txn.
+        now = self._clock.now()
+        user = User(
+            id=uuid4(),
+            tenant_id=tenant_id,
+            residency_region=residency_region,
+            pub_id=_generate_pub_id(),
+            status=UserStatus.ACTIVE,
+            is_guest=False,
+            trust_tier=TrustTier.NEW,
+            trust_score=0,
+            preferred_locale=preferred_locale,
+            preferred_timezone=preferred_timezone,
+            created_at=now,
+            updated_at=now,
+            email_verified_at=now if profile.email_verified else None,
+        )
+        user, _ = await self._users.create_oauth_user(
+            user=user,
+            email=profile.email,
+            email_verified=profile.email_verified,
+            provider_id=provider_id,
+            profile=profile,
+        )
+        try:
+            from src.core.metrics import business_signups_total
+
+            business_signups_total.inc()
+        except Exception:  # noqa: S110
+            pass
         return await self._issue_session(user, ip_address=ip_address, user_agent=user_agent)
 
     # --- refresh -------------------------------------------------------

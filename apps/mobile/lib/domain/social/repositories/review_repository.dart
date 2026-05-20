@@ -1,5 +1,5 @@
-import "package:silklens/core/utils/result.dart";
-import "package:silklens/domain/social/entities/review.dart";
+import 'package:silklens/core/utils/result.dart';
+import 'package:silklens/domain/social/entities/review.dart';
 
 abstract interface class ReviewRepository {
   Future<Result<List<Review>>> listForHeritage(String heritageId);

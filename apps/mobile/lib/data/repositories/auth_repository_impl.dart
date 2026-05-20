@@ -1,41 +1,140 @@
-// Concrete [AuthRepository] backed by the retrofit-generated REST client.
+// AuthRepositoryImpl — full implementation wired to SilkLensApiClient +
+// SecureTokenStorage.
 //
-// Responsibilities (per Clean Architecture, ADR-0003):
-//   * Catch ApiException / DioException / NetworkException and translate
-//     into domain Failure values inside `Result`.
-//   * Persist tokens into [SecureTokenStorage] on success and a JSON
-//     snapshot of the user so cold-boot can paint a logged-in shell.
-//   * Stay out of presentation concerns — providers wire this up.
+// All fallible operations return Result<T> so callers can exhaustively pattern-
+// match without try/catch.  currentSession() is the only method that returns a
+// nullable directly — it is intentionally non-failable (storage reads never
+// throw in practice, and an absent token simply means "anonymous user").
 
-import "dart:async";
-import "dart:convert";
+import 'dart:convert';
 
-import "package:dio/dio.dart";
-import "package:hooks_riverpod/hooks_riverpod.dart";
-import "package:silklens/core/error/exceptions.dart";
-import "package:silklens/core/error/failures.dart";
-import "package:silklens/core/logging/app_logger.dart";
-import "package:silklens/core/storage/secure_token_storage.dart";
-import "package:silklens/core/utils/result.dart";
-import "package:silklens/data/api/clients/api_client_provider.dart";
-import "package:silklens/data/api/clients/silklens_api_client.dart";
-import "package:silklens/data/api/dto/auth_dto.dart";
-import "package:silklens/domain/identity/entities/auth_session.dart";
-import "package:silklens/domain/identity/entities/auth_user.dart";
-import "package:silklens/domain/identity/repositories/auth_repository.dart";
+import 'package:dio/dio.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/core/error/failures.dart';
+import 'package:silklens/core/storage/secure_token_storage.dart';
+import 'package:silklens/core/utils/result.dart';
+import 'package:silklens/data/api/clients/api_client_provider.dart';
+import 'package:silklens/data/api/clients/silklens_api_client.dart';
+import 'package:silklens/data/api/dto/auth_dto.dart';
+import 'package:silklens/domain/identity/entities/auth_session.dart';
+import 'package:silklens/domain/identity/entities/auth_user.dart';
+import 'package:silklens/domain/identity/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  AuthRepositoryImpl({
-    required SilkLensApiClient api,
-    required SecureTokenStorage tokenStorage,
-    Clock? clock,
-  })  : _api = api,
-        _storage = tokenStorage,
-        _clock = clock ?? const _SystemClock();
+  AuthRepositoryImpl(this._client, this._tokenStorage);
 
-  final SilkLensApiClient _api;
-  final SecureTokenStorage _storage;
-  final Clock _clock;
+  final SilkLensApiClient _client;
+  final SecureTokenStorage _tokenStorage;
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  /// Maps a [DioException] into the appropriate domain [Failure].
+  Failure _mapDio(DioException e) {
+    final statusCode = e.response?.statusCode;
+    if (e.type == DioExceptionType.connectionError ||
+        e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.sendTimeout) {
+      return NetworkFailure(
+        'Network error: ${e.message}',
+        cause: e,
+        stackTrace: e.stackTrace,
+      );
+    }
+    if (statusCode == 401 || statusCode == 403) {
+      return AuthFailure(
+        _extractMessage(e) ?? 'Authentication failed ($statusCode)',
+        cause: e,
+        stackTrace: e.stackTrace,
+      );
+    }
+    if (statusCode == 422) {
+      return ValidationFailure(
+        _extractMessage(e) ?? 'Validation error',
+      );
+    }
+    return ServerFailure(
+      _extractMessage(e) ?? 'Server error ($statusCode)',
+      statusCode: statusCode,
+      cause: e,
+      stackTrace: e.stackTrace,
+    );
+  }
+
+  String? _extractMessage(DioException e) {
+    try {
+      final data = e.response?.data;
+      if (data is Map<String, dynamic>) {
+        return data['detail'] as String? ?? data['message'] as String?;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Failure _mapUnknown(Object e, StackTrace st) =>
+      UnknownFailure(e.toString(), cause: e, stackTrace: st);
+
+  /// Converts a [UserDto] to a domain [AuthUser].
+  AuthUser _userFromDto(UserDto dto) => AuthUser(
+        id: dto.id,
+        pubId: dto.pubId,
+        tenantId: dto.tenantId,
+        residencyRegion: dto.residencyRegion,
+        trustTier: dto.trustTier,
+        preferredLocale: dto.preferredLocale,
+        isVerified: dto.isVerified,
+      );
+
+  /// Persists tokens and the user snapshot after a successful auth response.
+  Future<void> _persistSession({
+    required String accessToken,
+    required String refreshToken,
+    required AuthUser user,
+  }) async {
+    await Future.wait([
+      _tokenStorage.writeAccessToken(accessToken),
+      _tokenStorage.writeRefreshToken(refreshToken),
+      _tokenStorage.writeUserSnapshot(jsonEncode(user.toJson())),
+    ]);
+  }
+
+  // ---------------------------------------------------------------------------
+  // AuthRepository implementation
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<Result<AuthSession>> signIn({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final resp = await _client.login(
+        LoginRequestDto(email: email, password: password),
+      );
+      final user = _userFromDto(resp.user);
+      final session = AuthSession(
+        accessToken: resp.tokens.accessToken,
+        refreshToken: resp.tokens.refreshToken,
+        user: user,
+        expiresIn: resp.tokens.expiresIn,
+        tokenType: resp.tokens.tokenType,
+        expiresAt: DateTime.now().add(Duration(seconds: resp.tokens.expiresIn)),
+        email: email,
+      );
+      await _persistSession(
+        accessToken: session.accessToken,
+        refreshToken: session.refreshToken,
+        user: user,
+      );
+      return Success(session);
+    } on DioException catch (e) {
+      return FailureResult(_mapDio(e));
+    } catch (e, st) {
+      return FailureResult(_mapUnknown(e, st));
+    }
+  }
 
   @override
   Future<Result<AuthSession>> signUp({
@@ -45,233 +144,217 @@ class AuthRepositoryImpl implements AuthRepository {
     String? preferredLocale,
   }) async {
     try {
-      final response = await _api.register(
+      final resp = await _client.register(
         RegisterRequestDto(
           email: email,
           password: password,
           displayName: displayName,
-          preferredLocale: preferredLocale ?? "en",
+          preferredLocale: preferredLocale ?? 'en',
         ),
       );
-      final session = _sessionFromResponse(response);
-      await _persist(session);
-      return Success<AuthSession>(session);
-    } on ApiException catch (e, st) {
-      return FailureResult<AuthSession>(_apiToFailure(e, st));
-    } on NetworkException catch (e, st) {
-      return FailureResult<AuthSession>(
-        NetworkFailure(e.message, cause: e, stackTrace: st),
+      final user = _userFromDto(resp.user);
+      final session = AuthSession(
+        accessToken: resp.tokens.accessToken,
+        refreshToken: resp.tokens.refreshToken,
+        user: user,
+        expiresIn: resp.tokens.expiresIn,
+        tokenType: resp.tokens.tokenType,
+        expiresAt: DateTime.now().add(Duration(seconds: resp.tokens.expiresIn)),
+        email: email,
       );
-    } on DioException catch (e, st) {
-      return FailureResult<AuthSession>(_dioToFailure(e, st));
-    }
-  }
-
-  @override
-  Future<Result<AuthSession>> signIn({
-    required String email,
-    required String password,
-  }) async {
-    try {
-      final response = await _api.login(
-        LoginRequestDto(email: email, password: password),
+      await _persistSession(
+        accessToken: session.accessToken,
+        refreshToken: session.refreshToken,
+        user: user,
       );
-      final session = _sessionFromResponse(response);
-      await _persist(session);
-      return Success<AuthSession>(session);
-    } on ApiException catch (e, st) {
-      return FailureResult<AuthSession>(_apiToFailure(e, st));
-    } on NetworkException catch (e, st) {
-      return FailureResult<AuthSession>(
-        NetworkFailure(e.message, cause: e, stackTrace: st),
-      );
-    } on DioException catch (e, st) {
-      return FailureResult<AuthSession>(_dioToFailure(e, st));
+      return Success(session);
+    } on DioException catch (e) {
+      return FailureResult(_mapDio(e));
+    } catch (e, st) {
+      return FailureResult(_mapUnknown(e, st));
     }
   }
 
   @override
   Future<Result<void>> signOut() async {
     try {
-      await _api.logout();
-    } on Exception catch (error, stackTrace) {
-      // Don't fail sign-out if the server returns an error — the user
-      // still expects the local session to be cleared.
-      AppLogger.instance.w(
-        "Logout API call failed; clearing local session anyway.",
-        error: error,
-        stackTrace: stackTrace,
-      );
+      // Best-effort server-side revocation — ignore errors so the local
+      // session is always cleared even if the server is unreachable.
+      await _client.logout();
+    } catch (_) {}
+    try {
+      await _tokenStorage.clear();
+      return const Success(null);
+    } catch (e, st) {
+      return FailureResult(_mapUnknown(e, st));
     }
-    await _storage.clear();
-    return const Success<void>(null);
   }
 
   @override
   Future<Result<AuthSession>> refresh() async {
-    final refreshToken = await _storage.readRefreshToken();
-    if (refreshToken == null || refreshToken.isEmpty) {
-      return const FailureResult<AuthSession>(
-        AuthFailure("No refresh token in secure storage."),
+    final refreshToken = await _tokenStorage.readRefreshToken();
+    if (refreshToken == null) {
+      return const FailureResult(
+        AuthFailure('No refresh token available — user must sign in again'),
       );
     }
     try {
-      final response =
-          await _api.refresh(RefreshRequestDto(refreshToken: refreshToken));
-      final session = _sessionFromResponse(response);
-      await _persist(session);
-      return Success<AuthSession>(session);
-    } on ApiException catch (e, st) {
-      // Refresh failed — caller must clear the session.
-      return FailureResult<AuthSession>(_apiToFailure(e, st));
-    } on DioException catch (e, st) {
-      return FailureResult<AuthSession>(_dioToFailure(e, st));
+      final resp = await _client.refresh(
+        RefreshRequestDto(refreshToken: refreshToken),
+      );
+      final user = _userFromDto(resp.user);
+
+      // Try to recover the cached email for the reconstructed session.
+      String? cachedEmail;
+      try {
+        final snapshot = await _tokenStorage.readUserSnapshot();
+        if (snapshot != null) {
+          // email is not in AuthUser.toJson — fall back to null gracefully.
+          cachedEmail = null;
+        }
+      } catch (_) {}
+
+      final session = AuthSession(
+        accessToken: resp.tokens.accessToken,
+        refreshToken: resp.tokens.refreshToken,
+        user: user,
+        expiresIn: resp.tokens.expiresIn,
+        tokenType: resp.tokens.tokenType,
+        expiresAt: DateTime.now().add(Duration(seconds: resp.tokens.expiresIn)),
+        email: cachedEmail,
+      );
+      await _persistSession(
+        accessToken: session.accessToken,
+        refreshToken: session.refreshToken,
+        user: user,
+      );
+      return Success(session);
+    } on DioException catch (e) {
+      // Revoked / expired refresh token — clear local storage so the caller
+      // knows the user must sign in from scratch.
+      await _tokenStorage.clear();
+      return FailureResult(_mapDio(e));
+    } catch (e, st) {
+      await _tokenStorage.clear();
+      return FailureResult(_mapUnknown(e, st));
     }
   }
 
   @override
   Future<AuthSession?> currentSession() async {
-    final access = await _storage.readAccessToken();
-    final refreshTok = await _storage.readRefreshToken();
-    final userJson = await _storage.readUserSnapshot();
-    if (access == null ||
-        access.isEmpty ||
-        refreshTok == null ||
-        refreshTok.isEmpty ||
-        userJson == null ||
-        userJson.isEmpty) {
-      return null;
-    }
+    final accessToken = await _tokenStorage.readAccessToken();
+    final refreshToken = await _tokenStorage.readRefreshToken();
+    if (accessToken == null) return null;
+
+    // Reconstruct user from cached snapshot when available.
+    AuthUser? cachedUser;
     try {
-      final user =
-          AuthUser.fromJson(json.decode(userJson) as Map<String, dynamic>);
-      // We don't know the precise expiry without re-decoding the JWT, so we
-      // mark it as expiring "now" — the splash page calls [refresh] before
-      // dropping into the authenticated home, which gives us a fresh window.
-      return AuthSession(
-        user: user,
-        accessToken: access,
-        refreshToken: refreshTok,
-        expiresAt: _clock.utcNow(),
-      );
-    } on FormatException catch (error, stackTrace) {
-      AppLogger.instance.w(
-        "Corrupt user snapshot in secure storage — clearing.",
-        error: error,
-        stackTrace: stackTrace,
-      );
-      await _storage.clear();
-      return null;
+      final snapshot = await _tokenStorage.readUserSnapshot();
+      if (snapshot != null) {
+        cachedUser = AuthUser.fromJson(
+          jsonDecode(snapshot) as Map<String, dynamic>,
+        );
+      }
+    } catch (_) {
+      // Corrupted snapshot — proceed without cached user; caller should call
+      // currentUser() or refresh() to get a fresh session.
     }
+
+    if (cachedUser == null) return null;
+
+    return AuthSession(
+      accessToken: accessToken,
+      refreshToken: refreshToken ?? '',
+      user: cachedUser,
+    );
   }
 
   @override
   Future<Result<AuthUser>> currentUser() async {
     try {
-      final response = await _api.me();
-      final user = _userFromDto(response.user);
-      await _storage.writeUserSnapshot(json.encode(user.toJson()));
-      return Success<AuthUser>(user);
-    } on ApiException catch (e, st) {
-      return FailureResult<AuthUser>(_apiToFailure(e, st));
-    } on DioException catch (e, st) {
-      return FailureResult<AuthUser>(_dioToFailure(e, st));
+      final resp = await _client.me();
+      final user = _userFromDto(resp.user);
+      // Keep the cached snapshot up-to-date.
+      await _tokenStorage.writeUserSnapshot(jsonEncode(user.toJson()));
+      return Success(user);
+    } on DioException catch (e) {
+      return FailureResult(_mapDio(e));
+    } catch (e, st) {
+      return FailureResult(_mapUnknown(e, st));
     }
   }
 
-  // --- helpers --------------------------------------------------------------
-
-  AuthSession _sessionFromResponse(LoginResponseDto dto) => AuthSession(
-        user: _userFromDto(dto.user),
-        accessToken: dto.tokens.accessToken,
-        refreshToken: dto.tokens.refreshToken,
-        tokenType: dto.tokens.tokenType,
-        expiresAt:
-            _clock.utcNow().add(Duration(seconds: dto.tokens.expiresIn)),
-      );
-
-  AuthUser _userFromDto(UserDto dto) => AuthUser(
-        id: dto.id,
-        pubId: dto.pubId,
-        tenantId: dto.tenantId,
-        residencyRegion: dto.residencyRegion,
-        email: dto.email,
-        displayName: dto.displayName,
-        avatarUrl: dto.avatarUrl,
-        trustTier: dto.trustTier,
-        preferredLocale: dto.preferredLocale,
-        preferredTimezone: dto.preferredTimezone,
-        isVerified: dto.isVerified,
-      );
-
-  Future<void> _persist(AuthSession session) async {
-    await _storage.writeAccessToken(session.accessToken);
-    await _storage.writeRefreshToken(session.refreshToken);
-    await _storage.writeUserSnapshot(json.encode(session.user.toJson()));
-  }
-
-  Failure _apiToFailure(ApiException e, StackTrace st) {
-    final code = e.statusCode;
-    final msg = e.message;
-    if (code == 400 && msg.contains("password")) {
-      return ValidationFailure(msg, fieldErrors: <String, String>{
-        "password": msg,
-      });
-    }
-    if (code == 401) {
-      return AuthFailure(msg, cause: e, stackTrace: st);
-    }
-    if (code == 403) {
-      return AuthFailure(msg, cause: e, stackTrace: st);
-    }
-    if (code == 409) {
-      return ValidationFailure(msg, fieldErrors: <String, String>{
-        "email": msg,
-      });
-    }
-    if (code == 429) {
-      return ServerFailure(
-        msg,
-        statusCode: code,
-        cause: e,
-        stackTrace: st,
-      );
-    }
-    return ServerFailure(msg, statusCode: code, cause: e, stackTrace: st);
-  }
-
-  Failure _dioToFailure(DioException e, StackTrace st) {
-    final inner = e.error;
-    if (inner is ApiException) return _apiToFailure(inner, st);
-    if (inner is NetworkException) {
-      return NetworkFailure(inner.message, cause: e, stackTrace: st);
-    }
-    return NetworkFailure(e.message ?? "Dio error", cause: e, stackTrace: st);
-  }
-}
-
-abstract class Clock {
-  const Clock();
-  DateTime utcNow();
-}
-
-class _SystemClock extends Clock {
-  const _SystemClock();
   @override
-  DateTime utcNow() => DateTime.now().toUtc();
+  Future<Result<bool>> verifyEmail({
+    required String email,
+    required String code,
+  }) async {
+    try {
+      final resp = await _client.verifyEmail(
+        VerifyEmailRequestDto(email: email, code: code),
+      );
+      if (resp.verified) {
+        // Refresh cached user snapshot so is_verified flips to true.
+        try {
+          await currentUser();
+        } catch (_) {}
+      }
+      return Success(resp.verified);
+    } on DioException catch (e) {
+      return FailureResult(_mapDio(e));
+    } catch (e, st) {
+      return FailureResult(_mapUnknown(e, st));
+    }
+  }
+
+  @override
+  Future<Result<bool>> resendVerification({required String email}) async {
+    try {
+      final resp = await _client.resendVerification(
+        ResendVerificationRequestDto(email: email),
+      );
+      return Success(resp.sent);
+    } on DioException catch (e) {
+      return FailureResult(_mapDio(e));
+    } catch (e, st) {
+      return FailureResult(_mapUnknown(e, st));
+    }
+  }
+
+  @override
+  Future<Result<AuthSession>> signInWithGoogle(String accessToken) async {
+    try {
+      final resp = await _client.googleSignIn(accessToken);
+      final user = _userFromDto(resp.user);
+      final session = AuthSession(
+        accessToken: resp.tokens.accessToken,
+        refreshToken: resp.tokens.refreshToken,
+        user: user,
+        expiresIn: resp.tokens.expiresIn,
+        tokenType: resp.tokens.tokenType,
+        expiresAt: DateTime.now().add(Duration(seconds: resp.tokens.expiresIn)),
+      );
+      await _persistSession(
+        accessToken: session.accessToken,
+        refreshToken: session.refreshToken,
+        user: user,
+      );
+      return Success(session);
+    } on DioException catch (e) {
+      return FailureResult(_mapDio(e));
+    } catch (e, st) {
+      return FailureResult(_mapUnknown(e, st));
+    }
+  }
 }
 
-/// Provider wiring lives here (data layer) so the presentation layer never
-/// needs to import data/*.
-///
-/// [silkLensApiClientProvider] is defined in
-/// `lib/data/api/clients/api_client_provider.dart` — the single source of
-/// truth for the retrofit client.
+// ── Riverpod provider ────────────────────────────────────────────────────────
+
 final Provider<AuthRepository> authRepositoryProvider =
     Provider<AuthRepository>(
   (Ref ref) => AuthRepositoryImpl(
-    api: ref.watch(silkLensApiClientProvider),
-    tokenStorage: ref.watch(secureTokenStorageProvider),
+    ref.watch(silkLensApiClientProvider),
+    ref.watch(secureTokenStorageProvider),
   ),
-  name: "authRepositoryProvider",
+  name: 'authRepositoryProvider',
 );

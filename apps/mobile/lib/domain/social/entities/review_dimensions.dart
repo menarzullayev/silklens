@@ -1,39 +1,12 @@
-// Multi-dimensional review per backend `review_dimensions` schema. Each
-// dimension is a 1–5 star rating; nulls mean "not rated".
-
-import "package:freezed_annotation/freezed_annotation.dart";
-
-part "review_dimensions.freezed.dart";
-
-@freezed
-class ReviewDimensions with _$ReviewDimensions {
-  const factory ReviewDimensions({
-    int? history,
-    int? photos,
-    int? access,
-    int? value,
-    int? atmosphere,
-    int? familyFriendly,
-  }) = _ReviewDimensions;
-
-  const ReviewDimensions._();
-
-  /// True if at least one dimension has been rated.
-  bool get hasAnyRating =>
-      history != null ||
-      photos != null ||
-      access != null ||
-      value != null ||
-      atmosphere != null ||
-      familyFriendly != null;
-}
-
-@freezed
-class ReviewDraft with _$ReviewDraft {
-  const factory ReviewDraft({
-    required String heritagePubId,
-    required ReviewDimensions dimensions,
-    String? body,
-    @Default("en") String language,
-  }) = _ReviewDraft;
+class ReviewDimensions {
+  const ReviewDimensions({this.history = 0, this.photos = 0, this.access = 0, this.value = 0, this.atmosphere = 0, this.familyFriendly = 0});
+  final double history;
+  final double photos;
+  final double access;
+  final double value;
+  final double atmosphere;
+  final double familyFriendly;
+  double get average =>
+      [history, photos, access, value, atmosphere, familyFriendly]
+          .fold<double>(0, (a, b) => a + b) / 6;
 }

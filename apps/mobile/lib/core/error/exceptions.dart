@@ -7,7 +7,7 @@ class ApiException implements Exception {
   final int? statusCode;
 
   @override
-  String toString() => "ApiException($statusCode): $message";
+  String toString() => 'ApiException($statusCode): $message';
 }
 
 class CacheException implements Exception {
@@ -15,7 +15,7 @@ class CacheException implements Exception {
   final String message;
 
   @override
-  String toString() => "CacheException: $message";
+  String toString() => 'CacheException: $message';
 }
 
 class NetworkException implements Exception {
@@ -23,5 +23,5 @@ class NetworkException implements Exception {
   final String message;
 
   @override
-  String toString() => "NetworkException: $message";
+  String toString() => 'NetworkException: $message';
 }

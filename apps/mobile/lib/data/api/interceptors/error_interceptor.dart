@@ -3,8 +3,8 @@
 // Repositories translate these (still adapter-level) exceptions into
 // domain `Failure` values inside `core/utils/result.dart`.
 
-import "package:dio/dio.dart";
-import "package:silklens/core/error/exceptions.dart";
+import 'package:dio/dio.dart';
+import 'package:silklens/core/error/exceptions.dart';
 
 class ErrorInterceptor extends Interceptor {
   @override
@@ -13,17 +13,17 @@ class ErrorInterceptor extends Interceptor {
       DioExceptionType.connectionTimeout ||
       DioExceptionType.sendTimeout ||
       DioExceptionType.receiveTimeout =>
-        NetworkException("Network timeout: ${err.message}"),
+        NetworkException('Network timeout: ${err.message}'),
       DioExceptionType.connectionError ||
       DioExceptionType.unknown =>
         NetworkException("Connection error: ${err.message ?? 'unknown'}"),
       DioExceptionType.badResponse => ApiException(
-          err.response?.statusMessage ?? "Bad response",
+          err.response?.statusMessage ?? 'Bad response',
           statusCode: err.response?.statusCode,
         ),
-      DioExceptionType.cancel => ApiException("Request cancelled"),
+      DioExceptionType.cancel => ApiException('Request cancelled'),
       DioExceptionType.badCertificate =>
-        NetworkException("Bad TLS certificate"),
+        NetworkException('Bad TLS certificate'),
     };
     handler.reject(
       DioException(

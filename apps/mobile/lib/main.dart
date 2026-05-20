@@ -3,53 +3,51 @@
 // Boot order:
 //   1. Bind Flutter widgets.
 //   2. Load .env (assets/.env, copied from .env.example by the developer).
-//   3. Initialize Isar (offline DB — Master Architecture §8).
+//   3. Initialize local DB stub (offline full persistence in FAZA 6+).
 //   4. Initialize Sentry (Project-Decisions §40 — crash reporting).
-//   5. Wrap the app in ProviderScope so every layer below can read providers.
-//
-// We intentionally keep this file thin. Anything beyond boot orchestration
-// belongs in `app/` (composition root) or one of the layers under `lib/`.
+//   5. Wrap the app in ProviderScope.
 
-import "dart:async";
+import 'dart:async';
 
-import "package:flutter/foundation.dart";
-import "package:flutter/widgets.dart";
-import "package:flutter_dotenv/flutter_dotenv.dart";
-import "package:hooks_riverpod/hooks_riverpod.dart";
-import "package:sentry_flutter/sentry_flutter.dart";
-import "package:silklens/app/app.dart";
-import "package:silklens/core/env/app_environment.dart";
-import "package:silklens/core/logging/app_logger.dart";
-import "package:silklens/data/local/isar_database.dart";
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+// import 'package:flutter_stripe/flutter_stripe.dart'; // SLK-041
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:silklens/app/app.dart';
+import 'package:silklens/core/env/app_environment.dart';
+import 'package:silklens/core/logging/app_logger.dart';
+import 'package:silklens/data/local/isar_database.dart';
 
 Future<void> main() async {
-  // `runZonedGuarded` makes sure any async error inside the app surfaces to
-  // Sentry. We use it instead of a top-level try/catch because async work
-  // initiated by the framework would otherwise escape.
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
 
-      // 1. Environment. Missing .env is non-fatal in debug builds.
+      // SLK-041: Stripe initialization.
+      // Uncomment when STRIPE_PK env var is configured:
+      // Stripe.publishableKey =
+      //     const String.fromEnvironment('STRIPE_PK', defaultValue: '');
+
       try {
-        await dotenv.load(fileName: "assets/.env");
+        await dotenv.load(fileName: 'assets/.env');
       } on Exception catch (error, stackTrace) {
         AppLogger.instance.w(
-          "assets/.env not found; falling back to defaults.",
+          'assets/.env not found; falling back to defaults.',
           error: error,
           stackTrace: stackTrace,
         );
       }
       final env = AppEnvironment.fromDotEnv(dotenv.env);
 
-      // 2. Offline DB. Schemas are wired here so the rest of the tree can
-      // resolve the Isar instance via DI.
-      final isar = await IsarDatabase.open();
+      // Initialize in-memory local DB stub.
+      final db = LocalDatabase.instance;
+      await db.init();
 
-      // 3. Sentry — only initialize when we actually have a DSN.
       FlutterError.onError = (FlutterErrorDetails details) {
         AppLogger.instance.e(
-          "FlutterError",
+          'FlutterError',
           error: details.exception,
           stackTrace: details.stack,
         );
@@ -59,10 +57,7 @@ Future<void> main() async {
       };
 
       Future<void> runApp() async {
-        runAppWithProviders(
-          environment: env,
-          isarDatabase: isar,
-        );
+        runAppWithProviders(environment: env, localDb: db);
       }
 
       if (env.sentryDsn.isEmpty) {
@@ -82,28 +77,20 @@ Future<void> main() async {
       }
     },
     (Object error, StackTrace stackTrace) {
-      AppLogger.instance.e(
-        "Uncaught zone error",
-        error: error,
-        stackTrace: stackTrace,
-      );
+      AppLogger.instance.e('Uncaught zone error', error: error, stackTrace: stackTrace);
       unawaited(Sentry.captureException(error, stackTrace: stackTrace));
     },
   );
 }
 
-/// Mounts [SilkLensApp] inside a [ProviderScope] with the resolved
-/// environment & DB overrides. Extracted for clarity and so widget tests can
-/// reuse it with a stub environment.
 void runAppWithProviders({
   required AppEnvironment environment,
-  required IsarDatabase isarDatabase,
+  required LocalDatabase localDb,
 }) {
   runApp(
     ProviderScope(
       overrides: <Override>[
         appEnvironmentProvider.overrideWithValue(environment),
-        isarDatabaseProvider.overrideWithValue(isarDatabase),
       ],
       child: const SilkLensApp(),
     ),

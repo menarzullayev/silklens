@@ -4,6 +4,23 @@
 !.env.example
 *.pem
 *.key
+*.p8
+*.p12
+*.jks
+*.keystore
+
+# Google / Firebase / OAuth client credentials — NEVER commit
+client_secret_*.json
+google-services.json
+GoogleService-Info.plist
+firebase-admin-sdk*.json
+service-account*.json
+
+# Cloud provider credentials
+*-credentials.json
+aws-credentials*
+.aws/
+gcloud-credentials*
 
 # --- Python ---
 __pycache__/
@@ -71,3 +88,7 @@ android/local.properties
 *.log
 *.tmp
 .cache/
+
+# --- Design scratch (AI prompts, zip exports, working analyses) ---
+design/
+finalDesign/

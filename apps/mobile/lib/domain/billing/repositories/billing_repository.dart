@@ -1,9 +1,9 @@
 // Billing contract — plans, subscriptions, invoices. Talks to /v1/billing/*.
 
-import "package:silklens/core/utils/result.dart";
-import "package:silklens/domain/billing/entities/invoice.dart";
-import "package:silklens/domain/billing/entities/subscription.dart";
-import "package:silklens/domain/billing/entities/subscription_plan.dart";
+import 'package:silklens/core/utils/result.dart';
+import 'package:silklens/domain/billing/entities/invoice.dart';
+import 'package:silklens/domain/billing/entities/subscription.dart';
+import 'package:silklens/domain/billing/entities/subscription_plan.dart';
 
 abstract interface class BillingRepository {
   Future<Result<List<SubscriptionPlan>>> plans();

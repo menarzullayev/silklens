@@ -11,14 +11,14 @@
 //   3. `.env` DEFAULT_LOCALE
 //   4. "en"
 
-import "package:flutter/widgets.dart";
-import "package:hooks_riverpod/hooks_riverpod.dart";
-import "package:shared_preferences/shared_preferences.dart";
-import "package:silklens/core/env/app_environment.dart";
-import "package:silklens/core/logging/app_logger.dart";
+import 'package:flutter/widgets.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:silklens/core/env/app_environment.dart';
+import 'package:silklens/core/logging/app_logger.dart';
 
-const Set<String> kSupportedLanguageCodes = <String>{"en", "uz", "ru", "zh"};
-const String _prefsKey = "sl.locale.language_code";
+const Set<String> kSupportedLanguageCodes = <String>{'en', 'uz', 'ru', 'zh'};
+const String _prefsKey = 'sl.locale.language_code';
 
 class LocaleController extends Notifier<Locale> {
   @override
@@ -44,7 +44,7 @@ class LocaleController extends Notifier<Locale> {
       }
     } on Exception catch (error, stackTrace) {
       AppLogger.instance.w(
-        "Locale bootstrap failed",
+        'Locale bootstrap failed',
         error: error,
         stackTrace: stackTrace,
       );
@@ -64,9 +64,9 @@ class LocaleController extends Notifier<Locale> {
 
   Locale _parse(String code) {
     final normalized = code.toLowerCase();
-    final parts = normalized.split(RegExp("[_-]"));
+    final parts = normalized.split(RegExp('[_-]'));
     final language = parts.first;
-    if (!kSupportedLanguageCodes.contains(language)) return const Locale("en");
+    if (!kSupportedLanguageCodes.contains(language)) return const Locale('en');
     return parts.length >= 2 ? Locale(language, parts[1]) : Locale(language);
   }
 }
@@ -74,5 +74,5 @@ class LocaleController extends Notifier<Locale> {
 final NotifierProvider<LocaleController, Locale> activeLocaleProvider =
     NotifierProvider<LocaleController, Locale>(
   LocaleController.new,
-  name: "activeLocaleProvider",
+  name: 'activeLocaleProvider',
 );

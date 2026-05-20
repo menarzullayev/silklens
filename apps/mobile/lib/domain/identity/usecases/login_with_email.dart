@@ -1,6 +1,6 @@
-import "package:silklens/core/utils/result.dart";
-import "package:silklens/domain/identity/entities/auth_session.dart";
-import "package:silklens/domain/identity/repositories/auth_repository.dart";
+import 'package:silklens/core/utils/result.dart';
+import 'package:silklens/domain/identity/entities/auth_session.dart';
+import 'package:silklens/domain/identity/repositories/auth_repository.dart';
 
 class LoginWithEmail {
   const LoginWithEmail(this._repo);

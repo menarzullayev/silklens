@@ -1,10 +1,11 @@
 // Gamification contract — XP, badges, streaks, leaderboards. Mapped onto
 // /v1/me/xp, /v1/me/badges, /v1/me/streak, /v1/leaderboards/*.
 
-import "package:silklens/core/utils/result.dart";
-import "package:silklens/domain/gamification/entities/badge.dart";
-import "package:silklens/domain/gamification/entities/leaderboard_entry.dart";
-import "package:silklens/domain/gamification/entities/xp_summary.dart";
+import 'package:silklens/core/utils/result.dart';
+import 'package:silklens/domain/gamification/entities/badge.dart';
+import 'package:silklens/domain/gamification/entities/leaderboard_entry.dart';
+import 'package:silklens/domain/gamification/entities/streak_entity.dart';
+import 'package:silklens/domain/gamification/entities/xp_summary.dart';
 
 abstract interface class GamificationRepository {
   Future<Result<XpSummary>> xpSummary();
@@ -16,4 +17,6 @@ abstract interface class GamificationRepository {
     int page = 1,
     int pageSize = 50,
   });
+
+  Future<StreakEntity> getStreak();
 }

@@ -1,29 +1,42 @@
-// Plan returned by /v1/billing/plans. `pricingZone` is resolved server-side
-// from the device country; we just render whatever the API returns.
+class SubscriptionPlan {
+  const SubscriptionPlan({
+    required this.id,
+    required this.slug,
+    required this.name,
+    required this.billingPeriod,
+    required this.trialDays,
+    required this.isDefault,
+    this.price,
+    this.currency = 'USD',
+    this.features = const [],
+    this.isHighlighted = false,
+  });
 
-import "package:freezed_annotation/freezed_annotation.dart";
+  factory SubscriptionPlan.fromJson(Map<String, dynamic> j) => SubscriptionPlan(
+        id: j['id'] as String,
+        slug: j['slug'] as String,
+        name: j['slug'] as String,
+        billingPeriod: j['billing_period'] as String? ?? 'monthly',
+        trialDays: j['trial_days'] as int? ?? 0,
+        isDefault: j['is_default'] as bool? ?? false,
+        price: (j['price'] as Map?)?['amount'] != null
+            ? double.tryParse(j['price']['amount'].toString())
+            : null,
+        currency: (j['price'] as Map?)?['currency'] as String? ?? 'USD',
+      );
+  final String id;
+  final String slug;
+  final String name;
+  final String billingPeriod;
+  final int trialDays;
+  final bool isDefault;
+  final double? price;
+  final String currency;
+  final List<String> features;
+  final bool isHighlighted;
 
-part "subscription_plan.freezed.dart";
+  String get interval => billingPeriod;
+  bool get isFree => price == null || (price ?? 0) == 0;
 
-enum PlanInterval { month, year, lifetime }
-
-@freezed
-class SubscriptionPlan with _$SubscriptionPlan {
-  const factory SubscriptionPlan({
-    required String slug,
-    required String name,
-    required PlanInterval interval,
-    required int amountMinor,
-    required String currency,
-    required String pricingZone,
-    @Default(<String>[]) List<String> features,
-    @Default(false) bool isFree,
-    @Default(false) bool isHighlighted,
-  }) = _SubscriptionPlan;
-
-  const SubscriptionPlan._();
-
-  /// Returns the price as a major-unit double — e.g. minor = 4900 + ccy = USD
-  /// produces 49.00.
-  double get amountMajor => amountMinor / 100.0;
+  String get amountMajor => price != null ? '${price!.toStringAsFixed(2)} $currency' : 'Free';
 }

@@ -1,6 +1,6 @@
 // Pure-Dart vocabulary term entity. Mirrors `VocabTermOut` in the backend.
 
-import "package:meta/meta.dart";
+import 'package:meta/meta.dart';
 
 @immutable
 class VocabTerm {
@@ -19,7 +19,7 @@ class VocabTerm {
   String localizedName(String languageCode) {
     if (displayName.isEmpty) return slug;
     return displayName[languageCode] ??
-        displayName["en"] ??
+        displayName['en'] ??
         displayName.values.firstWhere(
           (String v) => v.isNotEmpty,
           orElse: () => slug,

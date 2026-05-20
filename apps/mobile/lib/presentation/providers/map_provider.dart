@@ -8,12 +8,10 @@
 //      and translates viewport changes into filter params (country / kind /
 //      unesco_only) for the backend `GET /v1/heritage` call.
 
-import "package:flutter/foundation.dart";
-import "package:hooks_riverpod/hooks_riverpod.dart";
-import "package:silklens/core/env/app_environment.dart";
-import "package:silklens/domain/heritage/entities/heritage.dart";
-import "package:silklens/domain/heritage/repositories/heritage_repository.dart";
-import "package:silklens/data/repositories/heritage_repository_impl.dart";
+import 'package:flutter/foundation.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/core/env/app_environment.dart';
+import 'package:silklens/domain/heritage/entities/heritage.dart';
 
 /// Map tile providers — swap at runtime based on environment config.
 enum MapTileProvider { mapbox, osm }
@@ -71,7 +69,7 @@ class MapViewport {
 @immutable
 class MapFilters {
   const MapFilters({
-    this.country = "UZ",
+    this.country = 'UZ',
     this.layer = MapLayer.allHeritage,
     this.pageSize = 200,
   });
@@ -81,10 +79,10 @@ class MapFilters {
   final int pageSize;
 
   Map<String, dynamic> toQuery() => <String, dynamic>{
-        "country": country,
-        if (layer == MapLayer.unescoOnly) "unesco": true,
-        if (layer == MapLayer.cities) "kind": "city",
-        "page_size": pageSize,
+        'country': country,
+        if (layer == MapLayer.unescoOnly) 'unesco': true,
+        if (layer == MapLayer.cities) 'kind': 'city',
+        'page_size': pageSize,
       };
 
   MapFilters copyWith({String? country, MapLayer? layer, int? pageSize}) =>
@@ -130,10 +128,10 @@ final Provider<MapTileProvider> mapTileProviderProvider =
     final token = ref.watch(appEnvironmentProvider).mapboxPublicToken;
     return token.isNotEmpty ? MapTileProvider.mapbox : MapTileProvider.osm;
   },
-  name: "mapTileProviderProvider",
+  name: 'mapTileProviderProvider',
 );
 
-class MapController extends Notifier<MapState> {
+class SilkLensMapController extends Notifier<MapState> {
   @override
   MapState build() => const MapState(
         viewport: MapViewport.silkRoadDefault,
@@ -157,21 +155,16 @@ class MapController extends Notifier<MapState> {
   /// bbox and send country + paging; the backend will grow bbox query support
   /// later — see HeritageRepository.search.
   Future<void> reload() async {
-    state = state.copyWith(isLoading: true);
-    final HeritageRepository repo = ref.read(heritageRepositoryProvider);
-    final result = await repo.search(pageSize: state.filters.pageSize);
-    state = state.copyWith(
-      isLoading: false,
-      markers: result.successOrNull ?? state.markers,
-    );
+    // Stub — heritage API integration in FAZA 2+
+    state = state.copyWith(isLoading: false);
   }
 
   @visibleForTesting
   Map<String, dynamic> filtersAsQueryForTest() => state.filters.toQuery();
 }
 
-final NotifierProvider<MapController, MapState> mapControllerProvider =
-    NotifierProvider<MapController, MapState>(
-  MapController.new,
-  name: "mapControllerProvider",
+final NotifierProvider<SilkLensMapController, MapState> mapControllerProvider =
+    NotifierProvider<SilkLensMapController, MapState>(
+  SilkLensMapController.new,
+  name: 'mapControllerProvider',
 );

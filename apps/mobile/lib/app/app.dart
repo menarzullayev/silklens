@@ -9,13 +9,14 @@
 // Anything that hard-codes a string, color, or route belongs in `presentation/`
 // — never here. This file is intentionally short.
 
-import "package:flutter/material.dart";
-import "package:flutter_localizations/flutter_localizations.dart";
-import "package:hooks_riverpod/hooks_riverpod.dart";
-import "package:silklens/l10n/app_localizations.dart";
-import "package:silklens/presentation/providers/locale_provider.dart";
-import "package:silklens/presentation/router/app_router.dart";
-import "package:silklens/presentation/theme/theme_provider.dart";
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/l10n/app_localizations.dart';
+import 'package:silklens/presentation/providers/locale_provider.dart';
+import 'package:silklens/presentation/router/app_router.dart';
+import 'package:silklens/presentation/theme/theme_provider.dart';
+import 'package:silklens/presentation/widgets/offline_banner.dart';
 
 class SilkLensApp extends ConsumerWidget {
   const SilkLensApp({super.key});
@@ -33,7 +34,7 @@ class SilkLensApp extends ConsumerWidget {
       // keep it as the canonical product name. Per Project-Decisions §1
       // anything user-facing must come from localization / remote config.
       onGenerateTitle: (BuildContext context) =>
-          AppLocalizations.of(context)?.appName ?? "SilkLens",
+          AppLocalizations.of(context).appName ?? 'SilkLens',
       debugShowCheckedModeBanner: false,
       theme: themePack.light,
       darkTheme: themePack.dark,
@@ -46,6 +47,7 @@ class SilkLensApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
       ],
+      builder: (context, child) => OfflineBanner(child: child!),
       routerConfig: router,
     );
   }

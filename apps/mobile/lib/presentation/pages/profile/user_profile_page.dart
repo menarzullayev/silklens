@@ -1,109 +1,241 @@
-// Another user's public profile.
-//
-// Shows the follow button + bio + a public activity teaser. The full
-// public-activity feed endpoint is on the FAZA 3 backend roadmap; until then
-// we render the same shared feed filtered client-side.
+import 'package:flutter/material.dart';
 
-import "package:flutter/material.dart";
-import "package:hooks_riverpod/hooks_riverpod.dart";
-import "package:silklens/l10n/app_localizations.dart";
-import "package:silklens/presentation/pages/profile/follow_button.dart";
-import "package:silklens/presentation/providers/social_provider.dart";
-
-class UserProfilePage extends ConsumerWidget {
-  const UserProfilePage({required this.pubId, super.key});
-
-  final String pubId;
+class UserProfilePage extends StatefulWidget {
+  const UserProfilePage({super.key, this.isOwn = false});
+  final bool isOwn;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final asyncUser = ref.watch(followControllerProvider(pubId));
+  State<UserProfilePage> createState() => _UserProfilePageState();
+}
 
+class _UserProfilePageState extends State<UserProfilePage> {
+  bool _following = false;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(l10n?.profileTitle ?? "Profile")),
-      body: asyncUser.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (Object e, _) => Center(child: Text(e.toString())),
-        data: (user) {
-          if (user == null) {
-            return Center(
-              key: const Key("user_profile.not_found"),
-              child: Text(l10n?.profileUserNotFound ?? "User not found"),
-            );
-          }
-          return ListView(
-            key: const Key("user_profile.body"),
-            padding: const EdgeInsets.all(20),
-            children: <Widget>[
-              Center(
-                child: CircleAvatar(
-                  radius: 56,
-                  backgroundImage: user.avatarUrl != null
-                      ? NetworkImage(user.avatarUrl!)
-                      : null,
-                  child: user.avatarUrl == null
-                      ? Text(user.displayName.isNotEmpty
-                          ? user.displayName.characters.first
-                          : "?")
-                      : null,
-                ),
+      backgroundColor: const Color(0xFF0D2337),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 220,
+            pinned: true,
+            backgroundColor: const Color(0xFF0D2337),
+            leading: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: const Icon(
+                Icons.arrow_back_ios_new,
+                color: Colors.white,
+                size: 20,
               ),
-              const SizedBox(height: 12),
-              Center(
-                child: Text(
-                  user.displayName,
-                  style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            actions: [
+              if (widget.isOwn)
+                const Padding(
+                  padding: EdgeInsets.only(right: 12),
+                  child: Icon(Icons.settings_outlined, color: Colors.white),
                 ),
-              ),
-              if (user.handle != null)
-                Center(
-                  child: Text(
-                    "@${user.handle}",
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.outline,
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF1F3A93), Color(0xFF0D2337)],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      height: 60,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            const Color(0xFF0D2337).withValues(alpha: 0.9),
+                          ],
                         ),
-                  ),
-                ),
-              const SizedBox(height: 16),
-              if (user.bio != null) Text(user.bio!),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  _StatColumn(
-                    label: l10n?.profileFollowers ?? "Followers",
-                    value: user.followersCount,
-                  ),
-                  _StatColumn(
-                    label: l10n?.profileFollowing ?? "Following",
-                    value: user.followingCount,
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Center(child: FollowButton(userPubId: pubId)),
-            ],
-          );
-        },
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    // Avatar
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFB78628), Color(0xFF1F3A93)],
+                        ),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'A',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Aziz Karimov',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            '@aziz.heritage',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.5),
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFB78628),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              "Meros Qo'riqchi · Daraja 12",
+                              style: TextStyle(
+                                color: Color(0xFF1A1200),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],),
+                  const SizedBox(height: 16),
+                  // Stats
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _StatCol('47', 'Joy'),
+                      _StatCol('89', 'Kuzatuvchi'),
+                      _StatCol('34', 'Kuzatadi'),
+                      _StatCol('3,240', 'XP'),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Action buttons
+                  if (!widget.isOwn)
+                    Row(children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _following = !_following),
+                          child: Container(
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: _following
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : const Color(0xFFB78628),
+                              borderRadius: BorderRadius.circular(12),
+                              border: _following
+                                  ? Border.all(
+                                      color: Colors.white.withValues(alpha: 0.3),
+                                    )
+                                  : null,
+                            ),
+                            child: Center(
+                              child: Text(
+                                _following ? 'Kuzatilmoqda' : 'Kuzatish',
+                                style: TextStyle(
+                                  color: _following
+                                      ? Colors.white
+                                      : const Color(0xFF1A1200),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        height: 42,
+                        width: 42,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.message_outlined,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ],),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _StatColumn extends StatelessWidget {
-  const _StatColumn({required this.label, required this.value});
+class _StatCol extends StatelessWidget {
+  const _StatCol(this.value, this.label);
+  final String value;
   final String label;
-  final int value;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Text("$value", style: Theme.of(context).textTheme.titleLarge),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-      ],
-    );
+    return Column(children: [
+      Text(
+        value,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      Text(
+        label,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.5),
+          fontSize: 11,
+        ),
+      ),
+    ],);
   }
 }

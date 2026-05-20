@@ -1,50 +1,51 @@
-// Pure-Dart branding entity. Mirrors the `BrandingPublicOut` payload from
-// `services/api/src/api/routers/public_meta.py` — the response of
-// `GET /v1/branding`.
-//
-// We surface app_name as a jsonb i18n map (BCP-47 → display), so the
-// presentation layer can pick the right translation given the active
-// locale. `themeModeDefault` matches Flutter's [ThemeMode] enum strings.
+class Branding {
+  const Branding({
+    required this.tenantSlug,
+    required this.appName,
+    this.logoUrl,
+    this.logoDarkUrl,
+    this.primaryColor = '#1A3A5C',
+    this.accentColor,
+    this.splashUrl,
+    this.fontFamily,
+    this.themeModeDefault = 'system',
+    this.extra = const {},
+  });
 
-import "package:freezed_annotation/freezed_annotation.dart";
+  factory Branding.fromJson(Map<String, dynamic> j) => Branding(
+        tenantSlug: j['tenant_slug'] as String? ?? 'silklens',
+        appName: (j['app_name'] as Map?)?.cast<String, String>() ?? {'en': 'SilkLens'},
+        logoUrl: j['logo_url'] as String?,
+        logoDarkUrl: j['logo_dark_url'] as String?,
+        primaryColor: j['primary_color'] as String? ?? '#1A3A5C',
+        accentColor: j['accent_color'] as String?,
+        splashUrl: j['splash_url'] as String?,
+        fontFamily: j['font_family'] as String?,
+        themeModeDefault: j['theme_mode_default'] as String? ?? 'system',
+        extra: (j['extra'] as Map?)?.cast<String, dynamic>() ?? {},
+      );
 
-part "branding.freezed.dart";
+  final String tenantSlug;
+  final Map<String, String> appName;
+  final String? logoUrl;
+  final String? logoDarkUrl;
+  final String primaryColor;
+  final String? accentColor;
+  final String? splashUrl;
+  final String? fontFamily;
+  final String themeModeDefault;
+  final Map<String, dynamic> extra;
 
-@freezed
-class Branding with _$Branding {
-  const factory Branding({
-    required String tenantSlug,
-    @Default(<String, String>{}) Map<String, String> appName,
-    String? logoUrl,
-    String? logoDarkUrl,
-    String? primaryColorHex,
-    String? accentColorHex,
-    String? splashUrl,
-    String? fontFamily,
-    @Default("system") String themeModeDefault,
-    @Default(<String, Object?>{}) Map<String, Object?> extra,
-  }) = _Branding;
-
-  const Branding._();
-
-  /// Default branding when the API is unreachable on first run. Mirrors the
-  /// platform default seeded in migration 0002 (silklens tenant).
   static const Branding defaults = Branding(
-    tenantSlug: "silklens",
-    appName: <String, String>{
-      "en": "SilkLens",
-      "uz": "SilkLens",
-      "ru": "SilkLens",
-      "zh": "SilkLens",
-    },
-    themeModeDefault: "system",
+    tenantSlug: 'silklens',
+    appName: {'en': 'SilkLens', 'uz': 'SilkLens', 'ru': 'SilkLens', 'zh': 'SilkLens'},
   );
 
+
+  String get primaryColorHex => primaryColor;
+  String get accentColorHex => accentColor ?? primaryColor;
   String localizedAppName(String languageCode) {
-    if (appName.isEmpty) return "SilkLens";
-    return appName[languageCode] ??
-        appName["en"] ??
-        appName["uz"] ??
-        appName.values.first;
+    if (appName.isEmpty) return 'SilkLens';
+    return appName[languageCode] ?? appName['en'] ?? appName['uz'] ?? appName.values.first;
   }
 }

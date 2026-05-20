@@ -1,38 +1,20 @@
-// Wire DTOs for `GET /v1/vocab/{slug}` — mirrors `VocabOut` /
-// `VocabTermOut` from services/api/src/api/routers/public_meta.py.
-//
-// Heritage list/detail screens use heritage_kinds; profile language picker
-// uses `languages`. Both share the same shape.
-
-import "package:freezed_annotation/freezed_annotation.dart";
-
-part "vocab_dto.freezed.dart";
-part "vocab_dto.g.dart";
-
-@freezed
-class VocabTermDto with _$VocabTermDto {
-  const factory VocabTermDto({
-    required String slug,
-    @JsonKey(name: "display_name")
-    @Default(<String, String>{})
-    Map<String, String> displayName,
-    @Default(<String, String>{}) Map<String, String> description,
-    @JsonKey(name: "parent_slug") String? parentSlug,
-    @JsonKey(name: "sort_order") @Default(0) int sortOrder,
-  }) = _VocabTermDto;
-
-  factory VocabTermDto.fromJson(Map<String, dynamic> json) =>
-      _$VocabTermDtoFromJson(json);
+class VocabTermDto {
+  const VocabTermDto({required this.slug, required this.displayName});
+  factory VocabTermDto.fromJson(Map<String, dynamic> j) => VocabTermDto(
+        slug: j['slug'] as String,
+        displayName: (j['display_name'] as Map?)?.cast<String, String>() ?? {'en': j['slug'] as String},
+      );
+  final String slug;
+  final Map<String, String> displayName;
 }
 
-@freezed
-class VocabDto with _$VocabDto {
-  const factory VocabDto({
-    @JsonKey(name: "vocabulary_slug") required String vocabularySlug,
-    @JsonKey(name: "is_hierarchical") @Default(false) bool isHierarchical,
-    @Default(<VocabTermDto>[]) List<VocabTermDto> items,
-  }) = _VocabDto;
-
-  factory VocabDto.fromJson(Map<String, dynamic> json) =>
-      _$VocabDtoFromJson(json);
+class VocabDto {
+  const VocabDto({required this.terms});
+  factory VocabDto.fromJson(Map<String, dynamic> j) => VocabDto(
+        terms: (j['items'] as List?)
+                ?.map((e) => VocabTermDto.fromJson(e as Map<String, dynamic>))
+                .toList() ??
+            [],
+      );
+  final List<VocabTermDto> terms;
 }

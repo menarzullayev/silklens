@@ -1,117 +1,137 @@
-// Pure-Dart heritage entity. No Flutter, no Isar, no Dio imports here —
-// this layer must compile against `dart:core` alone (per ADR-0003 mirrored
-// on mobile).
-//
-// The entity mirrors the backend `HeritageOut` schema (see
-// `services/api/src/api/routers/heritage.py`). Localized fields (`name`,
-// `summary_md`, `description_md`) are jsonb maps keyed by BCP-47 language
-// tag — we keep the same shape on the client so the presentation layer can
-// pick the right translation reactively to the active locale.
+class Heritage {
+  const Heritage({
+    required this.id,
+    required this.pubId,
+    required this.kindSlug,
+    required this.name,
+    required this.summaryMd,
+    required this.descriptionMd,
+    required this.tags,
+    required this.status,
+    this.countryCode,
+    this.adminPath,
+    this.latitude,
+    this.longitude,
+    this.periodStartYear,
+    this.periodEndYear,
+    this.heroMediaId,
+    this.confidenceScore = 0,
+    this.revision = 1,
+    this.isSaved = false,
+  });
 
-import "package:freezed_annotation/freezed_annotation.dart";
+  factory Heritage.fromJson(Map<String, dynamic> j) => Heritage(
+        id: j['id'] as String,
+        pubId: j['pub_id'] as String,
+        kindSlug: j['kind_slug'] as String,
+        name: (j['name'] as Map?)?.cast<String, String>() ?? {},
+        summaryMd: (j['summary_md'] as Map?)?.cast<String, String>() ?? {},
+        descriptionMd:
+            (j['description_md'] as Map?)?.cast<String, String>() ?? {},
+        tags: (j['tags'] as List?)?.cast<String>() ?? [],
+        status: j['status'] as String? ?? 'published',
+        countryCode: j['country_code'] as String?,
+        adminPath: j['admin_path'] as String?,
+        latitude: (j['latitude'] as num?)?.toDouble(),
+        longitude: (j['longitude'] as num?)?.toDouble(),
+        periodStartYear: j['period_start_year'] as int?,
+        periodEndYear: j['period_end_year'] as int?,
+        heroMediaId: j['hero_media_id'] as String?,
+        confidenceScore: j['confidence_score'] as int? ?? 0,
+        revision: j['revision'] as int? ?? 1,
+      );
 
-part "heritage.freezed.dart";
+  final String id;
+  final String pubId;
+  final String kindSlug;
+  final Map<String, String> name;
+  final Map<String, String> summaryMd;
+  final Map<String, String> descriptionMd;
+  final List<String> tags;
+  final String status;
+  final String? countryCode;
+  final String? adminPath;
+  final double? latitude;
+  final double? longitude;
+  final int? periodStartYear;
+  final int? periodEndYear;
+  final String? heroMediaId;
+  final int confidenceScore;
+  final int revision;
+  final bool isSaved;
 
-@freezed
-class Heritage with _$Heritage {
-  const factory Heritage({
-    required String id,
-    required String pubId,
-    required String kindSlug,
-    required Map<String, String> name,
-    @Default(<String, String>{}) Map<String, String> summaryMd,
-    @Default(<String, String>{}) Map<String, String> descriptionMd,
-    @Default(<String>[]) List<String> tags,
-    @Default("draft") String status,
-    String? countryCode,
-    String? adminPath,
-    double? latitude,
-    double? longitude,
-    int? periodStartYear,
-    int? periodEndYear,
-    int? unescoInscriptionYear,
-    String? heroMediaUrl,
-    @Default(0) int confidenceScore,
-    @Default(0) int revision,
-    @Default(<String>[]) List<String> mediaUrls,
-  }) = _Heritage;
+  String localizedName(String lang) =>
+      name[lang] ?? name['en'] ?? name['uz'] ?? name.values.firstOrNull ?? pubId;
 
-  const Heritage._();
+  String localizedSummary(String lang) =>
+      summaryMd[lang] ?? summaryMd['en'] ?? summaryMd.values.firstOrNull ?? '';
 
-  /// Convenience accessor for the legacy single-string id (== pubId on
-  /// the wire). The list-page hero key and Isar cache use this.
-  String get heritageId => pubId;
 
+  String localizedDescription(String lang) =>
+      descriptionMd[lang] ?? descriptionMd['en'] ?? descriptionMd.values.firstOrNull ?? '';
+  String? get heroMediaUrl => null; // resolved by media service in FAZA 2+
   bool get hasGeolocation => latitude != null && longitude != null;
-  bool get isPublished => status == "published";
-  bool get isUnescoListed => unescoInscriptionYear != null;
-
-  /// Returns the localized name for [languageCode], falling back to
-  /// English, then to any available translation. Empty string only if the
-  /// entity has no name map at all (which should never happen in practice
-  /// — `name` is non-null on the backend).
-  String localizedName(String languageCode) =>
-      _pick(name, languageCode);
-
-  String localizedSummary(String languageCode) =>
-      _pick(summaryMd, languageCode);
-
-  String localizedDescription(String languageCode) =>
-      _pick(descriptionMd, languageCode);
-
-  /// Display-ready period label, e.g. "1417 – 1420" or "9th c. BCE".
-  String? get periodLabel {
-    final start = periodStartYear;
-    final end = periodEndYear;
-    if (start == null && end == null) return null;
-    if (start != null && end != null && start != end) {
-      return "${_yearLabel(start)} – ${_yearLabel(end)}";
-    }
-    final canonical = start ?? end!;
-    return _yearLabel(canonical);
+  String get periodLabel {
+    if (periodStartYear == null) return '';
+    if (periodEndYear == null) return periodStartYear.toString();
+    return r'$periodStartYear – $periodEndYear';
   }
-
-  static String _yearLabel(int y) =>
-      y < 0 ? "${-y} BCE" : y.toString();
-
-  static String _pick(Map<String, String> bag, String code) {
-    if (bag.isEmpty) return "";
-    final exact = bag[code];
-    if (exact != null && exact.isNotEmpty) return exact;
-    final fallback = bag["en"] ?? bag["uz"] ?? bag["ru"] ?? bag["zh"];
-    if (fallback != null && fallback.isNotEmpty) return fallback;
-    return bag.values.firstWhere(
-      (String v) => v.isNotEmpty,
-      orElse: () => "",
-    );
-  }
+  bool get isUnescoListed => false; // from heritage_facts in FAZA 2+
+  int? get unescoInscriptionYear => null;
+  String get description =>
+      descriptionMd['en'] ?? descriptionMd.values.firstOrNull ?? '';
+  Heritage copyWith({bool? isSaved}) => Heritage(
+        id: id, pubId: pubId, kindSlug: kindSlug,
+        name: name, summaryMd: summaryMd, descriptionMd: descriptionMd,
+        tags: tags, status: status, countryCode: countryCode,
+        adminPath: adminPath, latitude: latitude, longitude: longitude,
+        periodStartYear: periodStartYear, periodEndYear: periodEndYear,
+        heroMediaId: heroMediaId, confidenceScore: confidenceScore,
+        revision: revision, isSaved: isSaved ?? this.isSaved,
+      );
 }
 
-/// Filters accepted by the list endpoint. Mirrors backend `HeritageFilters`.
-@freezed
-class HeritageFilters with _$HeritageFilters {
-  const factory HeritageFilters({
-    String? kindSlug,
-    String? countryCode,
-    String? status,
-    String? search,
-    @Default(20) int limit,
-    @Default(0) int offset,
-  }) = _HeritageFilters;
+
+class HeritageFilters {
+  const HeritageFilters({
+    this.kindSlug,
+    this.countryCode,
+    this.status,
+    this.search,
+    this.limit = 20,
+    this.offset = 0,
+  });
+  final String? kindSlug;
+  final String? countryCode;
+  final String? status;
+  final String? search;
+  final int limit;
+  final int offset;
+
+  HeritageFilters copyWith({
+    String? kindSlug, String? countryCode, String? status,
+    String? search, int? limit, int? offset,
+  }) => HeritageFilters(
+        kindSlug: kindSlug ?? this.kindSlug,
+        countryCode: countryCode ?? this.countryCode,
+        status: status ?? this.status,
+        search: search ?? this.search,
+        limit: limit ?? this.limit,
+        offset: offset ?? this.offset,
+      );
 }
 
-/// Paged response envelope — keeps total + offset visible so the
-/// presentation layer can drive infinite scroll without round-tripping.
-@freezed
-class HeritagePage with _$HeritagePage {
-  const factory HeritagePage({
-    required List<Heritage> items,
-    required int total,
-    required int limit,
-    required int offset,
-  }) = _HeritagePage;
-
-  const HeritagePage._();
+class HeritagePage {
+  const HeritagePage({
+    required this.items,
+    required this.total,
+    required this.limit,
+    required this.offset,
+  });
+  final List<Heritage> items;
+  final int total;
+  final int limit;
+  final int offset;
 
   bool get hasMore => offset + items.length < total;
 }

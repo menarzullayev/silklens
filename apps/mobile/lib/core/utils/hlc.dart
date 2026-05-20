@@ -4,7 +4,7 @@
 // disconnected devices. The server validates and overrides if drift is
 // larger than N minutes. Keep this lib pure-Dart — no Flutter imports.
 
-import "dart:math";
+import 'dart:math';
 
 class HybridLogicalClock {
   HybridLogicalClock({
@@ -15,9 +15,9 @@ class HybridLogicalClock {
         nodeId = nodeId ?? _generateNodeId();
 
   factory HybridLogicalClock.parse(String packed) {
-    final parts = packed.split(":");
+    final parts = packed.split(':');
     if (parts.length != 3) {
-      throw const FormatException("HLC must be physical:counter:nodeId");
+      throw const FormatException('HLC must be physical:counter:nodeId');
     }
     return HybridLogicalClock(
       physical: int.parse(parts[0]),
@@ -62,13 +62,13 @@ class HybridLogicalClock {
     );
   }
 
-  String pack() => "$physical:$counter:$nodeId";
+  String pack() => '$physical:$counter:$nodeId';
 
   static String _generateNodeId() {
     final rng = Random.secure();
     final bytes = List<int>.generate(6, (_) => rng.nextInt(256));
     return bytes
-        .map((int b) => b.toRadixString(16).padLeft(2, "0"))
+        .map((int b) => b.toRadixString(16).padLeft(2, '0'))
         .join();
   }
 

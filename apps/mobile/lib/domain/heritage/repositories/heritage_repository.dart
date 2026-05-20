@@ -4,8 +4,8 @@
 // Mirrors the FastAPI `GET /v1/heritage` filter surface so we can pass
 // search / kind / country / status / pagination straight through.
 
-import "package:silklens/core/utils/result.dart";
-import "package:silklens/domain/heritage/entities/heritage.dart";
+import 'package:silklens/core/utils/result.dart';
+import 'package:silklens/domain/heritage/entities/heritage.dart';
 
 abstract interface class HeritageRepository {
   /// List heritage matching [filters]. Should hit the live API and best-

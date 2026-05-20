@@ -15,7 +15,10 @@ from uuid import UUID, uuid4
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import json
+
 from src.domain.identity.entities import (
+    OAuthProfile,
     ResidencyRegion,
     Session,
     TrustTier,
@@ -330,6 +333,351 @@ class SqlUserRepository:
         if h is None:
             return None
         return h, a
+
+    async def find_by_oauth_identity(
+        self,
+        *,
+        provider_id: UUID,
+        subject: str,
+    ) -> tuple[User, UserEmail] | None:
+        result = await self._session.execute(
+            text(
+                """
+                SELECT
+                    u.id, u.tenant_id, u.residency_region, u.pub_id,
+                    u.status, u.is_guest, u.trust_tier, u.trust_score,
+                    u.preferred_locale, u.preferred_timezone,
+                    u.email_verified_at, u.phone_verified_at, u.mfa_enabled,
+                    u.last_login_at, u.last_active_at,
+                    u.created_at, u.updated_at, u.deleted_at, u.anonymized_at,
+                    e.id          AS email_id,
+                    e.user_id     AS email_user_id,
+                    e.residency_region AS email_residency,
+                    e.tenant_id   AS email_tenant_id,
+                    e.email, e.is_primary, e.is_forwarded,
+                    e.verified_at AS email_verified_at_real,
+                    e.created_at  AS email_created_at
+                FROM user_identities ui
+                JOIN users u
+                  ON u.id = ui.user_id AND u.residency_region = ui.residency_region
+                JOIN user_emails e
+                  ON e.user_id = u.id
+                 AND e.residency_region = u.residency_region
+                 AND e.is_primary = true
+                WHERE ui.provider_id = :provider_id
+                  AND ui.provider_subject = :subject
+                  AND u.deleted_at IS NULL
+                LIMIT 1
+                """
+            ),
+            {"provider_id": provider_id, "subject": subject},
+        )
+        row = result.one_or_none()
+        if row is None:
+            return None
+        m = row._mapping  # type: ignore[attr-defined]
+        user = User(
+            id=m["id"],
+            tenant_id=m["tenant_id"],
+            residency_region=ResidencyRegion(m["residency_region"]),
+            pub_id=m["pub_id"],
+            status=UserStatus(m["status"]),
+            is_guest=m["is_guest"],
+            trust_tier=TrustTier(m["trust_tier"]),
+            trust_score=m["trust_score"],
+            preferred_locale=m["preferred_locale"],
+            preferred_timezone=m["preferred_timezone"],
+            email_verified_at=m["email_verified_at"],
+            phone_verified_at=m["phone_verified_at"],
+            mfa_enabled=m["mfa_enabled"],
+            last_login_at=m["last_login_at"],
+            last_active_at=m["last_active_at"],
+            created_at=m["created_at"],
+            updated_at=m["updated_at"],
+            deleted_at=m["deleted_at"],
+            anonymized_at=m["anonymized_at"],
+        )
+        email_row = UserEmail(
+            id=m["email_id"],
+            user_id=m["email_user_id"],
+            residency_region=ResidencyRegion(m["email_residency"]),
+            tenant_id=m["email_tenant_id"],
+            email=m["email"],
+            is_primary=m["is_primary"],
+            is_forwarded=m["is_forwarded"],
+            verified_at=m["email_verified_at_real"],
+            created_at=m["email_created_at"],
+        )
+        return user, email_row
+
+    async def create_oauth_user(
+        self,
+        *,
+        user: User,
+        email: str,
+        email_verified: bool,
+        provider_id: UUID,
+        profile: OAuthProfile,
+    ) -> tuple[User, UserEmail]:
+        """Create user+email+profile+identity in one transaction. No password set."""
+        now = user.created_at
+        verified_at = now if email_verified else None
+
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO users (
+                    id, tenant_id, residency_region, pub_id,
+                    status, is_guest, trust_tier, trust_score,
+                    preferred_locale, preferred_timezone,
+                    email_verified_at,
+                    created_at, updated_at
+                ) VALUES (
+                    :id, :tenant_id, :residency_region, :pub_id,
+                    :status, :is_guest, :trust_tier, :trust_score,
+                    :preferred_locale, :preferred_timezone,
+                    :email_verified_at,
+                    :created_at, :updated_at
+                )
+                """
+            ),
+            {
+                "id": user.id,
+                "tenant_id": user.tenant_id,
+                "residency_region": user.residency_region.value,
+                "pub_id": user.pub_id,
+                "status": user.status.value,
+                "is_guest": user.is_guest,
+                "trust_tier": user.trust_tier.value,
+                "trust_score": user.trust_score,
+                "preferred_locale": user.preferred_locale,
+                "preferred_timezone": user.preferred_timezone,
+                "email_verified_at": verified_at,
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+
+        email_id = uuid4()
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO user_emails (
+                    id, user_id, residency_region, tenant_id,
+                    email, is_primary, is_forwarded, verified_at
+                ) VALUES (
+                    :id, :user_id, :residency_region, :tenant_id,
+                    :email, true, false, :verified_at
+                )
+                """
+            ),
+            {
+                "id": email_id,
+                "user_id": user.id,
+                "residency_region": user.residency_region.value,
+                "tenant_id": user.tenant_id,
+                "email": email,
+                "verified_at": verified_at,
+            },
+        )
+
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO user_profiles (
+                    user_id, residency_region, tenant_id,
+                    display_name, full_name, avatar_url
+                ) VALUES (
+                    :user_id, :residency_region, :tenant_id,
+                    :display_name, :full_name, :avatar_url
+                )
+                """
+            ),
+            {
+                "user_id": user.id,
+                "residency_region": user.residency_region.value,
+                "tenant_id": user.tenant_id,
+                "display_name": profile.display_name or user.pub_id,
+                "full_name": profile.display_name,
+                "avatar_url": profile.avatar_url,
+            },
+        )
+
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO user_identities (
+                    id, user_id, residency_region, tenant_id,
+                    provider_id, provider_subject,
+                    email_at_link, display_name_at_link,
+                    raw_profile, linked_at, last_used_at
+                ) VALUES (
+                    :id, :user_id, :residency_region, :tenant_id,
+                    :provider_id, :subject,
+                    :email_at_link, :display_name_at_link,
+                    CAST(:raw_profile AS jsonb), now(), now()
+                )
+                """
+            ),
+            {
+                "id": uuid4(),
+                "user_id": user.id,
+                "residency_region": user.residency_region.value,
+                "tenant_id": user.tenant_id,
+                "provider_id": provider_id,
+                "subject": profile.provider_subject,
+                "email_at_link": email,
+                "display_name_at_link": profile.display_name,
+                "raw_profile": json.dumps(profile.raw),
+            },
+        )
+
+        await self._session.commit()
+        email_row = UserEmail(
+            id=email_id,
+            user_id=user.id,
+            residency_region=user.residency_region,
+            tenant_id=user.tenant_id,
+            email=email,
+            is_primary=True,
+            is_forwarded=False,
+            verified_at=verified_at,
+            created_at=now,
+        )
+        return user, email_row
+
+    async def upsert_oauth_identity(
+        self,
+        *,
+        user: User,
+        provider_id: UUID,
+        profile: OAuthProfile,
+    ) -> None:
+        """Link (or refresh) an OAuth identity for an existing user.
+
+        On first link: inserts user_identities and patches email + profile
+        with the provider's authoritative data. On subsequent logins: updates
+        last_used_at and raw_profile only (preserves user-edited profile).
+        Uses xmax to distinguish INSERT from UPDATE.
+        """
+        result = await self._session.execute(
+            text(
+                """
+                INSERT INTO user_identities (
+                    id, user_id, residency_region, tenant_id,
+                    provider_id, provider_subject,
+                    email_at_link, display_name_at_link,
+                    raw_profile, linked_at, last_used_at
+                ) VALUES (
+                    :id, :user_id, :residency_region, :tenant_id,
+                    :provider_id, :subject,
+                    :email_at_link, :display_name_at_link,
+                    CAST(:raw_profile AS jsonb), now(), now()
+                )
+                ON CONFLICT (provider_id, provider_subject, residency_region)
+                DO UPDATE SET
+                    last_used_at          = now(),
+                    raw_profile           = EXCLUDED.raw_profile,
+                    updated_at            = now()
+                RETURNING (xmax = 0) AS was_inserted
+                """
+            ),
+            {
+                "id": uuid4(),
+                "user_id": user.id,
+                "residency_region": user.residency_region.value,
+                "tenant_id": user.tenant_id,
+                "provider_id": provider_id,
+                "subject": profile.provider_subject,
+                "email_at_link": profile.email,
+                "display_name_at_link": profile.display_name,
+                "raw_profile": json.dumps(profile.raw),
+            },
+        )
+        row = result.one_or_none()
+        was_inserted: bool = row[0] if row else False
+
+        if profile.email_verified:
+            await self._session.execute(
+                text(
+                    """
+                    UPDATE user_emails
+                    SET verified_at = now(), updated_at = now()
+                    WHERE user_id = :user_id
+                      AND residency_region = :region
+                      AND verified_at IS NULL
+                    """
+                ),
+                {"user_id": user.id, "region": user.residency_region.value},
+            )
+            await self._session.execute(
+                text(
+                    """
+                    UPDATE users
+                    SET email_verified_at = now(), updated_at = now()
+                    WHERE id = :user_id
+                      AND residency_region = :region
+                      AND email_verified_at IS NULL
+                    """
+                ),
+                {"user_id": user.id, "region": user.residency_region.value},
+            )
+
+        # On first link: overwrite the placeholder display_name (= pub_id) and
+        # set avatar_url. On subsequent logins: don't disturb user edits.
+        if was_inserted:
+            await self._session.execute(
+                text(
+                    """
+                    UPDATE user_profiles
+                    SET
+                        display_name = COALESCE(:display_name, display_name),
+                        full_name    = COALESCE(:full_name, full_name),
+                        avatar_url   = COALESCE(:avatar_url, avatar_url),
+                        updated_at   = now()
+                    WHERE user_id = :user_id AND residency_region = :region
+                    """
+                ),
+                {
+                    "user_id": user.id,
+                    "region": user.residency_region.value,
+                    "display_name": profile.display_name,
+                    "full_name": profile.display_name,
+                    "avatar_url": profile.avatar_url,
+                },
+            )
+
+        await self._session.commit()
+
+    async def verify_email(self, user_id: UUID, residency_region: ResidencyRegion) -> None:
+        """Mark primary email + user row as verified (idempotent)."""
+        await self._session.execute(
+            text(
+                """
+                UPDATE user_emails
+                SET verified_at = now(), updated_at = now()
+                WHERE user_id = :user_id
+                  AND residency_region = :region
+                  AND verified_at IS NULL
+                """
+            ),
+            {"user_id": user_id, "region": residency_region.value},
+        )
+        await self._session.execute(
+            text(
+                """
+                UPDATE users
+                SET email_verified_at = now(),
+                    status = 'active',
+                    updated_at = now()
+                WHERE id = :user_id
+                  AND residency_region = :region
+                  AND email_verified_at IS NULL
+                """
+            ),
+            {"user_id": user_id, "region": residency_region.value},
+        )
+        await self._session.commit()
 
 
 class SqlSessionRepository:

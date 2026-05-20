@@ -1,11 +1,22 @@
-# SilkLens — Session Handoff
+# SilkLens — Session Handoff (Foundation Snapshot)
 
-> **Last updated:** 2026-05-18 · Last commit: pending (auth middleware + heritage CRUD)
-> Keep this file current at the end of every session. It is the entry point for the next agent or developer to pick up without re-reading the entire transcript.
+> ⚠️ **This document is a historical foundation snapshot from FAZA-1.**
+> For current project status, **see [`/PROGRESS.md`](../PROGRESS.md)** — single source of truth.
+>
+> Body below preserves architectural decisions, port assignments, and migration details from the early build phase. It is useful as onboarding/reference material, **not** as live status.
 
 ---
 
-## Where we are right now
+## Snapshot — FAZA 1 Hafta 2 (2026-05-18)
+
+**Status at snapshot:** ✅ Foundation + frontends + CI + auth (incl. middleware) + heritage CRUD all shipped.
+**Snapshot frozen at:** commit `0391819` — `feat(faza-1): auth middleware + heritage CRUD end-to-end`
+
+For everything after this snapshot (FAZA 2-7, wave-8, auth pipeline ship 2026-05-19) → **`/PROGRESS.md`**.
+
+---
+
+## Where we WERE at the time of snapshot
 
 **Active FAZA:** FAZA 1 — Hafta 2
 **Status:** ✅ Foundation + frontends + CI + **auth (incl. middleware)** + **heritage CRUD** all shipped. ⏳ AI vector + media services next.

@@ -3,7 +3,7 @@
 // Domain code never throws DioException or PostgrestException — those are
 // adapter concerns. Adapters translate them into one of these.
 
-import "package:meta/meta.dart";
+import 'package:meta/meta.dart';
 
 @immutable
 sealed class Failure {
@@ -14,7 +14,7 @@ sealed class Failure {
   final StackTrace? stackTrace;
 
   @override
-  String toString() => "$runtimeType($message)";
+  String toString() => '$runtimeType($message)';
 }
 
 class NetworkFailure extends Failure {

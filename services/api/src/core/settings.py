@@ -145,6 +145,13 @@ class Settings(BaseSettings):
     # How long a satisfied MFA challenge stays "fresh" for step-up gating.
     mfa_step_up_freshness_seconds: int = 300
 
+    # --- Email (Resend.com) ---
+    # Leave resend_api_key empty in dev to fall back to StubEmailClient.
+    # Sign up at resend.com — free tier: 3 000 emails/month, 100/day.
+    resend_api_key: SecretStr = SecretStr("")
+    email_from: str = "SilkLens <no-reply@silklens.app>"
+    email_otp_ttl_seconds: int = 600  # 10 minutes
+
     # --- AI ---
     # When true, the provider resolver always returns deterministic mock
     # providers (LLaVA / Kokoro / NLLB / Anthropic stubs). Set to false in

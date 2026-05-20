@@ -1,22 +1,20 @@
-// Backwards-compat shim. The canonical implementation is
-// [AuthRepositoryImpl]; this class wraps it so the legacy
-// [IdentityRepository] interface keeps working until callers migrate.
+// IdentityRepositoryImpl — adapts the legacy IdentityRepository protocol to
+// the canonical AuthRepository implementation.
+//
+// New code should depend on AuthRepository directly. This shim exists only so
+// that presentation code that was written against the older IdentityRepository
+// interface continues to compile and work without modification.
 
-import "package:hooks_riverpod/hooks_riverpod.dart";
-import "package:silklens/core/utils/result.dart";
-import "package:silklens/data/repositories/auth_repository_impl.dart"
-    show authRepositoryProvider;
-import "package:silklens/domain/identity/entities/auth_session.dart";
-import "package:silklens/domain/identity/repositories/auth_repository.dart";
-import "package:silklens/domain/identity/repositories/identity_repository.dart";
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/core/utils/result.dart';
+import 'package:silklens/data/repositories/auth_repository_impl.dart';
+import 'package:silklens/domain/identity/entities/auth_session.dart';
+import 'package:silklens/domain/identity/repositories/identity_repository.dart';
 
 class IdentityRepositoryImpl implements IdentityRepository {
-  IdentityRepositoryImpl({required AuthRepository auth}) : _auth = auth;
+  IdentityRepositoryImpl(this._auth);
 
   final AuthRepository _auth;
-
-  @override
-  Future<AuthSession?> currentSession() => _auth.currentSession();
 
   @override
   Future<Result<AuthSession>> loginWithEmail({
@@ -42,10 +40,17 @@ class IdentityRepositoryImpl implements IdentityRepository {
 
   @override
   Future<Result<void>> logout() => _auth.signOut();
+
+  @override
+  Future<AuthSession?> currentSession() => _auth.currentSession();
 }
+
+// ── Riverpod provider ─────────────────────────────────────────────────────────
 
 final Provider<IdentityRepository> identityRepositoryProvider =
     Provider<IdentityRepository>(
-  (Ref ref) => IdentityRepositoryImpl(auth: ref.watch(authRepositoryProvider)),
-  name: "identityRepositoryProvider",
+  (Ref ref) => IdentityRepositoryImpl(
+    ref.watch(authRepositoryProvider),
+  ),
+  name: 'identityRepositoryProvider',
 );

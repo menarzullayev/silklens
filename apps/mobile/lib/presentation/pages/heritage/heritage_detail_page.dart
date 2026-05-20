@@ -1,310 +1,350 @@
-// Heritage detail page — opened from a list / search / saved card.
-//
-// Hero image + localized name + summary_md + period chip + action row:
-//   [Save] [Share] [AI guide].
-//
-// The "Save" action toggles the local Isar pin (offline-first).
-// The "AI guide" button is intentionally disabled with a localized
-// "Coming in v2 build" tooltip — AR + voice-over land in FAZA 3.
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-import "package:flutter/material.dart";
-import "package:flutter_markdown/flutter_markdown.dart";
-import "package:go_router/go_router.dart";
-import "package:hooks_riverpod/hooks_riverpod.dart";
-import "package:silklens/domain/heritage/entities/heritage.dart";
-import "package:silklens/l10n/app_localizations.dart";
-import "package:silklens/presentation/providers/heritage_detail_provider.dart";
-
-class HeritageDetailPage extends ConsumerWidget {
+class HeritageDetailPage extends StatefulWidget {
   const HeritageDetailPage({required this.pubId, super.key});
-
   final String pubId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final async = ref.watch(heritageDetailProvider(pubId));
-
-    return Scaffold(
-      body: async.when(
-        loading: () => const Center(
-          key: Key("heritage_detail.loading"),
-          child: CircularProgressIndicator(),
-        ),
-        error: (Object error, StackTrace _) => _ErrorView(
-          message: error.toString(),
-          onRetry: () =>
-              ref.read(heritageDetailProvider(pubId).notifier).refresh(),
-        ),
-        data: (Heritage heritage) => _DetailBody(
-          heritage: heritage,
-          l10n: l10n,
-        ),
-      ),
-    );
-  }
+  State<HeritageDetailPage> createState() => _HeritageDetailPageState();
 }
 
-class _DetailBody extends ConsumerWidget {
-  const _DetailBody({required this.heritage, required this.l10n});
+class _HeritageDetailPageState extends State<HeritageDetailPage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabCtrl;
+  bool _saved = false;
+  int _activeTab = 0;
 
-  final Heritage heritage;
-  final AppLocalizations? l10n;
+  static const _tabs = ['Haqida', 'Faktlar', 'Sharhlar'];
+  static const _gold = Color(0xFFB78628);
+  static const _bg = Color(0xFF0D2337);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final locale = Localizations.localeOf(context).languageCode;
-    final name = heritage.localizedName(locale);
-    final summary = heritage.localizedSummary(locale);
-    final description = heritage.localizedDescription(locale);
+  void initState() {
+    super.initState();
+    _tabCtrl = TabController(length: _tabs.length, vsync: this);
+    _tabCtrl.addListener(() => setState(() => _activeTab = _tabCtrl.index));
+  }
 
-    return CustomScrollView(
-      key: const Key("heritage_detail.scroll"),
-      slivers: <Widget>[
-        SliverAppBar(
-          expandedHeight: 280,
-          pinned: true,
-          flexibleSpace: FlexibleSpaceBar(
-            title: Text(
-              name.isEmpty ? heritage.pubId : name,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+  @override
+  void dispose() {
+    _tabCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _bg,
+      body: CustomScrollView(
+        slivers: [
+          // Hero image sliver
+          SliverAppBar(
+            expandedHeight: MediaQuery.sizeOf(context).height * 0.48,
+            pinned: true,
+            backgroundColor: _bg,
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withValues(alpha: 0.35),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white,
+                  size: 18,
+                ),
               ),
             ),
-            background: heritage.heroMediaUrl != null &&
-                    heritage.heroMediaUrl!.isNotEmpty
-                ? Hero(
-                    tag: "heritage-hero-${heritage.pubId}",
-                    child: Image.network(
-                      heritage.heroMediaUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder:
-                          (BuildContext _, Object __, StackTrace? ___) =>
-                              _HeroPlaceholder(theme: theme),
+            actions: [
+              GestureDetector(
+                onTap: () => setState(() => _saved = !_saved),
+                child: Container(
+                  margin: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black.withValues(alpha: 0.35),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
                     ),
-                  )
-                : _HeroPlaceholder(theme: theme),
-          ),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate(<Widget>[
-              _ChipsRow(heritage: heritage, l10n: l10n),
-              const SizedBox(height: 16),
-              _ActionsRow(heritage: heritage),
-              const SizedBox(height: 24),
-              if (summary.isNotEmpty) ...<Widget>[
-                Text(
-                  l10n?.heritageDetailSummary ?? "",
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+                  ),
+                  child: Icon(
+                    _saved
+                        ? Icons.bookmark_rounded
+                        : Icons.bookmark_outline_rounded,
+                    color: _saved ? _gold : Colors.white,
+                    size: 20,
                   ),
                 ),
-                const SizedBox(height: 8),
-                MarkdownBody(
-                  key: const Key("heritage_detail.summary"),
-                  data: summary,
-                ),
-                const SizedBox(height: 24),
-              ],
-              if (description.isNotEmpty) ...<Widget>[
-                Text(
-                  l10n?.heritageDetailAbout ?? "",
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+              ),
+              Container(
+                margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withValues(alpha: 0.35),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
                   ),
                 ),
-                const SizedBox(height: 8),
-                MarkdownBody(
-                  key: const Key("heritage_detail.description"),
-                  data: description,
+                child: const Icon(
+                  Icons.share_outlined,
+                  color: Colors.white,
+                  size: 20,
                 ),
-                const SizedBox(height: 24),
-              ],
-              if (heritage.hasGeolocation)
-                _LocationBlock(heritage: heritage, l10n: l10n),
-            ]),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ChipsRow extends StatelessWidget {
-  const _ChipsRow({required this.heritage, required this.l10n});
-
-  final Heritage heritage;
-  final AppLocalizations? l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    final period = heritage.periodLabel;
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: <Widget>[
-        if (period != null)
-          Chip(
-            avatar: const Icon(Icons.history, size: 18),
-            label: Text("${l10n?.heritageDetailPeriod}: $period"),
-          ),
-        if (heritage.countryCode != null)
-          Chip(
-            avatar: const Icon(Icons.public, size: 18),
-            label: Text(
-              "${l10n?.heritageDetailCountry}: ${heritage.countryCode}",
-            ),
-          ),
-        if (heritage.isUnescoListed)
-          Chip(
-            avatar: const Icon(Icons.star, size: 18),
-            label: Text(
-              "${l10n?.heritageDetailUnesco} "
-              "(${heritage.unescoInscriptionYear})",
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _ActionsRow extends ConsumerWidget {
-  const _ActionsRow({required this.heritage});
-
-  final Heritage heritage;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final savedAsync = ref.watch(heritageSavedProvider(heritage.pubId));
-    final isSaved = savedAsync.maybeWhen(
-      data: (bool v) => v,
-      orElse: () => false,
-    );
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: <Widget>[
-        _ActionButton(
-          buttonKey: const Key("heritage_detail.save"),
-          icon: isSaved ? Icons.bookmark : Icons.bookmark_outline,
-          label: isSaved
-              ? (l10n?.heritageDetailUnsave ?? "")
-              : (l10n?.heritageDetailSave ?? ""),
-          onPressed: () => ref
-              .read(heritageSavedProvider(heritage.pubId).notifier)
-              .toggle(heritage),
-        ),
-        _ActionButton(
-          buttonKey: const Key("heritage_detail.share"),
-          icon: Icons.ios_share,
-          label: l10n?.heritageDetailShare ?? "",
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n?.authComingSoon ?? "Coming soon")),
-            );
-          },
-        ),
-        Tooltip(
-          message: l10n?.heritageDetailAiGuideTooltip ?? "",
-          child: _ActionButton(
-            buttonKey: const Key("heritage_detail.ai_guide"),
-            icon: Icons.auto_awesome,
-            label: l10n?.heritageDetailAiGuide ?? "",
-            onPressed: null,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.buttonKey,
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-  });
-
-  final Key buttonKey;
-  final IconData icon;
-  final String label;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final disabledColor = theme.colorScheme.onSurface.withValues(alpha: 0.38);
-    final color = onPressed == null ? disabledColor : theme.colorScheme.primary;
-    return InkWell(
-      key: buttonKey,
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Icon(icon, color: color),
-            const SizedBox(height: 4),
-            Text(label, style: theme.textTheme.bodySmall?.copyWith(color: color)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LocationBlock extends StatelessWidget {
-  const _LocationBlock({required this.heritage, required this.l10n});
-
-  final Heritage heritage;
-  final AppLocalizations? l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      key: const Key("heritage_detail.location"),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: <Widget>[
-          Icon(Icons.place, color: theme.colorScheme.primary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  l10n?.heritageDetailLocation ?? "Location",
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
+              ),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Heritage tone gradient placeholder
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFF8B3A2A),
+                          Color(0xFFD2691E),
+                          Color(0xFF8B6914),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-                Text(
-                  "${heritage.latitude?.toStringAsFixed(4)}, "
-                  "${heritage.longitude?.toStringAsFixed(4)}",
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ],
+                  // Photo caption
+                  Positioned(
+                    bottom: 16,
+                    left: 16,
+                    child: Text(
+                      'REGISTON · SAMARQAND · UZ',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.65),
+                        fontSize: 9,
+                        fontFamily: 'monospace',
+                        letterSpacing: 2,
+                      ),
+                    ),
+                  ),
+                  // UNESCO badge
+                  Positioned(
+                    top: 16,
+                    right: 16,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _gold,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'UNESCO',
+                        style: TextStyle(
+                          color: Color(0xFF1A1200),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Bottom gradient overlay
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      height: 80,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            _bg.withValues(alpha: 0.9),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          TextButton.icon(
-            key: const Key("heritage_detail.open_in_map"),
-            icon: const Icon(Icons.map),
-            label: Text(l10n?.heritageDetailOpenInMap ?? ""),
-            onPressed: () {
-              context.go("/home/map?lat=${heritage.latitude}&lng=${heritage.longitude}");
-            },
+
+          // Glass info card
+          SliverToBoxAdapter(
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.12),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Registon',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        color: Color(0xFFB78628),
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        "Samarqand, O'zbekiston",
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        color: Color(0xFFB78628),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        '4.9',
+                        style: TextStyle(
+                          color: Color(0xFFB78628),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '(2,847 sharh)',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Info chips
+                  const Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _InfoChip('XIV asr', Icons.history_edu_rounded),
+                      _InfoChip(
+                        'Saroy majmuasi',
+                        Icons.account_balance_rounded,
+                      ),
+                      _InfoChip(
+                        'UNESCO 1001',
+                        Icons.workspace_premium_rounded,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Tab bar
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TabBar(
+                      controller: _tabCtrl,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      indicator: BoxDecoration(
+                        color: const Color(0xFFB78628),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      labelColor: const Color(0xFF1A1200),
+                      unselectedLabelColor:
+                          Colors.white.withValues(alpha: 0.6),
+                      labelStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      tabs: _tabs.map((t) => Tab(text: t)).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Tab content
+                  if (_activeTab == 0)
+                    Text(
+                      "Registon — O'rta Osiyoning eng mashhur arxitektura"
+                      " yodgorligi. U uch madrasadan iborat: Ulug'bek"
+                      ' (1420), Sher-Dor (1636) va Tillakori (1660). UNESCO'
+                      " tomonidan Jahon merosi ro'yxatiga kiritilgan.",
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 14,
+                        height: 1.6,
+                      ),
+                    )
+                  else if (_activeTab == 1)
+                    const Column(
+                      children: [
+                        _FactRow('Qurilgan yil', '1420 — 1660'),
+                        _FactRow('Maydoni', '3.6 gektar'),
+                        _FactRow('UNESCO', '1001-raqam'),
+                        _FactRow('Kirish', "50,000 so'm"),
+                      ],
+                    )
+                  else
+                    Text(
+                      'Sharhlar yuklanmoqda...',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 14,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+
+          // Action buttons
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+              child: Row(
+                children: [
+                  _ActionBtn(Icons.volume_up_rounded, 'Audio', () {}),
+                  const SizedBox(width: 8),
+                  _ActionBtn(
+                    Icons.view_in_ar_rounded,
+                    'AR',
+                    () {},
+                    isGold: true,
+                  ),
+                  const SizedBox(width: 8),
+                  _ActionBtn(Icons.map_rounded, "Yo'nalish", () {}),
+                  const SizedBox(width: 8),
+                  _ActionBtn(Icons.photo_library_outlined, 'Foto', () {}),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -312,52 +352,112 @@ class _LocationBlock extends StatelessWidget {
   }
 }
 
-class _HeroPlaceholder extends StatelessWidget {
-  const _HeroPlaceholder({required this.theme});
-
-  final ThemeData theme;
+class _InfoChip extends StatelessWidget {
+  const _InfoChip(this.label, this.icon);
+  final String label;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: theme.colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Icon(
-          Icons.account_balance,
-          size: 96,
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: const Color(0xFFB78628)),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 11),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.message, required this.onRetry});
-
-  final String message;
-  final Future<void> Function() onRetry;
+class _FactRow extends StatelessWidget {
+  const _FactRow(this.key2, this.value);
+  final String key2;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Center(
-      key: const Key("heritage_detail.error"),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const Icon(Icons.error_outline, size: 64),
-            const SizedBox(height: 12),
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            FilledButton.tonal(
-              key: const Key("heritage_detail.retry"),
-              onPressed: onRetry,
-              child: Text(l10n?.commonRetry ?? "Retry"),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            key2,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.55),
+              fontSize: 13,
             ),
-          ],
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionBtn extends StatelessWidget {
+  const _ActionBtn(this.icon, this.label, this.onTap, {this.isGold = false});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isGold;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 54,
+          decoration: BoxDecoration(
+            color: isGold
+                ? const Color(0xFFB78628)
+                : Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: isGold
+                ? null
+                : Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                  ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: isGold ? const Color(0xFF1A1200) : Colors.white,
+                size: 20,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isGold ? const Color(0xFF1A1200) : Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -4,8 +4,8 @@
 // The presentation layer reads through `brandingProvider` and never imports
 // the implementation directly (Clean Architecture invariant).
 
-import "package:silklens/core/utils/result.dart";
-import "package:silklens/domain/branding/entities/branding.dart";
+import 'package:silklens/core/utils/result.dart';
+import 'package:silklens/domain/branding/entities/branding.dart';
 
 abstract interface class BrandingRepository {
   /// Fetches branding from the live API and writes it to the Isar cache.

@@ -1,24 +1,36 @@
-// Badge — both unlocked and locked badges are returned by /v1/me/badges; the
-// `unlockedAt` field is null for locked entries and `criterionHint` is used
-// in the locked-state UI.
+class Badge {
+  const Badge({
+    required this.slug,
+    required this.name,
+    required this.description,
+    this.iconUrl,
+    this.earnedAt,
+    this.category = '',
+    this.stepsRemaining,
+    this.accentHex,
+  });
 
-import "package:freezed_annotation/freezed_annotation.dart";
+  factory Badge.fromJson(Map<String, dynamic> j) => Badge(
+    slug: j['slug'] as String,
+    name: j['name'] as String,
+    description: j['description'] as String,
+    iconUrl: j['icon_url'] as String?,
+    earnedAt: j['earned_at'] != null
+        ? DateTime.parse(j['earned_at'] as String)
+        : null,
+    category: j['category'] as String? ?? '',
+    stepsRemaining: j['steps_remaining'] as int?,
+    accentHex: j['accent_hex'] as String?,
+  );
 
-part "badge.freezed.dart";
+  final String slug;
+  final String name;
+  final String description;
+  final String? iconUrl;
+  final DateTime? earnedAt;
+  final String category;
+  final int? stepsRemaining;
+  final String? accentHex;
 
-@freezed
-class Badge with _$Badge {
-  const factory Badge({
-    required String slug,
-    required String name,
-    required String description,
-    String? iconUrl,
-    DateTime? unlockedAt,
-    String? criterionHint,
-    @Default(0) int xpValue,
-  }) = _Badge;
-
-  const Badge._();
-
-  bool get isUnlocked => unlockedAt != null;
+  bool get isEarned => earnedAt != null;
 }

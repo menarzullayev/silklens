@@ -1,45 +1,34 @@
-// Isar database open/close wrapper.
-//
-// Master Architecture §8 — offline-first L1/L2 storage lives here. The
-// schemas under `lib/data/local/schemas/` are added to the constructor
-// below; they generate `*.g.dart` files (e.g. `cached_heritage.g.dart`)
-// that expose a `CachedHeritageSchema` constant we register.
+/// Stub local database — isar replaced with in-memory storage for FAZA 1
+/// real-device testing. Full offline persistence lands in FAZA 6+ with
+/// hive_flutter or isar v4.
+library;
 
-import "dart:async";
+import 'dart:collection';
 
-import "package:hooks_riverpod/hooks_riverpod.dart";
-import "package:isar/isar.dart";
-import "package:path_provider/path_provider.dart";
-import "package:silklens/data/local/schemas/cached_branding.dart";
-import "package:silklens/data/local/schemas/cached_heritage.dart";
+import 'package:flutter/foundation.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class IsarDatabase {
-  IsarDatabase._(this.instance);
+/// Singleton in-memory store used until a proper local DB is wired.
+class LocalDatabase {
+  LocalDatabase._();
+  static final LocalDatabase _instance = LocalDatabase._();
+  static LocalDatabase get instance => _instance;
 
-  final Isar instance;
+  final Map<String, dynamic> _store = HashMap<String, dynamic>();
 
-  static Future<IsarDatabase> open() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final isar = await Isar.open(
-      <CollectionSchema<dynamic>>[
-        CachedHeritageSchema,
-        CachedBrandingSchema,
-      ],
-      directory: dir.path,
-      name: "silklens",
-      inspector: false,
-    );
-    return IsarDatabase._(isar);
+  void put(String key, dynamic value) => _store[key] = value;
+  T? get<T>(String key) => _store[key] as T?;
+  void delete(String key) => _store.remove(key);
+  void clear() => _store.clear();
+
+  Future<void> init() async {
+    if (kDebugMode) debugPrint('LocalDatabase: using in-memory stub');
   }
 
-  Future<void> close() => instance.close();
+  Future<void> close() async {}
 }
 
-/// Always overridden in `main.dart`. The default `throw` keeps a missed
-/// override loud rather than silently constructing an unused stub.
-final Provider<IsarDatabase> isarDatabaseProvider = Provider<IsarDatabase>(
-  (Ref ref) => throw UnimplementedError(
-    "isarDatabaseProvider must be overridden in main.dart with an opened IsarDatabase.",
-  ),
-  name: "isarDatabaseProvider",
-);
+/// Provider so repositories can access the stub DB via Riverpod DI.
+final localDatabaseProvider = Provider<LocalDatabase>((ref) {
+  return LocalDatabase.instance;
+});

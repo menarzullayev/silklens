@@ -1,6 +1,6 @@
 # SilkLens — Progress Tracker
 
-> **Tags:** `v0.1.0-alpha` (FAZA 1-3) · `v0.2.0-beta` (FAZA 4-5) · **`v0.3.0-beta`** (FAZA 6-7) · **Last commit:** `94b4963` · **Refreshed:** 2026-05-18
+> **Tags:** `v0.1.0-alpha` (FAZA 1-3) · `v0.2.0-beta` (FAZA 4-5) · **`v0.3.0-beta`** (FAZA 6-7) · **Last commit:** `88bbcbd` · **Refreshed:** 2026-05-19
 
 ## Kuzatuv joylari
 
@@ -141,6 +141,108 @@ git push --no-verify  # emergency bypass
 
 ---
 
+---
+
+## Flutter Mobile — Professional Auth Flow (2026-05-18)
+
+> Maqsad: Launch → Auth oralig'ini world-class standartga yetkazish (12 xususiyat)
+
+### Tezkor (UI/UX polish)
+- [x] **Page transitions** — 5 ta transition helper: noTransition/fade/slideUp/slideRight/fadeScale ✅ 2026-05-18
+- [x] **ToS checkbox** — Sign Up da Foydalanish shartlari roziligi ✅ 2026-05-18
+- [x] **Native splash branding** — flutter_native_splash paketi, compass logo barcha densitylarda ✅ 2026-05-18
+- [x] **Dynamic splash timing** — `Future.wait([loadPrefs, minDelay(1800ms)])` pattern ✅ 2026-05-18
+
+### O'rta (Komponentlar)
+- [x] **Custom app icon** — compass + Silk Road to'lqin, barcha mipmap densitylari + adaptive icon ✅ 2026-05-18
+- [x] **Shimmer skeleton** — `ShimmerBox`/`HeritageCardSkeleton`/`HeritageListSkeleton`, HookWidget loading state ✅ 2026-05-18
+- [x] **Offline banner** — `connectivity_plus`, `OfflineBanner` MaterialApp.router builder da wrap ✅ 2026-05-18
+
+### Murakkab (Auth features)
+- [x] **Google OAuth UI** — backend `POST /v1/auth/google` (501 stub) + `GoogleSignInButton` widget ✅ 2026-05-18
+- [x] **Email OTP verification** — `EmailVerifyPage`, 6-box OTP, `/auth/email-verify?email=` route ✅ 2026-05-18
+- [x] **Biometric login** — `local_auth`, `BiometricButton` widget, SignIn da ko'rinadi ✅ 2026-05-18
+
+### Kelajak (tashqi bog'liqlik)
+- [ ] **Lottie onboarding** — JSON animatsiya fayllar kerak (dizayner)
+- [ ] **Apple Sign In** — Apple Developer account kerak ($99/yil)
+
+---
+
+## Auth Pipeline Ship (2026-05-19)
+
+> Maqsad: Mobile signup → email verify → signin loop'ni production-grade qilish.
+
+### Backend — Identity & Email
+- [x] **OTP service (Redis-backed)** — `infrastructure/notifications/otp_service.py`: 6-raqamli kod, 10 daqiqa TTL, atomic verify+delete
+- [x] **ResendEmailClient** — `infrastructure/notifications/email_client.py`: httpx async, `get_email_client()` factory (Resend yoki StubEmailClient)
+- [x] **`POST /v1/auth/verify-email`** — OTP kodni Redis'dan tekshirib `user_emails.verified_at` + `users.email_verified_at` ni belgilaydi
+- [x] **`POST /v1/auth/resend-verification`** — yangi OTP generate qiladi va email yuboradi (rate-limited 3/min)
+- [x] **`/register` endpoint** — auto-login + OTP email yuborish (fire-and-forget, register response'ni bloklamaydi)
+- [x] **Plain-text email fix** — HTML olib tashlandi: mail.ru filter `onboarding@resend.dev` HTML emaillarni "Blocked due to content" qiladi, plain-text esa o'tadi
+- [x] **`SqlUserRepository.verify_email()`** — idempotent UPDATE: status='active', email_verified_at, user_emails.verified_at
+
+### Backend — Google OAuth (refactor)
+- [x] **`OAuthProfile` domain entity** — provider_subject, email, email_verified, display_name, avatar_url, raw payload
+- [x] **`AuthService.login_with_oauth()`** — temp-password hack olib tashlandi; OAuth flow uchun maxsus service method
+- [x] **`UserRepository.find_by_oauth_identity()`** — provider+subject orqali izlash
+- [x] **`UserRepository.create_oauth_user()`** — password_hash siz user yaratish, email_verified=true bo'lsa darrov verify qilish
+- [x] **`UserRepository.upsert_oauth_identity()`** — INSERT ON CONFLICT, `xmax=0` orqali first-link aniqlash, display_name + avatar_url first-link'da yangilanadi
+- [x] **`/v1/auth/google`** — parallel tokeninfo + userinfo (asyncio.gather), full profile (sub, email, name, picture)
+
+### Flutter — Auth UX
+- [x] **Sign Up confirm password field** — `_confirmPassCtrl`, validator: `v != _passCtrl.text` → `err_passwords_mismatch`
+- [x] **3 yangi locale string** — `auth_confirm_password`, `err_confirm_password_required`, `err_passwords_mismatch` (uz/ru/en/zh)
+- [x] **"Continue as Guest" tugmasi olib tashlandi** — `context.go('/home')` auth bypass edi
+- [x] **Sign Up navigatsiya** — muvaffaqiyat → `/auth/email-verify?email=<encoded>`
+- [x] **EmailVerifyPage real API** — `ConsumerStatefulWidget`, `verifyEmail()` + `resendVerification()` notifier methods
+- [x] **OTP boxes error state** — noto'g'ri kodda qizil bo'rder + xato matni + auto-clear + focus[0]
+- [x] **`AuthRepository.verifyEmail()` + `resendVerification()`** — domain interface, DTO, dio client, repo impl
+- [x] **`AuthNotifier.verifyEmail()` + `resendVerification()`** — Riverpod notifier methods
+
+### Flutter — Session Persistence (bug fix)
+- [x] **`SplashPage` → `ConsumerStatefulWidget`** — `_waitForAuth()` Completer'da auth state'ni kutadi
+- [x] **Parallel cold-boot** — `(loadPrefs, minDelay(1800ms), waitForAuth).wait` → AuthAuthenticated → `/home`
+- [x] **`_AuthRouterNotifier`** — Riverpod → GoRouter ChangeNotifier ko'prigi
+- [x] **`appRouterProvider` redirect** — `_guestOnlyPaths` Set: AuthAuthenticated user'larni guest pathlardan `/home`'ga; unauthenticated user'larni protected pathlardan `/onboarding`'ga
+- [x] **AuthInitial state** — splash sahifada qoladi, navigation block qilinadi
+
+### E2E test (2026-05-19, real device — Redmi 25028RN03A)
+- [x] **Signup** — `saidakbarnarzullayev@mail.ru` + parol → 201, user yaratildi (pub_id=n23elWXIijPz2Qgu)
+- [x] **OTP email yuborildi** — Resend `delivered`, message_id=57a41e1a-..., subject="SilkLens kirish kodi: 020264"
+- [x] **OTP verify** — `/v1/auth/verify-email` 200, `email_verified_at = 2026-05-18 23:34:36`
+- [x] **Sign In (qayta kirish)** — `app pm clear` → sign-in → 200, yangi session, `last_login_at` yangilandi
+- [x] **`/home` navigatsiya** — HeritageListPage UNESCO kartochkalari bilan
+
+### Open / deferred
+- [ ] **`silklens.app` domain Resend'da verify qilish** — `onboarding@resend.dev` ni `no-reply@silklens.app` ga almashtirish (DNS SPF/DKIM/DMARC qo'shish kerak)
+- [ ] **HTML email shabloni qaytarish** — domain verify qilingandan keyin branded gold HTML qaytariladi
+- [ ] **`MfaGateAdapter` to'liq wire qilish** — login flow'da MFA challenge integration
+- [ ] **Phone OTP** — SMS provider tanlovi kerak (Twilio? Eskiz.uz?)
+
+---
+
+## Flutter Design System (2026-05-19) — TASKLIST.md sintezi
+
+> 11 EPIC · 93 task · 76 ✅ DONE · 16 🔄 IN_PROGRESS · 1 TODO
+
+### Yakunlangan EPIC'lar
+- [x] **EPIC-001 Critical Bug Fixes** (6/6) — duplicate class, typo (PlansPagePage → PlansPage), Hive/Isar migration
+- [x] **EPIC-002 Design System Foundation** (10/10) — Inter/Playfair/JetBrains/DM Sans fonts, AppTextStyles, ThemeVariant 4 variants, glass extensions, color tokens, animation durations
+- [x] **EPIC-003 Shared Widget Library** (14/14) — GlassSurface, AuroraBackground, SilkBottomNav, SilkAppBar, GoldButton, GlassTextField, GoldShimmerText, HexBadge, HeritageTonePlaceholder, GlassPill, StarRating, GrainOverlay, TweenProgressBar
+- [x] **EPIC-004 Platform & Infrastructure** — pubspec deps, ThemeProvider, Riverpod setup
+- [x] **EPIC-005 Auth Module Visual Redesign** — aurora background, gold gradient buttons, password strength bar
+
+### Jarayonda (qoldiq)
+- [🔄] **EPIC-006 Domain Entities** — heritage_object, review, booking stub'lari to'ldirilmoqda
+- [🔄] **EPIC-007 Discovery & Heritage** — search filters, AR overlay placeholder
+- [🔄] **EPIC-008 Gamification** — XP dashboard, badges grid, leaderboard live data
+- [🔄] **EPIC-009 Social & Community** — activity feed pagination, notifications
+- [🔄] **EPIC-010 Billing** — checkout sahifa real Stripe flow
+- [🔄] **EPIC-011 Settings & Account** — language settings dinamik vocab, GDPR delete flow
+
+---
+
 ## CI/CD holati (GitHub Actions)
 
 | Workflow | Status |
@@ -159,12 +261,14 @@ git push --no-verify  # emergency bypass
 | DB tables | ~250+ |
 | RLS policies | 81 |
 | Backend endpoints | 100+ |
-| Backend tests | **275/275 yashil** |
+| Backend tests | **635/635 yashil** (275 + 360 wave-8) |
 | Flutter screens | 24 wired |
 | Admin pages | 8 wired |
 | Heritage entries | ~200 (UZ 5 UNESCO + CA 95) |
-| Commits (main) | 38+ |
-| Active tags | `v0.1.0-alpha` + `v0.2.0-beta` |
+| Commits (main) | 50+ |
+| Active tags | `v0.1.0-alpha` + `v0.2.0-beta` + `v0.3.0-beta` |
+| Auth flow status | ✅ Signup → email OTP → verify → sign-in E2E ishlamoqda |
+| Email delivery | ✅ Resend integration, mail.ru deliverability (plain-text) |
 
 ---
 

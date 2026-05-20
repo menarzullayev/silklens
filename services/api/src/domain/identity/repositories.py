@@ -11,6 +11,7 @@ from typing import Protocol
 from uuid import UUID
 
 from src.domain.identity.entities import (
+    OAuthProfile,
     ResidencyRegion,
     Session,
     User,
@@ -55,6 +56,50 @@ class UserRepository(Protocol):
         residency_region: ResidencyRegion,
     ) -> tuple[str, str] | None:
         """Return (password_hash, password_algorithm) or None if not set."""
+
+    async def find_by_oauth_identity(
+        self,
+        *,
+        provider_id: UUID,
+        subject: str,
+    ) -> tuple[User, UserEmail] | None:
+        """Look up a user by their stable OAuth provider subject ('sub').
+
+        Returns the user + their primary email row, or None if no identity
+        link exists for this (provider, subject) pair.
+        """
+
+    async def create_oauth_user(
+        self,
+        *,
+        user: User,
+        email: str,
+        email_verified: bool,
+        provider_id: UUID,
+        profile: OAuthProfile,
+    ) -> tuple[User, UserEmail]:
+        """Create a new user originating from an OAuth provider.
+
+        Unlike create_with_email there is no password. The email is marked
+        verified immediately when the provider reports email_verified=True.
+        The user_identities link is inserted in the same transaction.
+        """
+
+    async def upsert_oauth_identity(
+        self,
+        *,
+        user: User,
+        provider_id: UUID,
+        profile: OAuthProfile,
+    ) -> None:
+        """Insert or update the user_identities row for an existing user.
+
+        Also marks the primary email as verified and updates user_profiles
+        (display_name, avatar_url) from the provider's authoritative data.
+        """
+
+    async def verify_email(self, user_id: UUID, residency_region: ResidencyRegion) -> None:
+        """Mark the user's primary email and the user row as verified."""
 
 
 class SessionRepository(Protocol):

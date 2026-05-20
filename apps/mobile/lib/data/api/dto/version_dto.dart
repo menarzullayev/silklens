@@ -1,15 +1,6 @@
-import "package:freezed_annotation/freezed_annotation.dart";
-
-part "version_dto.freezed.dart";
-part "version_dto.g.dart";
-
-@freezed
-class VersionDto with _$VersionDto {
-  const factory VersionDto({
-    required String version,
-    required String commit,
-  }) = _VersionDto;
-
-  factory VersionDto.fromJson(Map<String, dynamic> json) =>
-      _$VersionDtoFromJson(json);
+class VersionDto {
+  const VersionDto({required this.version});
+  factory VersionDto.fromJson(Map<String, dynamic> j) =>
+      VersionDto(version: j['version'] as String? ?? '0.1.0');
+  final String version;
 }

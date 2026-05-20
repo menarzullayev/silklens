@@ -6,6 +6,7 @@ provider secrets are wired (per [[reference-ai-providers]]).
 
 from __future__ import annotations
 
+import asyncio
 from typing import Annotated, NoReturn
 from uuid import UUID
 
@@ -17,6 +18,7 @@ from src.core.database import get_session
 from src.core.settings import get_settings
 from src.domain.identity.entities import (
     Credentials,
+    OAuthProfile,
     RegistrationRequest,
     ResidencyRegion,
 )
@@ -29,6 +31,8 @@ from src.infrastructure.identity.repositories import (
     SqlUserRepository,
 )
 from src.infrastructure.security import Argon2PasswordHasher, JwtTokenIssuer
+from src.infrastructure.notifications import otp_service
+from src.infrastructure.notifications.email_client import get_email_client
 from src.middleware.auth import CurrentUserDep
 from src.middleware.ratelimit import rate_limit
 
@@ -138,6 +142,22 @@ def _raise_identity_error(exc: IdentityError) -> NoReturn:
     ) from exc
 
 
+# --- Email templates ---------------------------------------------------------
+
+# Plain-text only on purpose: mail.ru (and a few other strict consumer ISPs)
+# silently drop HTML emails from shared Resend senders, while accepting the
+# same content in plain text. Once silklens.app is verified on Resend we can
+# re-introduce branded HTML — until then text/plain is the deliverable form.
+
+
+def _otp_text(code: str) -> str:
+    return (
+        f"SilkLens kirish kodi: {code}\n"
+        f"\n"
+        f"Kodni ilovaga kiriting. 10 daqiqada amal qiladi.\n"
+    )
+
+
 # --- Routes ------------------------------------------------------------------
 
 # Per-route rate-limit dependencies. SEC-005: prevents credential-stuffing /
@@ -175,11 +195,25 @@ async def register(
 
     # Auto-login after registration so the client gets tokens immediately.
     auth = await service.login(
-        Credentials(email=str(payload.email), password=payload.password),
+        Credentials(email=payload.email, password=payload.password),
         tenant_id=user.tenant_id,
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
     )
+
+    # Send email verification OTP — fire-and-forget; don't block the response.
+    try:
+        code = await otp_service.generate_and_store(payload.email)
+        await get_email_client().send_email(
+            to=payload.email,
+            subject=f"SilkLens kirish kodi: {code}",
+            html=None,
+            text=_otp_text(code),
+        )
+    except Exception:  # noqa: BLE001
+        # Email failure must never break login — OTP can be resent.
+        pass
+
     return LoginResponse(
         user=_user_out(auth.user),
         tokens=_token_bundle(auth, ttl=settings.jwt_access_token_ttl_seconds),
@@ -269,8 +303,122 @@ async def me(ctx: CurrentUserDep, db: SessionDep) -> MeResponse:
     )
 
 
+class GoogleTokenRequest(BaseModel):
+    access_token: str
+
+
 class LogoutResponse(BaseModel):
     status: str = "ok"
+
+
+async def _get_provider_id(session: AsyncSession, slug: str) -> UUID:
+    from sqlalchemy import text as _text
+
+    result = await session.execute(
+        _text("SELECT id FROM oauth_providers WHERE slug = :slug AND is_enabled = true"),
+        {"slug": slug},
+    )
+    row = result.one_or_none()
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "PROVIDER_NOT_CONFIGURED", "message": f"OAuth provider '{slug}' not configured"},
+        )
+    return row[0]
+
+
+@router.post(
+    "/google",
+    response_model=LoginResponse,
+    dependencies=[Depends(rate_limit("10/minute", per="ip", scope="auth:google"))],
+)
+async def google_sign_in(
+    payload: GoogleTokenRequest,
+    request: Request,
+    db: SessionDep,
+) -> LoginResponse:
+    """Sign in or register via Google access token.
+
+    Verifies the token with Google's tokeninfo endpoint, then:
+      1. Looks up the user by OAuth identity (provider + subject).
+      2. Falls back to email lookup and links the identity.
+      3. Creates a new account (no password) if neither found.
+    Email is marked verified, display_name and avatar_url are saved from Google.
+    """
+    import httpx  # noqa: PLC0415
+
+    # Two calls with a single client:
+    #   1. tokeninfo — validates the access_token and returns sub/email/email_verified
+    #   2. userinfo  — returns full profile (name, picture, locale) that tokeninfo omits
+    async with httpx.AsyncClient(timeout=10) as client:
+        tokeninfo_r, userinfo_r = await asyncio.gather(
+            client.get(
+                "https://oauth2.googleapis.com/tokeninfo",
+                params={"access_token": payload.access_token},
+            ),
+            client.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {payload.access_token}"},
+            ),
+        )
+
+    if tokeninfo_r.status_code != 200:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "GOOGLE_TOKEN_INVALID", "message": "Google token noto'g'ri"},
+        )
+
+    tokeninfo = tokeninfo_r.json()
+    userinfo = userinfo_r.json() if userinfo_r.status_code == 200 else {}
+
+    # Merge: tokeninfo is authoritative for security fields; userinfo for profile.
+    info = {**tokeninfo, **userinfo}
+
+    email: str = info.get("email", "")
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "GOOGLE_NO_EMAIL", "message": "Google email topilmadi"},
+        )
+
+    subject: str = info.get("sub", "")
+    if not subject:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "GOOGLE_NO_SUB", "message": "Google foydalanuvchi ID topilmadi"},
+        )
+
+    profile = OAuthProfile(
+        provider_subject=subject,
+        email=email,
+        email_verified=info.get("email_verified") in ("true", True),
+        display_name=info.get("name") or email.split("@")[0],
+        avatar_url=info.get("picture"),
+        raw=info,
+    )
+
+    settings = get_settings()
+    service = _service(db)
+    provider_id = await _get_provider_id(db, "google")
+
+    try:
+        auth = await service.login_with_oauth(
+            provider_id=provider_id,
+            profile=profile,
+            tenant_id=UUID(settings.default_tenant_id),
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            preferred_locale="uz",
+            preferred_timezone="UTC",
+            residency_region=ResidencyRegion.GLOBAL,
+        )
+    except IdentityError as exc:
+        _raise_identity_error(exc)
+
+    return LoginResponse(
+        user=_user_out(auth.user),
+        tokens=_token_bundle(auth, ttl=settings.jwt_access_token_ttl_seconds),
+    )
 
 
 @router.post("/logout", response_model=LogoutResponse)
@@ -283,3 +431,72 @@ async def logout(ctx: CurrentUserDep, db: SessionDep) -> LogoutResponse:
         reason="user_logout",
     )
     return LogoutResponse()
+
+
+# --- Email verification endpoints --------------------------------------------
+
+
+class VerifyEmailRequest(BaseModel):
+    email: EmailStr
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
+class VerifyEmailResponse(BaseModel):
+    verified: bool
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+
+class ResendVerificationResponse(BaseModel):
+    sent: bool
+
+
+@router.post(
+    "/verify-email",
+    response_model=VerifyEmailResponse,
+    dependencies=[Depends(rate_limit("10/minute", per="ip", scope="auth:verify_email"))],
+)
+async def verify_email(
+    payload: VerifyEmailRequest,
+    ctx: CurrentUserDep,
+    db: SessionDep,
+) -> VerifyEmailResponse:
+    """Verify the OTP code sent to the user's email after registration."""
+    ok = await otp_service.verify_and_consume(payload.email, payload.code)
+    if not ok:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "OTP_INVALID", "message": "Kod noto'g'ri yoki muddati o'tgan"},
+        )
+
+    repo = SqlUserRepository(db)
+    await repo.verify_email(ctx.user_id, ctx.residency_region)
+    return VerifyEmailResponse(verified=True)
+
+
+@router.post(
+    "/resend-verification",
+    response_model=ResendVerificationResponse,
+    dependencies=[Depends(rate_limit("3/minute", per="ip", scope="auth:resend_verification"))],
+)
+async def resend_verification(
+    payload: ResendVerificationRequest,
+    _ctx: CurrentUserDep,
+) -> ResendVerificationResponse:
+    """Resend email verification OTP to the authenticated user."""
+    try:
+        code = await otp_service.generate_and_store(payload.email)
+        await get_email_client().send_email(
+            to=payload.email,
+            subject=f"SilkLens kirish kodi: {code}",
+            html=None,
+            text=_otp_text(code),
+        )
+    except Exception:  # noqa: BLE001
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": "EMAIL_SEND_FAILED", "message": "Email yuborishda xato"},
+        )
+    return ResendVerificationResponse(sent=True)

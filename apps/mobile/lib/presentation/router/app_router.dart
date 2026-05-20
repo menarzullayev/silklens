@@ -1,279 +1,390 @@
-// SilkLens navigation map (go_router 14).
-//
-// Top-level routes:
-//   /                       → SplashPage (decides where to land)
-//   /onboarding             → 3-slide intro (anonymous)
-//   /auth/sign-in           → email+password sign-in
-//   /auth/sign-up           → register (auto-login on 201)
-//   /auth/forgot-password   → recovery stub
-//   /heritage/search        → dedicated search page
-//   /heritage/:pubId        → detail page (deep-linkable)
-//   /home/...               → bottom-nav shell:
-//      ├─ /home/discover    → heritage list (default landing)
-//      ├─ /home/map         → map (Agent B)
-//      ├─ /home/camera      → camera (Agent B)
-//      ├─ /home/saved       → Isar-backed saved list
-//      └─ /home/profile     → profile + theme/locale
-//
-// Stack routes (no bottom-nav shell): chat, user profile, badges,
-// leaderboard, billing — surface on top of /home/.
-//
-// Auth redirect: anonymous users hitting the /home/... shell are routed
-// to /auth/sign-in. The splash page handles the initial bootstrap so we
-// don't redirect away from it.
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/presentation/pages/auth/auth_choice_page.dart';
+import 'package:silklens/presentation/pages/auth/email_verify_page.dart';
+import 'package:silklens/presentation/pages/auth/forgot_password_page.dart';
+import 'package:silklens/presentation/pages/auth/language_selection_page.dart';
+import 'package:silklens/presentation/pages/auth/onboarding_page.dart';
+import 'package:silklens/presentation/pages/auth/sign_in_page.dart';
+import 'package:silklens/presentation/pages/auth/sign_up_page.dart';
+import 'package:silklens/presentation/pages/auth/splash_page.dart';
+import 'package:silklens/presentation/pages/billing/checkout_page.dart';
+import 'package:silklens/presentation/pages/billing/invoices_page.dart';
+import 'package:silklens/presentation/pages/billing/manage_subscription_page.dart';
+import 'package:silklens/presentation/pages/billing/plans_page.dart';
+import 'package:silklens/presentation/pages/camera/camera_page.dart';
+import 'package:silklens/presentation/pages/gamification/badges_page.dart';
+import 'package:silklens/presentation/pages/gamification/leaderboard_page.dart';
+import 'package:silklens/presentation/pages/gamification/missions_page.dart';
+import 'package:silklens/presentation/pages/gamification/streak_widget.dart';
+import 'package:silklens/presentation/pages/gamification/xp_card.dart';
+import 'package:silklens/presentation/pages/heritage/audio_guide_page.dart';
+import 'package:silklens/presentation/pages/heritage/heritage_detail_page.dart';
+import 'package:silklens/presentation/pages/heritage/heritage_list_page.dart';
+import 'package:silklens/presentation/pages/heritage/offline_mode_page.dart';
+import 'package:silklens/presentation/pages/heritage/search_page.dart';
+import 'package:silklens/presentation/pages/heritage/search_results_page.dart';
+import 'package:silklens/presentation/pages/map/map_page.dart';
+import 'package:silklens/presentation/pages/profile/user_profile_page.dart';
+import 'package:silklens/presentation/pages/settings/about_page.dart';
+import 'package:silklens/presentation/pages/settings/delete_account_page.dart';
+import 'package:silklens/presentation/pages/settings/language_settings_page.dart';
+import 'package:silklens/presentation/pages/settings/notification_prefs_page.dart';
+import 'package:silklens/presentation/pages/settings/privacy_gdpr_page.dart';
+import 'package:silklens/presentation/pages/settings/settings_home_page.dart';
+import 'package:silklens/presentation/pages/social/activity_feed_page.dart';
+import 'package:silklens/presentation/pages/social/following_list_page.dart';
+import 'package:silklens/presentation/pages/social/friend_invite_page.dart';
+import 'package:silklens/presentation/pages/social/notifications_page.dart';
+import 'package:silklens/presentation/providers/auth_provider.dart';
 
-import "package:flutter/widgets.dart";
-import "package:go_router/go_router.dart";
-import "package:hooks_riverpod/hooks_riverpod.dart";
-import "package:silklens/presentation/pages/auth/forgot_password_page.dart";
-import "package:silklens/presentation/pages/auth/onboarding_page.dart"
-    as auth_onboarding;
-import "package:silklens/presentation/pages/auth/sign_in_page.dart";
-import "package:silklens/presentation/pages/auth/sign_up_page.dart";
-import "package:silklens/presentation/pages/auth/splash_page.dart"
-    as auth_splash;
-import "package:silklens/presentation/pages/billing/checkout_page.dart";
-import "package:silklens/presentation/pages/billing/invoices_page.dart";
-import "package:silklens/presentation/pages/billing/manage_subscription_page.dart";
-import "package:silklens/presentation/pages/billing/plans_page.dart";
-import "package:silklens/presentation/pages/camera/camera_page.dart";
-import "package:silklens/presentation/pages/chat/chat_page.dart";
-import "package:silklens/presentation/pages/gamification/badges_page.dart";
-import "package:silklens/presentation/pages/gamification/leaderboard_page.dart";
-import "package:silklens/presentation/pages/heritage/heritage_detail_page.dart";
-import "package:silklens/presentation/pages/heritage/heritage_list_page.dart";
-import "package:silklens/presentation/pages/heritage/heritage_search_page.dart";
-import "package:silklens/presentation/pages/heritage/saved_heritage_page.dart";
-import "package:silklens/presentation/pages/home_shell_page.dart";
-import "package:silklens/presentation/pages/map/map_page.dart";
-import "package:silklens/presentation/pages/profile/profile_page.dart";
-import "package:silklens/presentation/pages/profile/user_profile_page.dart";
-import "package:silklens/presentation/providers/auth_provider.dart";
+// Shell page with bottom navigation
+class HomeShellPage extends StatelessWidget {
+  const HomeShellPage({required this.child, super.key});
+  final Widget child;
 
-abstract final class AppRoutes {
-  static const String splash = "/";
-  static const String onboarding = "/onboarding";
-
-  static const String authSignIn = "/auth/sign-in";
-  static const String authSignUp = "/auth/sign-up";
-  static const String authForgotPassword = "/auth/forgot-password";
-
-  static const String home = "/home";
-  static const String homeDiscover = "/home/discover";
-  static const String homeMap = "/home/map";
-  static const String homeCamera = "/home/camera";
-  static const String homeSaved = "/home/saved";
-  static const String homeProfile = "/home/profile";
-
-  static const String heritageSearch = "/heritage/search";
-
-  /// Build the canonical detail-page path for a heritage object.
-  static String heritageDetail(String pubId) => "/heritage/$pubId";
-
-  // Stack routes (no bottom-nav shell).
-  static const String heritageDetailPattern = "/heritage/:pubId";
-
-  static const String chat = "/chat";
-  static const String chatWithContextPattern = "/chat/:heritage_id";
-  static const String userProfilePattern = "/users/:pub_id";
-  static String userProfile(String pubId) => "/users/$pubId";
-
-  static const String badges = "/gamification/badges";
-  static const String leaderboard = "/gamification/leaderboard";
-
-  static const String billingPlans = "/billing/plans";
-  static const String billingCheckoutPattern = "/billing/checkout/:plan_slug";
-  static const String billingManage = "/billing/manage";
-  static const String billingInvoices = "/billing/invoices";
-
-  // ── Legacy aliases (kept so older imports keep compiling). ──
-  static const String camera = homeCamera;
-  static const String map = homeMap;
-  static const String profile = homeProfile;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(body: child);
+  }
 }
 
-final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((Ref ref) {
-  final shellNavKey = GlobalKey<NavigatorState>(debugLabel: "sl-shell");
-  final authListenable = _AuthChangeNotifier(ref);
-  ref.onDispose(authListenable.dispose);
+// ─── Transition helpers ──────────────────────────────────────────────────────
+
+CustomTransitionPage<void> _noTransitionPage(
+  BuildContext ctx,
+  GoRouterState state,
+  Widget child,
+) =>
+    CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionDuration: Duration.zero,
+      reverseTransitionDuration: Duration.zero,
+      transitionsBuilder: (_, __, ___, child) => child,
+    );
+
+CustomTransitionPage<void> _fadePage(
+  BuildContext ctx,
+  GoRouterState state,
+  Widget child, {
+  Duration duration = const Duration(milliseconds: 300),
+}) =>
+    CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionDuration: duration,
+      transitionsBuilder: (_, anim, __, child) =>
+          FadeTransition(opacity: anim, child: child),
+    );
+
+CustomTransitionPage<void> _slideUpPage(
+  BuildContext ctx,
+  GoRouterState state,
+  Widget child,
+) =>
+    CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionsBuilder: (_, anim, __, child) => SlideTransition(
+        position: anim.drive(
+          Tween(begin: const Offset(0, 0.08), end: Offset.zero)
+              .chain(CurveTween(curve: Curves.easeOutCubic)),
+        ),
+        child: FadeTransition(opacity: anim, child: child),
+      ),
+    );
+
+CustomTransitionPage<void> _slideRightPage(
+  BuildContext ctx,
+  GoRouterState state,
+  Widget child, {
+  Duration duration = const Duration(milliseconds: 250),
+}) =>
+    CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionDuration: duration,
+      transitionsBuilder: (_, anim, __, child) => SlideTransition(
+        position: anim.drive(
+          Tween(begin: const Offset(1, 0), end: Offset.zero)
+              .chain(CurveTween(curve: Curves.easeOutCubic)),
+        ),
+        child: child,
+      ),
+    );
+
+CustomTransitionPage<void> _fadeScalePage(
+  BuildContext ctx,
+  GoRouterState state,
+  Widget child,
+) =>
+    CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionDuration: const Duration(milliseconds: 400),
+      transitionsBuilder: (_, anim, __, child) {
+        final curved = CurvedAnimation(
+          parent: anim,
+          curve: Curves.easeOutCubic,
+        );
+        return FadeTransition(
+          opacity: curved,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.96, end: 1).animate(curved),
+            child: child,
+          ),
+        );
+      },
+    );
+
+// ─── Auth router notifier ────────────────────────────────────────────────────
+
+// Bridges Riverpod auth state into GoRouter's refreshListenable so the
+// router re-evaluates its redirect callback whenever auth state changes.
+class _AuthRouterNotifier extends ChangeNotifier {
+  _AuthRouterNotifier(Ref ref) {
+    ref.listen<AuthState>(authProvider, (_, __) => notifyListeners());
+  }
+}
+
+// Routes that are only for unauthenticated users.
+const _guestOnlyPaths = {
+  '/',
+  '/language',
+  '/onboarding',
+  '/auth/choice',
+  '/auth/sign-in',
+  '/auth/sign-up',
+  '/auth/forgot-password',
+};
+
+// ─── Router ──────────────────────────────────────────────────────────────────
+
+final appRouterProvider = Provider<GoRouter>((ref) {
+  final notifier = _AuthRouterNotifier(ref);
 
   return GoRouter(
-    initialLocation: AppRoutes.splash,
-    debugLogDiagnostics: false,
-    refreshListenable: authListenable,
-    redirect: (BuildContext context, GoRouterState state) {
-      final auth = ref.read(authNotifierProvider);
-      final location = state.matchedLocation;
-      final isProtected = location.startsWith("/home");
-      final isAuthLoc = location.startsWith("/auth/");
+    initialLocation: '/',
+    refreshListenable: notifier,
+    redirect: (context, state) {
+      final auth = ref.read(authProvider);
+      final loc = state.matchedLocation;
 
-      if (auth.isLoading) return null;
-      if (auth.isAnonymous && isProtected) return AppRoutes.authSignIn;
-      if (auth.isAuthenticated && isAuthLoc) return AppRoutes.homeDiscover;
+      // Still loading — keep showing splash, don't redirect anything else.
+      if (auth is AuthInitial) {
+        return loc == '/' ? null : '/';
+      }
+
+      if (auth is AuthAuthenticated) {
+        // Send authenticated users away from auth/splash pages.
+        if (_guestOnlyPaths.contains(loc)) return '/home';
+        return null;
+      }
+
+      // Unauthenticated — block protected routes.
+      if (!_guestOnlyPaths.contains(loc)) return '/onboarding';
       return null;
     },
-    routes: <RouteBase>[
+    routes: [
       GoRoute(
-        path: AppRoutes.splash,
-        name: "splash",
-        builder: (BuildContext context, GoRouterState state) =>
-            const auth_splash.SplashPage(),
+        path: '/',
+        pageBuilder: (ctx, state) =>
+            _noTransitionPage(ctx, state, const SplashPage()),
       ),
       GoRoute(
-        path: AppRoutes.onboarding,
-        name: "onboarding",
-        builder: (BuildContext context, GoRouterState state) =>
-            const auth_onboarding.OnboardingPage(),
+        path: '/language',
+        pageBuilder: (ctx, state) =>
+            _fadePage(ctx, state, const LanguageSelectionPage()),
       ),
       GoRoute(
-        path: AppRoutes.authSignIn,
-        name: "sign-in",
-        builder: (BuildContext context, GoRouterState state) =>
-            const SignInPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.authSignUp,
-        name: "sign-up",
-        builder: (BuildContext context, GoRouterState state) =>
-            const SignUpPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.authForgotPassword,
-        name: "forgot-password",
-        builder: (BuildContext context, GoRouterState state) =>
-            const ForgotPasswordPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.heritageSearch,
-        name: "heritage-search",
-        builder: (BuildContext context, GoRouterState state) =>
-            const HeritageSearchPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.heritageDetailPattern,
-        name: "heritage-detail",
-        builder: (BuildContext context, GoRouterState state) =>
-            HeritageDetailPage(
-          pubId: state.pathParameters["pubId"] ?? "",
+        path: '/onboarding',
+        pageBuilder: (ctx, state) => _fadePage(
+          ctx,
+          state,
+          const OnboardingPage(),
+          duration: const Duration(milliseconds: 350),
         ),
       ),
-      ShellRoute(
-        navigatorKey: shellNavKey,
-        builder: (BuildContext context, GoRouterState state, Widget child) =>
-            HomeShellPage(child: child),
-        routes: <RouteBase>[
-          GoRoute(
-            path: AppRoutes.homeDiscover,
-            name: "discover",
-            pageBuilder: (BuildContext context, GoRouterState state) =>
-                const NoTransitionPage<void>(child: HeritageListPage()),
+      GoRoute(
+        path: '/auth/choice',
+        pageBuilder: (ctx, state) =>
+            _slideUpPage(ctx, state, const AuthChoicePage()),
+      ),
+      GoRoute(
+        path: '/auth/sign-in',
+        pageBuilder: (ctx, state) =>
+            _slideUpPage(ctx, state, const SignInPage()),
+      ),
+      GoRoute(
+        path: '/auth/sign-up',
+        pageBuilder: (ctx, state) =>
+            _slideUpPage(ctx, state, const SignUpPage()),
+      ),
+      GoRoute(
+        path: '/auth/forgot-password',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const ForgotPasswordPage()),
+      ),
+      GoRoute(
+        path: '/settings',
+        pageBuilder: (ctx, state) =>
+            _fadePage(ctx, state, const SettingsHomePage()),
+      ),
+      GoRoute(
+        path: '/settings/notifications',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const NotificationPrefsPage()),
+      ),
+      GoRoute(
+        path: '/settings/privacy',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const PrivacyGDPRPage()),
+      ),
+      GoRoute(
+        path: '/settings/about',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const AboutPage()),
+      ),
+      GoRoute(
+        path: '/settings/delete-account',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const DeleteAccountPage()),
+      ),
+      GoRoute(
+        path: '/settings/language',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const LanguageSettingsPage()),
+      ),
+      GoRoute(
+        path: '/social/feed',
+        pageBuilder: (ctx, state) =>
+            _fadePage(ctx, state, const ActivityFeedPage()),
+      ),
+      GoRoute(
+        path: '/social/notifications',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const NotificationsPage()),
+      ),
+      GoRoute(
+        path: '/auth/email-verify',
+        pageBuilder: (ctx, state) => _slideRightPage(
+          ctx,
+          state,
+          EmailVerifyPage(
+            email: state.uri.queryParameters['email'] ?? '',
           ),
+        ),
+      ),
+      GoRoute(
+        path: '/home',
+        pageBuilder: (ctx, state) =>
+            _fadeScalePage(ctx, state, const HeritageListPage()),
+        routes: [
           GoRoute(
-            path: AppRoutes.homeMap,
-            name: "map",
-            pageBuilder: (BuildContext context, GoRouterState state) =>
-                const NoTransitionPage<void>(child: MapPage()),
-          ),
-          GoRoute(
-            path: AppRoutes.homeCamera,
-            name: "camera",
-            pageBuilder: (BuildContext context, GoRouterState state) =>
-                const NoTransitionPage<void>(child: CameraPage()),
-          ),
-          GoRoute(
-            path: AppRoutes.homeSaved,
-            name: "saved",
-            pageBuilder: (BuildContext context, GoRouterState state) =>
-                const NoTransitionPage<void>(child: SavedHeritagePage()),
-          ),
-          GoRoute(
-            path: AppRoutes.homeProfile,
-            name: "profile",
-            pageBuilder: (BuildContext context, GoRouterState state) =>
-                const NoTransitionPage<void>(child: ProfilePage()),
+            path: 'heritage/:pubId',
+            pageBuilder: (ctx, state) => _slideRightPage(
+              ctx,
+              state,
+              HeritageDetailPage(pubId: state.pathParameters['pubId']!),
+            ),
           ),
         ],
       ),
       GoRoute(
-        path: AppRoutes.chat,
-        name: "chat",
-        builder: (BuildContext context, GoRouterState state) =>
-            const ChatPage(),
+        path: '/map',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const MapPage()),
       ),
       GoRoute(
-        path: AppRoutes.chatWithContextPattern,
-        name: "chat_context",
-        builder: (BuildContext context, GoRouterState state) => ChatPage(
-          heritagePubIdContext: state.pathParameters["heritage_id"],
+        path: '/camera',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const CameraPage()),
+      ),
+      GoRoute(
+        path: '/search',
+        pageBuilder: (ctx, state) =>
+            _slideUpPage(ctx, state, const SearchPage()),
+      ),
+      GoRoute(
+        path: '/search/results',
+        pageBuilder: (ctx, state) => _slideRightPage(
+          ctx,
+          state,
+          SearchResultsPage(query: state.uri.queryParameters['q'] ?? ''),
         ),
       ),
       GoRoute(
-        path: AppRoutes.userProfilePattern,
-        name: "user_profile",
-        builder: (BuildContext context, GoRouterState state) =>
-            UserProfilePage(
-          pubId: state.pathParameters["pub_id"] ?? "",
-        ),
+        path: '/offline',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const OfflineModePage()),
       ),
       GoRoute(
-        path: AppRoutes.badges,
-        name: "badges",
-        builder: (BuildContext context, GoRouterState state) =>
-            const BadgesPage(),
+        path: '/audio-guide',
+        pageBuilder: (ctx, state) =>
+            _slideUpPage(ctx, state, const AudioGuidePage()),
       ),
       GoRoute(
-        path: AppRoutes.leaderboard,
-        name: "leaderboard",
-        builder: (BuildContext context, GoRouterState state) =>
-            const LeaderboardPage(),
+        path: '/billing',
+        pageBuilder: (ctx, state) =>
+            _fadePage(ctx, state, const PlansPage()),
       ),
       GoRoute(
-        path: AppRoutes.billingPlans,
-        name: "billing_plans",
-        builder: (BuildContext context, GoRouterState state) =>
-            const PlansPage(),
+        path: '/billing/checkout',
+        pageBuilder: (ctx, state) =>
+            _slideUpPage(ctx, state, const CheckoutPage()),
       ),
       GoRoute(
-        path: AppRoutes.billingCheckoutPattern,
-        name: "billing_checkout",
-        builder: (BuildContext context, GoRouterState state) => CheckoutPage(
-          planSlug: state.pathParameters["plan_slug"] ?? "",
-        ),
+        path: '/billing/invoices',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const InvoicesPage()),
       ),
       GoRoute(
-        path: AppRoutes.billingManage,
-        name: "billing_manage",
-        builder: (BuildContext context, GoRouterState state) =>
-            const ManageSubscriptionPage(),
+        path: '/billing/manage',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const ManageSubscriptionPage()),
       ),
       GoRoute(
-        path: AppRoutes.billingInvoices,
-        name: "billing_invoices",
-        builder: (BuildContext context, GoRouterState state) =>
-            const InvoicesPage(),
+        path: '/social/profile',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const UserProfilePage()),
+      ),
+      GoRoute(
+        path: '/social/following',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const FollowingListPage()),
+      ),
+      GoRoute(
+        path: '/social/invite',
+        pageBuilder: (ctx, state) =>
+            _slideUpPage(ctx, state, const FriendInvitePage()),
+      ),
+      GoRoute(
+        path: '/gamification/xp',
+        pageBuilder: (ctx, state) =>
+            _fadeScalePage(ctx, state, const XPDashboardPage()),
+      ),
+      GoRoute(
+        path: '/gamification/badges',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const BadgesPage()),
+      ),
+      GoRoute(
+        path: '/gamification/leaderboard',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const LeaderboardPage()),
+      ),
+      GoRoute(
+        path: '/gamification/streak',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const StreakPage()),
+      ),
+      GoRoute(
+        path: '/gamification/missions',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const MissionsPage()),
       ),
     ],
   );
-}, name: "appRouterProvider");
-
-/// Bridges Riverpod's [authNotifierProvider] into a [Listenable] so
-/// go_router knows to re-evaluate redirects whenever the auth state
-/// transitions.
-class _AuthChangeNotifier extends ChangeNotifier {
-  _AuthChangeNotifier(this._ref) {
-    _sub = _ref.listen<AuthState>(
-      authNotifierProvider,
-      (AuthState? _, AuthState __) => notifyListeners(),
-      fireImmediately: false,
-    );
-  }
-
-  final Ref _ref;
-  late final ProviderSubscription<AuthState> _sub;
-
-  @override
-  void dispose() {
-    _sub.close();
-    super.dispose();
-  }
-}
+});

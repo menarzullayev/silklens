@@ -1,6 +1,6 @@
-import "package:silklens/core/utils/result.dart";
-import "package:silklens/domain/heritage/entities/heritage.dart";
-import "package:silklens/domain/media/entities/media_capture.dart";
+import 'package:silklens/core/utils/result.dart';
+import 'package:silklens/domain/heritage/entities/heritage.dart';
+import 'package:silklens/domain/media/entities/media_capture.dart';
 
 /// Camera → Vision pipeline (FAZA 2 deliverable). Placeholder signature only.
 abstract interface class VisionRepository {

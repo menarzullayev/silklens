@@ -1,50 +1,25 @@
-// Riverpod auth controller — the single source of truth for the current
-// session at the presentation layer. The router redirect rule, the splash
-// page silent refresh, the profile sign-out button — all read this.
-//
-// Clean-Architecture: this file lives in `presentation/` and depends only
-// on the `domain/identity/...` protocol — never on the concrete
-// implementation. Wiring of [authRepositoryProvider] happens in `data/`.
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/core/error/failures.dart';
+import 'package:silklens/data/repositories/auth_repository_impl.dart'
+    as auth_impl;
+import 'package:silklens/domain/identity/entities/auth_session.dart';
+import 'package:silklens/domain/identity/entities/auth_user.dart';
+import 'package:silklens/domain/identity/repositories/auth_repository.dart';
 
-import "package:flutter/foundation.dart";
-import "package:hooks_riverpod/hooks_riverpod.dart";
-import "package:meta/meta.dart";
-import "package:silklens/core/error/failures.dart";
-import "package:silklens/core/utils/result.dart";
-import "package:silklens/data/repositories/auth_repository_impl.dart"
-    show authRepositoryProvider;
-import "package:silklens/domain/identity/entities/auth_session.dart";
-import "package:silklens/domain/identity/entities/auth_user.dart";
-import "package:silklens/domain/identity/repositories/auth_repository.dart";
+// ---------------------------------------------------------------------------
+// AuthState — sealed class hierarchy
+// ---------------------------------------------------------------------------
 
-/// Discriminated union of the three states the UI cares about. We model it
-/// as a sealed class so go_router's redirect can do exhaustive switching.
-@immutable
 sealed class AuthState {
   const AuthState();
+}
 
-  const factory AuthState.loading() = AuthLoading;
-  const factory AuthState.anonymous() = AuthAnonymous;
-  const factory AuthState.authenticated(AuthSession session) = AuthAuthenticated;
-
-  bool get isAuthenticated => this is AuthAuthenticated;
-  bool get isAnonymous => this is AuthAnonymous;
-  bool get isLoading => this is AuthLoading;
-
-  AuthSession? get session => switch (this) {
-        AuthAuthenticated(:final session) => session,
-        _ => null,
-      };
-
-  AuthUser? get user => session?.user;
+class AuthInitial extends AuthState {
+  const AuthInitial();
 }
 
 class AuthLoading extends AuthState {
   const AuthLoading();
-}
-
-class AuthAnonymous extends AuthState {
-  const AuthAnonymous();
 }
 
 class AuthAuthenticated extends AuthState {
@@ -52,118 +27,193 @@ class AuthAuthenticated extends AuthState {
   final AuthSession session;
 }
 
-/// Notifier that owns [AuthState]. Persists across restarts via the secure
-/// storage backing the underlying [AuthRepository].
+class AuthUnauthenticated extends AuthState {
+  const AuthUnauthenticated();
+}
+
+/// Backwards-compat alias — existing code that used [AuthAnonymous] still
+/// compiles without changes.
+typedef AuthAnonymous = AuthUnauthenticated;
+
+class AuthError extends AuthState {
+  const AuthError(this.message);
+  final String message;
+}
+
+// ---------------------------------------------------------------------------
+// Repository provider
+// ---------------------------------------------------------------------------
+
+/// Real AuthRepositoryImpl — wired to SilkLens API + SecureTokenStorage.
+final authRepositoryProvider = auth_impl.authRepositoryProvider;
+
+// ---------------------------------------------------------------------------
+// AuthNotifier
+// ---------------------------------------------------------------------------
+
 class AuthNotifier extends Notifier<AuthState> {
   @override
   AuthState build() {
-    // Kick off a non-blocking bootstrap. The router redirect waits on the
-    // [bootstrapped] future once before deciding what to render.
-    _bootstrap();
-    return const AuthState.loading();
+    // Kick off the silent session-restore check immediately.
+    _init();
+    return const AuthInitial();
   }
 
   AuthRepository get _repo => ref.read(authRepositoryProvider);
 
-  Future<void> _bootstrap() async {
-    final cached = await _repo.currentSession();
-    if (cached == null) {
-      state = const AuthState.anonymous();
-      return;
-    }
-    // Try a silent refresh to validate the session. The repo writes the
-    // fresh tokens to secure storage on success.
-    final refreshed = await _repo.refresh();
-    refreshed.fold<void>(
-      onSuccess: (AuthSession session) =>
-          state = AuthState.authenticated(session),
-      onFailure: (Failure _) async {
-        // The refresh failed — clear local session.
-        await _repo.signOut();
-        state = const AuthState.anonymous();
-      },
-    );
+  // -------------------------------------------------------------------------
+  // Cold-boot: restore persisted session from secure storage
+  // -------------------------------------------------------------------------
+
+  Future<void> _init() async {
+    final session = await _repo.currentSession();
+    state = session != null
+        ? AuthAuthenticated(session)
+        : const AuthUnauthenticated();
   }
 
-  /// Sign-in. Returns [null] on success or the [Failure] on error so the
-  /// sign-in page can render a localized error message.
-  Future<Failure?> signIn({
-    required String email,
-    required String password,
-  }) async {
-    final previous = state;
-    state = const AuthState.loading();
+  // -------------------------------------------------------------------------
+  // Public API
+  // -------------------------------------------------------------------------
+
+  Future<bool> login(String email, String password) async {
+    state = const AuthLoading();
     final result = await _repo.signIn(email: email, password: password);
-    return result.fold<Failure?>(
-      onSuccess: (AuthSession session) {
-        state = AuthState.authenticated(session);
-        return null;
+    return result.fold(
+      onSuccess: (session) {
+        state = AuthAuthenticated(session);
+        return true;
       },
-      onFailure: (Failure f) {
-        state = previous is AuthAuthenticated ? previous : const AuthState.anonymous();
-        return f;
+      onFailure: (failure) {
+        state = AuthError(_failureMessage(failure));
+        return false;
       },
     );
   }
 
-  Future<Failure?> signUp({
+  Future<bool> register(String email, String password) async {
+    state = const AuthLoading();
+    final result = await _repo.signUp(email: email, password: password);
+    return result.fold(
+      onSuccess: (session) {
+        state = AuthAuthenticated(session);
+        return true;
+      },
+      onFailure: (failure) {
+        state = AuthError(_failureMessage(failure));
+        return false;
+      },
+    );
+  }
+
+  /// Sign in with Google access token.
+  /// Flutter obtains [accessToken] via `google_sign_in` package,
+  /// then backend verifies it with Google tokeninfo API.
+  Future<bool> loginWithGoogle(String accessToken) async {
+    state = const AuthLoading();
+    final result = await _repo.signInWithGoogle(accessToken);
+    return result.fold(
+      onSuccess: (session) {
+        state = AuthAuthenticated(session);
+        return true;
+      },
+      onFailure: (failure) {
+        state = AuthError(_failureMessage(failure));
+        return false;
+      },
+    );
+  }
+
+  Future<bool> verifyEmail({
     required String email,
-    required String password,
-    String? displayName,
-    String? preferredLocale,
+    required String code,
   }) async {
-    final previous = state;
-    state = const AuthState.loading();
-    final result = await _repo.signUp(
-      email: email,
-      password: password,
-      displayName: displayName,
-      preferredLocale: preferredLocale,
-    );
-    return result.fold<Failure?>(
-      onSuccess: (AuthSession session) {
-        state = AuthState.authenticated(session);
-        return null;
-      },
-      onFailure: (Failure f) {
-        state = previous is AuthAuthenticated ? previous : const AuthState.anonymous();
-        return f;
-      },
+    final result = await _repo.verifyEmail(email: email, code: code);
+    return result.fold(
+      onSuccess: (verified) => verified,
+      onFailure: (_) => false,
     );
   }
 
-  Future<void> signOut() async {
+  Future<bool> resendVerification({required String email}) async {
+    final result = await _repo.resendVerification(email: email);
+    return result.fold(
+      onSuccess: (sent) => sent,
+      onFailure: (_) => false,
+    );
+  }
+
+  Future<void> logout() async {
     await _repo.signOut();
-    state = const AuthState.anonymous();
+    state = const AuthUnauthenticated();
   }
 
-  /// Manually force the state into anonymous (used by the auth interceptor
-  /// when a refresh family is revoked).
-  void markAnonymous() {
-    state = const AuthState.anonymous();
+  /// Dismiss an error and return to [AuthUnauthenticated] so the UI can
+  /// re-enable the form without a full navigation reset.
+  void clearError() {
+    if (state is AuthError) {
+      state = const AuthUnauthenticated();
+    }
   }
 
-  @visibleForTesting
-  void debugSet(AuthState newState) => state = newState;
+  // -------------------------------------------------------------------------
+  // Convenience getters
+  // -------------------------------------------------------------------------
+
+  bool get isAuthenticated => state is AuthAuthenticated;
+
+  AuthSession? get session =>
+      state is AuthAuthenticated ? (state as AuthAuthenticated).session : null;
+
+  // -------------------------------------------------------------------------
+  // Error message localisation (Uzbek)
+  // -------------------------------------------------------------------------
+
+  String _failureMessage(Failure failure) {
+    if (failure is AuthFailure) {
+      return failure.message.isNotEmpty
+          ? failure.message
+          : "Email yoki parol noto'g'ri";
+    }
+    if (failure is ValidationFailure) {
+      final fields = failure.fieldErrors;
+      if (fields.isNotEmpty) return fields.values.first;
+      return "Noto'g'ri ma'lumot";
+    }
+    if (failure is ServerFailure) {
+      return switch (failure.statusCode) {
+        401 => "Email yoki parol noto'g'ri",
+        403 => 'Kirish taqiqlangan',
+        422 => "Noto'g'ri ma'lumot",
+        423 => 'Hisob vaqtincha bloklangan',
+        429 => "Juda ko'p urinish. Biroz kuting.",
+        500 => 'Server xatosi',
+        _ => failure.message.isNotEmpty ? failure.message : 'Server xatosi',
+      };
+    }
+    if (failure is NetworkFailure) {
+      return 'Ulanish xatosi. Internet aloqasini tekshiring.';
+    }
+    return failure.message.isNotEmpty ? failure.message : 'Xato yuz berdi';
+  }
 }
 
-final NotifierProvider<AuthNotifier, AuthState> authNotifierProvider =
-    NotifierProvider<AuthNotifier, AuthState>(
-  AuthNotifier.new,
-  name: "authNotifierProvider",
+// ---------------------------------------------------------------------------
+// Providers
+// ---------------------------------------------------------------------------
+
+final authProvider =
+    NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
+
+/// Convenience alias used by route guards and legacy call-sites.
+final authNotifierProvider = authProvider;
+
+final currentUserProvider = Provider<AuthUser?>((ref) {
+  final s = ref.watch(authProvider);
+  return s is AuthAuthenticated ? s.session.user : null;
+});
+
+final isAuthenticatedProvider = Provider<bool>(
+  (ref) => ref.watch(authProvider) is AuthAuthenticated,
 );
 
-/// Convenience selector for code that only needs the user — avoids
-/// rebuilds when the tokens rotate but the user stays the same.
-final Provider<AuthUser?> currentUserProvider = Provider<AuthUser?>(
-  (Ref ref) {
-    final state = ref.watch(authNotifierProvider);
-    return state.user;
-  },
-  name: "currentUserProvider",
-);
-
-final Provider<bool> isAuthenticatedProvider = Provider<bool>(
-  (Ref ref) => ref.watch(authNotifierProvider).isAuthenticated,
-  name: "isAuthenticatedProvider",
-);

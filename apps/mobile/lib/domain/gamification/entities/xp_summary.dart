@@ -1,25 +1,29 @@
-// Current XP + level + streak for the authenticated user. Mapped from
-// /v1/me/xp + /v1/me/streak.
+class XpSummary {
+  const XpSummary({
+    required this.currentXp,
+    required this.lifetimeXp,
+    required this.levelName,
+    required this.levelNumber,
+    required this.xpToNextLevel,
+    this.todayXp = 0,
+  });
 
-import "package:freezed_annotation/freezed_annotation.dart";
+  factory XpSummary.fromJson(Map<String, dynamic> j) => XpSummary(
+    currentXp: j['current_xp'] as int,
+    lifetimeXp: j['lifetime_xp'] as int,
+    levelName: j['level_name'] as String,
+    levelNumber: j['level_number'] as int,
+    xpToNextLevel: j['xp_to_next_level'] as int,
+    todayXp: j['today_xp'] as int? ?? 0,
+  );
 
-part "xp_summary.freezed.dart";
+  final int currentXp;
+  final int lifetimeXp;
+  final String levelName;
+  final int levelNumber;
+  final int xpToNextLevel;
+  final int todayXp;
 
-@freezed
-class XpSummary with _$XpSummary {
-  const factory XpSummary({
-    required int totalXp,
-    required int level,
-    required int xpIntoCurrentLevel,
-    required int xpForNextLevel,
-    @Default(0) int streakDays,
-    DateTime? lastActiveDate,
-  }) = _XpSummary;
-
-  const XpSummary._();
-
-  double get levelProgress {
-    if (xpForNextLevel <= 0) return 1;
-    return (xpIntoCurrentLevel / xpForNextLevel).clamp(0.0, 1.0);
-  }
+  double get progressToNextLevel =>
+      xpToNextLevel > 0 ? (currentXp % xpToNextLevel) / xpToNextLevel : 1.0;
 }

@@ -1,4 +1,4 @@
-import "package:flutter/material.dart";
+import 'package:flutter/material.dart';
 
 /// Placeholder logo. FAZA 2 swaps this for an asset pulled from the
 /// tenant_branding endpoint.

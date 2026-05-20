@@ -1,40 +1,18 @@
-// Persistent cache for the `/v1/branding` response so we can paint a
-// branded splash on cold-boot even without network access.
-
-import "package:isar/isar.dart";
-
-part "cached_branding.g.dart";
-
-@collection
+/// Branding cache entry — plain Dart class (no isar annotations for now).
 class CachedBranding {
   CachedBranding({
-    required this.tenantSlug,
+    required this.tenantId,
     required this.appNameJson,
+    required this.primaryColor,
     this.logoUrl,
-    this.logoDarkUrl,
-    this.primaryColorHex,
-    this.accentColorHex,
-    this.splashUrl,
-    this.fontFamily,
-    this.themeModeDefault = "system",
-    this.extraJson = "{}",
-    this.fetchedAt,
+    this.themeModeDefault = 'system',
+    this.updatedAt,
   });
 
-  Id id = Isar.autoIncrement;
-
-  @Index(unique: true, replace: true)
-  late String tenantSlug;
-
-  late String appNameJson;
-  String? logoUrl;
-  String? logoDarkUrl;
-  String? primaryColorHex;
-  String? accentColorHex;
-  String? splashUrl;
-  String? fontFamily;
-  String themeModeDefault;
-  String extraJson;
-
-  DateTime? fetchedAt;
+  final String tenantId;
+  final String appNameJson;  // JSON string e.g. '{"en":"SilkLens"}'
+  final String primaryColor;
+  final String? logoUrl;
+  final String themeModeDefault;
+  final DateTime? updatedAt;
 }
