@@ -286,7 +286,21 @@ docker exec silklens-redis redis-cli GET 'otp:email_verify:<email>'
 
 ---
 
-## 10 · Available subagents (global, in `~/.claude/agents/`)
+## 10 · Available subagents
+
+### Project-local (`.claude/agents/` — SilkLens-specific)
+
+| Agent | When |
+|---|---|
+| `silklens-migration-author` | Adding tables, indexes, RLS, triggers — any Alembic schema change |
+| `silklens-flutter-e2e-tester` | Driving the Redmi device through signup/signin/verify flows |
+| `silklens-otp-debugger` | Diagnosing OTP/email failures across Redis + Resend + Postgres |
+| `silklens-router-author` | New FastAPI endpoint with auth + rate limit + audit + RBAC |
+| `silklens-flutter-page-author` | New Flutter screen with Clean Arch + Riverpod + 4-locale i18n |
+
+See [`.claude/agents/README.md`](.claude/agents/README.md) for invocation patterns.
+
+### Global (`~/.claude/agents/` — language/framework-agnostic)
 
 `architect`, `build-error-resolver`, `code-explorer`, `code-reviewer`, `code-simplifier`, `comment-analyzer`, `coverage`, `harness-optimizer`, `performance-optimizer`, `pr-test-analyzer`, `security-reviewer`, `ultra-reviewer`.
 
