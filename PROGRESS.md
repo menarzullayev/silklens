@@ -1,6 +1,11 @@
 # SilkLens — Progress Tracker
 
-> **Tags:** `v0.1.0-alpha` (FAZA 1-3) · `v0.2.0-beta` (FAZA 4-5) · **`v0.3.0-beta`** (FAZA 6-7) · **Last commit:** `88bbcbd` · **Refreshed:** 2026-05-19
+> **Tags:** `v0.1.0-alpha` (FAZA 1-3) · `v0.2.0-beta` (FAZA 4-5) · **`v0.3.0-beta`** (FAZA 6-7) · **Refreshed:** 2026-05-19
+>
+> **Convention:** [`docs/TRACKING_CONVENTION.md`](docs/TRACKING_CONVENTION.md) — every open item carries a `SILK-NNNN` ID.
+> **Next ID:** run `./scripts/next-ticket-id.sh` to get the next available number.
+> **Commit format:** `<type>(<scope>): SILK-NNNN — <subject>` (one or more IDs per commit)
+> **Statuses:** `[ ]` TODO · `[🔄]` IN_PROGRESS · `[✅]` DONE · `[❌]` BLOCKED · `[⏭️]` DEFERRED
 
 ## Kuzatuv joylari
 
@@ -85,10 +90,10 @@ git push --no-verify  # emergency bypass
 - [x] UGC: review/rating/photo APIs wired
 
 ### Deferred (real GPU server kerak)
-- [ ] **LLaVA / InternVL** real inference (MockProvider bor)
-- [ ] **Kokoro / Piper TTS** real audio (MockProvider bor)
-- [ ] **NLLB-200 translation** real pipeline (MockProvider bor)
-- [ ] **Mapbox API key** (OSM fallback aktiv)
+- [⏭️] **SILK-0001** 🟡 **LLaVA / InternVL** real inference (MockProvider bor) — DEFERRED on university GPU SSH
+- [⏭️] **SILK-0002** 🟡 **Kokoro / Piper TTS** real audio (MockProvider bor) — DEFERRED on GPU access
+- [⏭️] **SILK-0003** 🟡 **NLLB-200 translation** real pipeline (MockProvider bor) — DEFERRED on GPU access
+- [❌] **SILK-0004** 🟢 **Mapbox API key** (OSM fallback aktiv) — BLOCKED on key purchase decision
 
 ---
 
@@ -103,9 +108,9 @@ git push --no-verify  # emergency bypass
 - [x] Group travel schema (infra ready)
 
 ### Deferred
-- [ ] AR overlay (real ARCore/ARKit device testing)
-- [ ] Route planning AI endpoint (tez yoziladi)
-- [ ] App Store / Play Store submission
+- [⏭️] **SILK-0005** 🟢 AR overlay (real ARCore/ARKit device testing) — DEFERRED on physical AR-capable device
+- [ ] **SILK-0006** 🟢 Route planning AI endpoint — ready to ship (tez yoziladi)
+- [❌] **SILK-0007** 🟡 App Store / Play Store submission — BLOCKED on Apple Dev account ($99/yr) + Play Console ($25 one-off)
 
 ---
 
@@ -164,8 +169,8 @@ git push --no-verify  # emergency bypass
 - [x] **Biometric login** — `local_auth`, `BiometricButton` widget, SignIn da ko'rinadi ✅ 2026-05-18
 
 ### Kelajak (tashqi bog'liqlik)
-- [ ] **Lottie onboarding** — JSON animatsiya fayllar kerak (dizayner)
-- [ ] **Apple Sign In** — Apple Developer account kerak ($99/yil)
+- [❌] **SILK-0008** ⚪ **Lottie onboarding** — BLOCKED on designer assets (JSON animatsiya fayllar)
+- [❌] **SILK-0009** 🟡 **Apple Sign In** — BLOCKED on Apple Developer account ($99/yr)
 
 ---
 
@@ -215,10 +220,10 @@ git push --no-verify  # emergency bypass
 - [x] **`/home` navigatsiya** — HeritageListPage UNESCO kartochkalari bilan
 
 ### Open / deferred
-- [ ] **`silklens.app` domain Resend'da verify qilish** — `onboarding@resend.dev` ni `no-reply@silklens.app` ga almashtirish (DNS SPF/DKIM/DMARC qo'shish kerak)
-- [ ] **HTML email shabloni qaytarish** — domain verify qilingandan keyin branded gold HTML qaytariladi
-- [ ] **`MfaGateAdapter` to'liq wire qilish** — login flow'da MFA challenge integration
-- [ ] **Phone OTP** — SMS provider tanlovi kerak (Twilio? Eskiz.uz?)
+- [ ] **SILK-0010** 🟡 **`silklens.app` domain Resend'da verify qilish** — `onboarding@resend.dev` ni `no-reply@silklens.app` ga almashtirish (DNS SPF/DKIM/DMARC qo'shish kerak)
+- [⏭️] **SILK-0011** ⚪ **HTML email shabloni qaytarish** — DEFERRED on [[SILK-0010]] domain verify; tugagandan keyin branded gold HTML qaytariladi
+- [ ] **SILK-0012** 🟢 **`MfaGateAdapter` to'liq wire qilish** — login flow'da MFA challenge integration
+- [ ] **SILK-0013** 🟢 **Phone OTP** — SMS provider tanlovi kerak (Twilio? Eskiz.uz?); avval provider tahlili
 
 ---
 
@@ -234,12 +239,12 @@ git push --no-verify  # emergency bypass
 - [x] **EPIC-005 Auth Module Visual Redesign** — aurora background, gold gradient buttons, password strength bar
 
 ### Jarayonda (qoldiq)
-- [🔄] **EPIC-006 Domain Entities** — heritage_object, review, booking stub'lari to'ldirilmoqda
-- [🔄] **EPIC-007 Discovery & Heritage** — search filters, AR overlay placeholder
-- [🔄] **EPIC-008 Gamification** — XP dashboard, badges grid, leaderboard live data
-- [🔄] **EPIC-009 Social & Community** — activity feed pagination, notifications
-- [🔄] **EPIC-010 Billing** — checkout sahifa real Stripe flow
-- [🔄] **EPIC-011 Settings & Account** — language settings dinamik vocab, GDPR delete flow
+- [🔄] **SILK-0014** 🟢 **EPIC-006 Domain Entities** — heritage_object, review, booking stub'lari to'ldirilmoqda
+- [🔄] **SILK-0015** 🟢 **EPIC-007 Discovery & Heritage** — search filters, AR overlay placeholder
+- [🔄] **SILK-0016** 🟢 **EPIC-008 Gamification** — XP dashboard, badges grid, leaderboard live data
+- [🔄] **SILK-0017** 🟢 **EPIC-009 Social & Community** — activity feed pagination, notifications
+- [🔄] **SILK-0018** 🟡 **EPIC-010 Billing** — checkout sahifa real Stripe flow
+- [🔄] **SILK-0019** 🟢 **EPIC-011 Settings & Account** — language settings dinamik vocab, GDPR delete flow
 
 ---
 
