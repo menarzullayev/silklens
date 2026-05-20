@@ -149,8 +149,12 @@ The script `./scripts/next-ticket-id.sh` treats any `SILK-NNNN` that ever appear
 | Range | Reason | Decision |
 |---|---|---|
 | `SILK-0021`…`SILK-0042` | Burned by example numeric IDs in early CLAUDE.md / TRACKING_CONVENTION.md commit bodies | RETIRED — never allocate |
+| `SILK-0044` | Burned by "Next available ID: SILK-0044" mention in a commit body | RETIRED — never allocate |
 
-**Lesson:** in docs, always write `SILK-NNNN` (literal placeholder), never a real-looking number. The git history is immutable, so a single careless example permanently burns IDs.
+**Hard rules to avoid future burns:**
+1. In docs: always write `SILK-NNNN` (literal placeholder), never a real-looking number
+2. In commit bodies: mention only the ticket(s) this commit closes — never speculate on future IDs
+3. Git history is immutable. A single careless example permanently burns IDs.
 
 ---
 
