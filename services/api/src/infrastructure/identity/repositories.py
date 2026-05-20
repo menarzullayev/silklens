@@ -579,7 +579,7 @@ class SqlUserRepository:
                     last_used_at          = now(),
                     raw_profile           = EXCLUDED.raw_profile,
                     updated_at            = now()
-                RETURNING (xmax = 0) AS was_inserted
+                RETURNING (linked_at = last_used_at) AS was_inserted
                 """
             ),
             {

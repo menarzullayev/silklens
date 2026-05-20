@@ -37,6 +37,9 @@ os.environ.setdefault(
 # 200/min limit would 429 the suite. Tests that specifically assert rate-limit
 # behaviour set this back to "true" inside their own fixture scope.
 os.environ.setdefault("SILKLENS_RATE_LIMIT_ENABLED", "false")
+# Force StubEmailClient (no live Resend calls). setdefault wouldn't override
+# the value loaded from .env, so use plain assignment here.
+os.environ["SILKLENS_RESEND_API_KEY"] = ""
 
 from src.api.app import create_app
 from src.core.database import dispose_engine
