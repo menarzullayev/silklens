@@ -297,5 +297,71 @@ git push --no-verify  # emergency bypass
 | AR overlay | Real ARCore/ARKit device |
 | 200+ KZ / 150+ TJ yodgorlik | Wikidata ingestion pipeline bor, data curation kerak |
 | Load test 10K users | k6 scripts yozilmagan |
+
+---
+
+## Gap Analysis — Full Implementation Roadmap (2026-05-23)
+
+> 📋 **To'liq task bord:** [`docs/GAP-ANALYSIS-TASKS.md`](docs/GAP-ANALYSIS-TASKS.md)
+> 43 ticket · 37 mijoz talabi tahlili · Phase 1/2/3 prioritizatsiya
+
+### PHASE 1 — Must Have (App Store uchun bloklovchi)
+
+- [ ] **SILK-0050** 🔴 Real AI Vision — Claude Vision interim wiring
+- [ ] **SILK-0051** 🔴 Real TTS — OpenAI TTS interim
+- [ ] **SILK-0052** 🔴 Real Translation — DeepL interim
+- [ ] **SILK-0053** 🔴 Facebook + Instagram OAuth
+- [ ] **SILK-0054** 🔴 Apple Sign In (App Store blocker) — SILK-0009 bog'liq
+- [ ] **SILK-0055** 🔴 Offline Bundle Download API
+- [ ] **SILK-0056** 🔴 Hotel / Restaurant / Transport qidiruv API
+- [ ] **SILK-0057** 🔴 Emergency Contacts API (xavfsizlik)
+- [ ] **SILK-0058** 🟠 Onboarding Tutorial Endpoint
+- [ ] **SILK-0059** 🔴 Real FCM Push Notifications
+- [ ] **SILK-0060** 🔴 AI Chat Conversation History DB
+- [ ] **SILK-0061** 🔴 Route Planning Domain (kundalik reja)
+- [ ] **SILK-0062** 🟠 user_profiles travel preferences fields
+- [ ] **SILK-0063** 🔴 MfaGateAdapter Full Wiring (SILK-0012)
+- [ ] **SILK-0064** 🟠 languages admin registry migration
+
+### PHASE 2 — Should Have
+
+- [ ] **SILK-0065** 🔴 Smart Ticketing + QR System
+- [ ] **SILK-0066** 🔴 ASR Voice Input endpoint
+- [ ] **SILK-0067** 🟠 AI Photo Guide (angle + historical overlay)
+- [ ] **SILK-0068** 🟠 Kids Mode
+- [ ] **SILK-0069** 🟠 Cultural Tips API
+- [ ] **SILK-0070** 🟠 Smart Food Guide (halol/vegetarian)
+- [ ] **SILK-0071** 🟠 AI Review Analyzer (fake detection)
+- [ ] **SILK-0072** 🟠 Smart Expense Tracker
+- [ ] **SILK-0073** 🔴 Multi-City Route Optimizer
+- [ ] **SILK-0074** 🟠 Travel Health + Weather-Aware Guide
+- [ ] **SILK-0075** 🟠 Crowd Prediction System
+- [ ] **SILK-0076** 🟠 AI Memory Book (PDF export)
+- [ ] **SILK-0077** 🟠 Social Traveler Discovery
+- [ ] **SILK-0078** 🟠 Mood-Based Travel Recommendations
+- [ ] **SILK-0079** 🟠 German + Korean locale (de/ko)
+- [ ] **SILK-0080** 🟠 AI Bargaining + Scam + Lost&Found Utilities
+- [ ] **SILK-0081** 🟡 Local Storyteller Content Category
+
+### PHASE 3 — Nice to Have
+
+- [ ] **SILK-0082** 🟡 NFT / Raqamli Suvenir
+- [ ] **SILK-0083** 🟡 AI Tarixiy Shaxslar Bilan Foto (AR)
+- [ ] **SILK-0084** 🟡 Wearable Device Integration
+- [ ] **SILK-0085** 🟡 Carbon Footprint Tracker
+- [ ] **SILK-0086** 🟡 Government Smart Mode
+- [ ] **SILK-0087** 🟡 AI Video Memory Book
+- [ ] **SILK-0088** 🟠 Tax Engine (VAT/jurisdictions)
+- [ ] **SILK-0089** 🟠 Coupon / Promo Code System
+- [ ] **SILK-0090** 🟠 Local GPU AI Pipeline (LLaVA+NLLB+Kokoro)
+- [ ] **SILK-0091** 🟡 GAAP/IFRS Revenue Recognition
+- [ ] **SILK-0092** 🟡 Heritage Extension Tables
+
+### Technical Debt
+
+- [ ] **TD-001** finetuning/errors.py FastAPI import fix
+- [ ] **TD-002** GET /v1/ai/models public access
+- [ ] **TD-003** Pagination standardization
+- [ ] **TD-004** 0084 migration naming collision
 | Mapbox API key | API key kerak |
 | WebAuthn real device | Browser + authenticator kerak |
