@@ -68,9 +68,7 @@ async def test_generate_normalizes_email_case(redis_client) -> None:
 async def test_generate_trims_whitespace(redis_client) -> None:
     email = "  ws-trim@silklens-test.com  "
     code = await otp_service.generate_and_store(email)
-    stored = await redis_client.get(
-        "otp:email_verify:ws-trim@silklens-test.com"
-    )
+    stored = await redis_client.get("otp:email_verify:ws-trim@silklens-test.com")
     assert stored == code
 
 

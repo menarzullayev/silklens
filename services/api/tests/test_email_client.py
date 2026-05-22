@@ -32,9 +32,7 @@ async def test_stub_returns_message_id_and_never_raises() -> None:
 async def test_stub_handles_html_only_or_text_only() -> None:
     client = email_client.StubEmailClient()
     for html, text in [(None, "t"), ("<p>h</p>", None), ("<p>h</p>", "t")]:
-        result = await client.send_email(
-            to="x@example.com", subject="s", html=html, text=text
-        )
+        result = await client.send_email(to="x@example.com", subject="s", html=html, text=text)
         assert "message_id" in result
 
 
@@ -178,9 +176,7 @@ def test_factory_returns_stub_when_api_key_empty(monkeypatch) -> None:
     monkeypatch.setattr(
         email_client,
         "get_settings",
-        lambda: type(
-            "S", (), {"resend_api_key": SecretStr(""), "email_from": "x@y.z"}
-        )(),
+        lambda: type("S", (), {"resend_api_key": SecretStr(""), "email_from": "x@y.z"})(),
     )
     client = email_client.get_email_client()
     assert isinstance(client, email_client.StubEmailClient)

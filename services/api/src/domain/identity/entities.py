@@ -175,5 +175,5 @@ class OAuthProfile:
     email: str
     email_verified: bool
     display_name: str | None = None  # provider's 'name' / 'display_name'
-    avatar_url: str | None = None    # provider's 'picture' / 'avatar'
+    avatar_url: str | None = None  # provider's 'picture' / 'avatar'
     raw: dict = field(default_factory=dict)  # full tokeninfo/userinfo payload for audit

@@ -115,9 +115,7 @@ async def test_google_new_user_signup(
     user_id = body["user"]["id"]
     user_row = (
         await db_session.execute(
-            text(
-                "SELECT email_verified_at, status FROM users WHERE id = :id"
-            ),
+            text("SELECT email_verified_at, status FROM users WHERE id = :id"),
             {"id": user_id},
         )
     ).first()
@@ -126,9 +124,7 @@ async def test_google_new_user_signup(
 
     profile = (
         await db_session.execute(
-            text(
-                "SELECT display_name, avatar_url FROM user_profiles WHERE user_id = :id"
-            ),
+            text("SELECT display_name, avatar_url FROM user_profiles WHERE user_id = :id"),
             {"id": user_id},
         )
     ).first()
@@ -137,9 +133,7 @@ async def test_google_new_user_signup(
 
     identity = (
         await db_session.execute(
-            text(
-                "SELECT provider_subject, email_at_link FROM user_identities WHERE user_id = :id"
-            ),
+            text("SELECT provider_subject, email_at_link FROM user_identities WHERE user_id = :id"),
             {"id": user_id},
         )
     ).first()
@@ -193,9 +187,7 @@ async def test_google_links_existing_user_by_email(
     # Identity now linked
     identity = (
         await db_session.execute(
-            text(
-                "SELECT count(*) AS n FROM user_identities WHERE user_id = :id"
-            ),
+            text("SELECT count(*) AS n FROM user_identities WHERE user_id = :id"),
             {"id": user_id},
         )
     ).first()
@@ -261,9 +253,7 @@ async def test_google_returning_user_finds_by_identity(
     # was_inserted flag to preserve user edits on subsequent logins
     profile = (
         await db_session.execute(
-            text(
-                "SELECT display_name FROM user_profiles WHERE user_id = :id"
-            ),
+            text("SELECT display_name FROM user_profiles WHERE user_id = :id"),
             {"id": user_id},
         )
     ).first()

@@ -151,11 +151,7 @@ def _raise_identity_error(exc: IdentityError) -> NoReturn:
 
 
 def _otp_text(code: str) -> str:
-    return (
-        f"SilkLens kirish kodi: {code}\n"
-        f"\n"
-        f"Kodni ilovaga kiriting. 10 daqiqada amal qiladi.\n"
-    )
+    return f"SilkLens kirish kodi: {code}\n\nKodni ilovaga kiriting. 10 daqiqada amal qiladi.\n"
 
 
 # --- Routes ------------------------------------------------------------------

@@ -60,9 +60,7 @@ async def test_verify_email_marks_user_verified(
 
     # DB side-effects
     row = await db_session.execute(
-        text(
-            "SELECT email_verified_at, status FROM users WHERE id = :id"
-        ),
+        text("SELECT email_verified_at, status FROM users WHERE id = :id"),
         {"id": user_id},
     )
     user_row = row.first()
@@ -70,9 +68,7 @@ async def test_verify_email_marks_user_verified(
     assert user_row.status == "active"
 
     email_row = await db_session.execute(
-        text(
-            "SELECT verified_at FROM user_emails WHERE user_id = :id AND is_primary = true"
-        ),
+        text("SELECT verified_at FROM user_emails WHERE user_id = :id AND is_primary = true"),
         {"id": user_id},
     )
     assert email_row.first().verified_at is not None
