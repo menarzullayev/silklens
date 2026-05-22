@@ -8,14 +8,13 @@ in a later FAZA when we need polymorphic loading.
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 from typing import Final
 from uuid import UUID, uuid4
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-
-import json
 
 from src.domain.identity.entities import (
     OAuthProfile,

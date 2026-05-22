@@ -13,7 +13,6 @@ from pydantic import SecretStr
 
 from src.infrastructure.notifications import email_client
 
-
 # --- StubEmailClient --------------------------------------------------------
 
 

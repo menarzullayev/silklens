@@ -60,7 +60,7 @@ async def test_generate_normalizes_email_case(redis_client) -> None:
     upper = "MixedCase@SilkLens-Test.COM"
     code = await otp_service.generate_and_store(upper)
     # Stored under lowercase key
-    stored = await redis_client.get(f"otp:email_verify:mixedcase@silklens-test.com")
+    stored = await redis_client.get("otp:email_verify:mixedcase@silklens-test.com")
     assert stored == code
 
 

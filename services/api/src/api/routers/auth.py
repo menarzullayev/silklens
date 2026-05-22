@@ -30,9 +30,9 @@ from src.infrastructure.identity.repositories import (
     SqlSessionRepository,
     SqlUserRepository,
 )
-from src.infrastructure.security import Argon2PasswordHasher, JwtTokenIssuer
 from src.infrastructure.notifications import otp_service
 from src.infrastructure.notifications.email_client import get_email_client
+from src.infrastructure.security import Argon2PasswordHasher, JwtTokenIssuer
 from src.middleware.auth import CurrentUserDep
 from src.middleware.ratelimit import rate_limit
 
@@ -210,7 +210,7 @@ async def register(
             html=None,
             text=_otp_text(code),
         )
-    except Exception:  # noqa: BLE001
+    except Exception:  # noqa: S110
         # Email failure must never break login — OTP can be resent.
         pass
 
@@ -322,7 +322,10 @@ async def _get_provider_id(session: AsyncSession, slug: str) -> UUID:
     if row is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"code": "PROVIDER_NOT_CONFIGURED", "message": f"OAuth provider '{slug}' not configured"},
+            detail={
+                "code": "PROVIDER_NOT_CONFIGURED",
+                "message": f"OAuth provider '{slug}' not configured",
+            },
         )
     return row[0]
 
@@ -345,7 +348,7 @@ async def google_sign_in(
       3. Creates a new account (no password) if neither found.
     Email is marked verified, display_name and avatar_url are saved from Google.
     """
-    import httpx  # noqa: PLC0415
+    import httpx  # local import keeps domain layer free of httpx at definition time
 
     # Two calls with a single client:
     #   1. tokeninfo — validates the access_token and returns sub/email/email_verified
@@ -494,9 +497,9 @@ async def resend_verification(
             html=None,
             text=_otp_text(code),
         )
-    except Exception:  # noqa: BLE001
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={"code": "EMAIL_SEND_FAILED", "message": "Email yuborishda xato"},
-        )
+        ) from None
     return ResendVerificationResponse(sent=True)

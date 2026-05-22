@@ -242,7 +242,8 @@ async def test_google_returning_user_finds_by_identity(
             "sub": sub,
             "email": email,
             "email_verified": True,
-            "name": "Return Visit",  # different display name; should NOT overwrite on subsequent visits
+            # different display name; should NOT overwrite on subsequent visits
+            "name": "Return Visit",
         },
     )
     transport2 = httpx.MockTransport(second_handler)
