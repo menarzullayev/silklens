@@ -300,7 +300,26 @@ async def me(ctx: CurrentUserDep, db: SessionDep) -> MeResponse:
 
 
 class GoogleTokenRequest(BaseModel):
-    access_token: str
+    access_token: str = Field(..., min_length=10, max_length=2048)
+
+
+class FacebookLoginRequest(BaseModel):
+    access_token: str = Field(
+        ..., min_length=10, max_length=2048, description="Facebook user access token"
+    )
+    tenant_id: UUID | None = None
+    residency_region: ResidencyRegion = ResidencyRegion.GLOBAL
+
+
+class InstagramLoginRequest(BaseModel):
+    access_token: str = Field(
+        ...,
+        min_length=10,
+        max_length=2048,
+        description="Instagram Basic Display API access token",
+    )
+    tenant_id: UUID | None = None
+    residency_region: ResidencyRegion = ResidencyRegion.GLOBAL
 
 
 class LogoutResponse(BaseModel):
@@ -410,6 +429,236 @@ async def google_sign_in(
             preferred_locale="uz",
             preferred_timezone="UTC",
             residency_region=ResidencyRegion.GLOBAL,
+        )
+    except IdentityError as exc:
+        _raise_identity_error(exc)
+
+    return LoginResponse(
+        user=_user_out(auth.user),
+        tokens=_token_bundle(auth, ttl=settings.jwt_access_token_ttl_seconds),
+    )
+
+
+@router.post(
+    "/facebook",
+    response_model=LoginResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit("10/minute", per="ip", scope="auth:facebook"))],
+)
+async def facebook_sign_in(
+    payload: FacebookLoginRequest,
+    request: Request,
+    db: SessionDep,
+) -> LoginResponse:
+    """Sign in or register via Facebook access token.
+
+    1. Verifies the token using Facebook's debug_token endpoint with our app
+       token — prevents token-substitution attacks where a token issued to
+       another app is replayed here.
+    2. Confirms the token belongs to OUR app_id.
+    3. Fetches minimal profile (id, email, name, picture) via Graph API.
+    4. Delegates to AuthService.login_with_oauth (same path as Google).
+    Note: email may be absent if the user hasn't granted the email permission —
+    a synthetic placeholder is used so the domain entity constraint is satisfied.
+    """
+    import httpx  # local import keeps domain layer free of httpx at definition time
+
+    settings = get_settings()
+
+    app_id = settings.facebook_app_id
+    app_secret = settings.facebook_app_secret.get_secret_value()
+    if not app_id or not app_secret:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": "PROVIDER_NOT_CONFIGURED", "message": "Facebook OAuth not configured"},
+        )
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        # Step 1: verify token authenticity — prevents token substitution attacks
+        app_token = f"{app_id}|{app_secret}"
+        debug_resp = await client.get(
+            "https://graph.facebook.com/debug_token",
+            params={"input_token": payload.access_token, "access_token": app_token},
+        )
+
+    if debug_resp.status_code != 200:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "code": "FACEBOOK_TOKEN_INVALID",
+                "message": "Facebook token tekshirib bo'lmadi",
+            },
+        )
+
+    debug_data = debug_resp.json().get("data", {})
+    if not debug_data.get("is_valid"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "FACEBOOK_TOKEN_INVALID", "message": "Facebook token yaroqsiz"},
+        )
+
+    # Security: confirm the token belongs to OUR app (not another Facebook app)
+    if str(debug_data.get("app_id")) != str(app_id):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "FACEBOOK_TOKEN_WRONG_APP", "message": "Token boshqa ilovaga tegishli"},
+        )
+
+    # Step 2: fetch user profile — use a separate client call to avoid holding
+    # the connection open while we do app-token verification above
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        me_resp = await client.get(
+            "https://graph.facebook.com/me",
+            params={
+                "fields": "id,email,name,picture.width(200)",
+                "access_token": payload.access_token,
+            },
+        )
+
+    if me_resp.status_code != 200:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "code": "FACEBOOK_PROFILE_FETCH_FAILED",
+                "message": "Facebook profilni olishda xato",
+            },
+        )
+
+    fb_data = me_resp.json()
+    provider_user_id: str = fb_data.get("id", "")
+    if not provider_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "FACEBOOK_NO_ID", "message": "Facebook foydalanuvchi ID topilmadi"},
+        )
+
+    raw_email: str | None = fb_data.get("email")
+    # Synthetic placeholder for accounts where email scope was not granted.
+    # The provider_subject (stable FB user ID) uniquely identifies the account;
+    # the placeholder keeps OAuthProfile's non-optional email constraint happy
+    # while ensuring no collision with real addresses.
+    email: str = raw_email if raw_email else f"fb_{provider_user_id}@oauth.silklens.internal"
+    email_verified: bool = raw_email is not None  # only verified if Facebook returned a real email
+
+    display_name: str = fb_data.get("name") or "Facebook User"
+    avatar_url: str | None = fb_data.get("picture", {}).get("data", {}).get("url")
+
+    profile = OAuthProfile(
+        provider_subject=provider_user_id,
+        email=email,
+        email_verified=email_verified,
+        display_name=display_name,
+        avatar_url=avatar_url,
+        raw=fb_data,
+    )
+
+    service = _service(db)
+    provider_id = await _get_provider_id(db, "facebook")
+
+    try:
+        auth = await service.login_with_oauth(
+            provider_id=provider_id,
+            profile=profile,
+            tenant_id=payload.tenant_id or UUID(settings.default_tenant_id),
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            preferred_locale="uz",
+            preferred_timezone="UTC",
+            residency_region=payload.residency_region,
+        )
+    except IdentityError as exc:
+        _raise_identity_error(exc)
+
+    return LoginResponse(
+        user=_user_out(auth.user),
+        tokens=_token_bundle(auth, ttl=settings.jwt_access_token_ttl_seconds),
+    )
+
+
+@router.post(
+    "/instagram",
+    response_model=LoginResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit("10/minute", per="ip", scope="auth:instagram"))],
+)
+async def instagram_sign_in(
+    payload: InstagramLoginRequest,
+    request: Request,
+    db: SessionDep,
+) -> LoginResponse:
+    """Sign in or register via Instagram Basic Display API access token.
+
+    Instagram Basic Display API returns only id and username — no email scope.
+    A synthetic internal email placeholder is used so the domain's OAuthProfile
+    constraint is satisfied while keeping the account anchored on the stable
+    Instagram user ID (provider_subject). The account can be linked to a real
+    email later via the email-verification flow.
+    """
+    import httpx  # local import keeps domain layer free of httpx at definition time
+
+    settings = get_settings()
+
+    ig_app_id = settings.instagram_app_id
+    ig_app_secret = settings.instagram_app_secret.get_secret_value()
+    if not ig_app_id or not ig_app_secret:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": "PROVIDER_NOT_CONFIGURED", "message": "Instagram OAuth sozlanmagan"},
+        )
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        me_resp = await client.get(
+            "https://graph.instagram.com/me",
+            params={
+                "fields": "id,username",
+                "access_token": payload.access_token,
+            },
+        )
+
+    if me_resp.status_code != 200:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "INSTAGRAM_TOKEN_INVALID", "message": "Instagram token yaroqsiz"},
+        )
+
+    ig_data = me_resp.json()
+    provider_user_id: str = ig_data.get("id", "")
+    if not provider_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INSTAGRAM_NO_ID", "message": "Instagram foydalanuvchi ID topilmadi"},
+        )
+
+    username: str = ig_data.get("username", "instagram_user")
+
+    # Instagram Basic Display API does not expose email. Use a synthetic
+    # internal placeholder anchored on the stable provider_subject.
+    # email_verified=False ensures the account still needs email verification
+    # unless the user links a real address later.
+    synthetic_email = f"ig_{provider_user_id}@oauth.silklens.internal"
+
+    profile = OAuthProfile(
+        provider_subject=provider_user_id,
+        email=synthetic_email,
+        email_verified=False,  # Instagram never returns email — always unverified
+        display_name=f"@{username}",
+        avatar_url=None,  # Basic Display API does not expose avatar
+        raw=ig_data,
+    )
+
+    service = _service(db)
+    provider_id = await _get_provider_id(db, "instagram")
+
+    try:
+        auth = await service.login_with_oauth(
+            provider_id=provider_id,
+            profile=profile,
+            tenant_id=payload.tenant_id or UUID(settings.default_tenant_id),
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            preferred_locale="uz",
+            preferred_timezone="UTC",
+            residency_region=payload.residency_region,
         )
     except IdentityError as exc:
         _raise_identity_error(exc)

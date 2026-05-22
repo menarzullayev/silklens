@@ -111,17 +111,75 @@ class ProviderResolver:
                 log.warning("ai.resolver.factory_failed", model_slug=slug, error=str(exc))
                 continue
 
+        settings = get_settings()
+        anthropic_key: str = os.environ.get("ANTHROPIC_API_KEY") or ""
+        openai_key: str = (
+            settings.openai_api_key.get_secret_value() if settings.openai_api_key else ""
+        )
+        deepl_key: str = settings.deepl_api_key.get_secret_value() if settings.deepl_api_key else ""
+
         # FAZA-4 preference: if mocks are disabled and an ANTHROPIC_API_KEY is
         # present, ensure a real Anthropic provider is the first choice for
         # TEXT tasks even when the DB chain hasn't been seeded with it.
-        if task_type is AiTaskType.TEXT and os.environ.get("ANTHROPIC_API_KEY"):
-            model = get_settings().anthropic_model_default
+        if task_type is AiTaskType.TEXT and anthropic_key:
+            model = settings.anthropic_model_default
             already_real = any(isinstance(p, AnthropicLlmProvider) for p in out)
             if not already_real:
                 try:
                     out.insert(0, AnthropicLlmProvider(model_id=model))
                 except Exception as exc:  # pragma: no cover — defensive
                     log.warning("ai.resolver.anthropic_init_failed", error=str(exc))
+
+        # FAZA-4 preference: if mocks are disabled and an ANTHROPIC_API_KEY is
+        # present, ensure AnthropicVisionProvider leads the VISION chain.
+        if task_type is AiTaskType.VISION and anthropic_key:
+            from src.infrastructure.ai.anthropic_vision_provider import AnthropicVisionProvider
+
+            already_real = any(type(p).__name__ == "AnthropicVisionProvider" for p in out)
+            if not already_real:
+                try:
+                    out.insert(
+                        0,
+                        AnthropicVisionProvider(
+                            api_key=anthropic_key,
+                            model=settings.anthropic_model_default,
+                        ),
+                    )
+                    log.info("ai.resolver.vision_anthropic_prepended")
+                except Exception as exc:  # pragma: no cover — defensive
+                    log.warning("ai.resolver.anthropic_vision_init_failed", error=str(exc))
+
+        # FAZA-4 preference: if mocks are disabled and OPENAI_API_KEY is
+        # present, ensure OpenAiTtsProvider leads the TTS chain.
+        if task_type is AiTaskType.TTS and openai_key:
+            from src.infrastructure.ai.openai_tts_provider import OpenAiTtsProvider
+
+            already_real = any(type(p).__name__ == "OpenAiTtsProvider" for p in out)
+            if not already_real:
+                try:
+                    out.insert(
+                        0,
+                        OpenAiTtsProvider(
+                            api_key=openai_key,
+                            model=settings.openai_tts_model,
+                        ),
+                    )
+                    log.info("ai.resolver.tts_openai_prepended")
+                except Exception as exc:  # pragma: no cover — defensive
+                    log.warning("ai.resolver.openai_tts_init_failed", error=str(exc))
+
+        # FAZA-4 preference: if mocks are disabled and DEEPL_API_KEY is
+        # present, ensure DeepLTranslationProvider leads the TRANSLATION chain.
+        if task_type is AiTaskType.TRANSLATION and deepl_key:
+            from src.infrastructure.ai.deepl_provider import DeepLTranslationProvider
+
+            already_real = any(type(p).__name__ == "DeepLTranslationProvider" for p in out)
+            if not already_real:
+                try:
+                    out.insert(0, DeepLTranslationProvider(api_key=deepl_key))
+                    log.info("ai.resolver.translation_deepl_prepended")
+                except Exception as exc:  # pragma: no cover — defensive
+                    log.warning("ai.resolver.deepl_init_failed", error=str(exc))
 
         if not out:
             # Better to fall back to a mock than to fail the whole request when

@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import status as http_status
-
 
 class FinetuningError(Exception):
-    status_code: int = http_status.HTTP_400_BAD_REQUEST
+    status_code: int = 400
     code: str = "finetuning_error"
 
     def __init__(self, message: str = "") -> None:
@@ -14,7 +12,7 @@ class FinetuningError(Exception):
 
 
 class DatasetNotFoundError(FinetuningError):
-    status_code = http_status.HTTP_404_NOT_FOUND
+    status_code = 404
     code = "dataset_not_found"
 
     def __init__(self, slug_or_id: str = "") -> None:
@@ -26,7 +24,7 @@ DatasetNotFound = DatasetNotFoundError
 
 
 class ExampleNotFoundError(FinetuningError):
-    status_code = http_status.HTTP_404_NOT_FOUND
+    status_code = 404
     code = "example_not_found"
 
     def __init__(self, example_id: str = "") -> None:
@@ -37,7 +35,7 @@ ExampleNotFound = ExampleNotFoundError
 
 
 class JobNotFoundError(FinetuningError):
-    status_code = http_status.HTTP_404_NOT_FOUND
+    status_code = 404
     code = "job_not_found"
 
     def __init__(self, job_id: str = "") -> None:
@@ -48,7 +46,7 @@ JobNotFound = JobNotFoundError
 
 
 class DatasetNotReadyError(FinetuningError):
-    status_code = http_status.HTTP_409_CONFLICT
+    status_code = 409
     code = "dataset_not_ready"
 
     def __init__(self) -> None:
@@ -61,7 +59,7 @@ DatasetNotReady = DatasetNotReadyError
 
 
 class AlreadyApprovedError(FinetuningError):
-    status_code = http_status.HTTP_409_CONFLICT
+    status_code = 409
     code = "example_already_approved"
 
     def __init__(self) -> None:

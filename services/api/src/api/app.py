@@ -21,22 +21,32 @@ from src.api.routers import (
     auth,
     billing,
     compliance,
+    crowd,
+    cultural_tips,
+    emergency,
     enterprise_sla,
+    expenses,
     finetuning,
     fundraising,
     gamification,
     health,
     heritage,
+    listings,
     media,
     mfa,
     notifications,
+    offline,
+    onboarding,
     partnerships,
     public_meta,
     reseller,
     reviews,
     search,
     social,
+    storyteller,
+    trips,
     virtual_tours,
+    weather,
 )
 from src.core.database import dispose_engine, get_engine
 from src.core.logging import configure_logging, get_logger
@@ -154,8 +164,18 @@ def create_app() -> FastAPI:
     app.include_router(reseller.router)
     app.include_router(partnerships.router)
     app.include_router(virtual_tours.router)
+    app.include_router(offline.router)
     app.include_router(finetuning.router)
     app.include_router(enterprise_sla.router)
     app.include_router(fundraising.router)
+    app.include_router(emergency.router)
+    app.include_router(onboarding.router)
+    app.include_router(weather.router)
+    app.include_router(cultural_tips.router)
+    app.include_router(expenses.router)
+    app.include_router(storyteller.router)
+    app.include_router(crowd.router)
+    app.include_router(listings.router)
+    app.include_router(trips.router)
 
     return app

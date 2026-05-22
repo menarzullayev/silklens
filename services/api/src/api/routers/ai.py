@@ -1,13 +1,16 @@
 """AI endpoints.
 
-POST /v1/ai/recognize        — vision recognition (auth required, quota'd)
-POST /v1/ai/chat             — LLM chat (auth required, quota'd)
-POST /v1/ai/translate        — translation w/ TM cache (auth optional)
-POST /v1/ai/tts              — text-to-speech, persisted to media_assets
-POST /v1/ai/search           — pgvector semantic search (public)
-GET  /v1/ai/models           — list ai_models registry (ai:configure)
-GET  /v1/ai/fallback-chains  — list chains + steps (ai:configure)
-PATCH /v1/ai/models/{slug}   — toggle is_enabled / sort_order (ai:configure)
+POST /v1/ai/recognize                        — vision recognition (auth required, quota'd)
+POST /v1/ai/chat                             — LLM chat with conversation persistence
+POST /v1/ai/translate                        — translation w/ TM cache (auth optional)
+POST /v1/ai/tts                              — text-to-speech, persisted to media_assets
+POST /v1/ai/search                           — pgvector semantic search (public)
+GET  /v1/ai/conversations                    — list user's conversation sessions
+GET  /v1/ai/conversations/{session_id}/messages — messages for a session
+DELETE /v1/ai/conversations/{session_id}     — soft-delete a session
+GET  /v1/ai/models                           — list ai_models registry (ai:configure)
+GET  /v1/ai/fallback-chains                  — list chains + steps (ai:configure)
+PATCH /v1/ai/models/{slug}                   — toggle is_enabled / sort_order (ai:configure)
 """
 
 from __future__ import annotations
@@ -15,7 +18,7 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -95,6 +98,37 @@ class ChatOut(BaseModel):
     input_tokens: int
     output_tokens: int
     model_slug: str
+    conversation_id: UUID | None = None
+
+
+class ConversationSessionOut(BaseModel):
+    id: UUID
+    title: str | None
+    context_kind: str
+    language_tag: str
+    message_count: int
+    last_message_at: str | None
+    created_at: str
+
+
+class ConversationListOut(BaseModel):
+    items: list[ConversationSessionOut]
+    limit: int
+    offset: int
+
+
+class ConversationMessageOut(BaseModel):
+    id: UUID
+    role: str
+    content_text: str
+    model_slug: str | None
+    created_at: str
+
+
+class ConversationMessagesOut(BaseModel):
+    items: list[ConversationMessageOut]
+    limit: int
+    offset: int
 
 
 class TranslateIn(BaseModel):
@@ -123,6 +157,15 @@ class TtsOut(BaseModel):
     duration_ms: int
     mime_type: str
     model_slug: str
+
+
+class AsrOut(BaseModel):
+    text: str
+    detected_language: str
+    confidence: float
+    command_intent: str | None
+    command_params: dict
+    stub: bool = False
 
 
 class SearchFilters(BaseModel):
@@ -233,12 +276,109 @@ async def chat(
         )
     except AiError as exc:
         _raise_ai(exc)
+
+    # ---- Conversation persistence ----------------------------------------
+    region = ctx.residency_region.value
+    conv_id: UUID | None = payload.conversation_id
+
+    if conv_id is not None:
+        # Verify the session belongs to this user before updating it.
+        owner_row = await db.execute(
+            text(
+                """
+                SELECT id FROM conversation_sessions
+                WHERE id = :sid
+                  AND user_id = :uid
+                  AND residency_region = :region
+                  AND is_active = true
+                """
+            ),
+            {"sid": str(conv_id), "uid": ctx.user_id, "region": region},
+        )
+        if owner_row.fetchone() is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "conversation.not_found", "message": "Conversation not found"},
+            )
+        await db.execute(
+            text(
+                """
+                UPDATE conversation_sessions
+                SET message_count = message_count + 2,
+                    last_message_at = now(),
+                    updated_at = now()
+                WHERE id = :sid AND residency_region = :region
+                """
+            ),
+            {"sid": str(conv_id), "region": region},
+        )
+    else:
+        # Create a new session and capture the generated id.
+        new_id = await db.scalar(
+            text(
+                """
+                INSERT INTO conversation_sessions
+                    (user_id, residency_region, tenant_id, language_tag,
+                     message_count, last_message_at)
+                VALUES
+                    (:uid, :region, :tenant, :lang, 2, now())
+                RETURNING id
+                """
+            ),
+            {
+                "uid": ctx.user_id,
+                "region": region,
+                "tenant": str(ctx.tenant_id),
+                "lang": payload.language or "en",
+            },
+        )
+        conv_id = new_id
+
+    # Persist user turn.
+    await db.execute(
+        text(
+            """
+            INSERT INTO conversation_messages
+                (session_id, residency_region, role, content_text, input_tokens)
+            VALUES
+                (:sid, :region, 'user', :content, :tokens)
+            """
+        ),
+        {
+            "sid": str(conv_id),
+            "region": region,
+            "content": payload.prompt,
+            "tokens": resp.input_tokens,
+        },
+    )
+    # Persist assistant turn.
+    await db.execute(
+        text(
+            """
+            INSERT INTO conversation_messages
+                (session_id, residency_region, role, content_text,
+                 output_tokens, model_slug)
+            VALUES
+                (:sid, :region, 'assistant', :content, :tokens, :model)
+            """
+        ),
+        {
+            "sid": str(conv_id),
+            "region": region,
+            "content": resp.text,
+            "tokens": resp.output_tokens,
+            "model": resp.model_slug,
+        },
+    )
+    # ---- end persistence ------------------------------------------------
+
     await db.commit()
     return ChatOut(
         text=resp.text,
         input_tokens=resp.input_tokens,
         output_tokens=resp.output_tokens,
         model_slug=resp.model_slug,
+        conversation_id=conv_id,
     )
 
 
@@ -304,6 +444,91 @@ async def tts(
     )
 
 
+@router.post(
+    "/asr",
+    response_model=AsrOut,
+    dependencies=[Depends(rate_limit("10/minute", per="user", scope="ai:asr"))],
+)
+async def transcribe_audio(
+    ctx: Annotated[AuthContext, Depends(require_user)],
+    db: SessionDep,
+    media_asset_id: Annotated[UUID, Form(description="UUID of an uploaded audio asset")],
+    language: Annotated[
+        str | None,
+        Form(min_length=2, max_length=10, description="BCP-47 language hint, e.g. uz, en, ru"),
+    ] = None,
+) -> AsrOut:
+    """Transcribe audio to text (voice command input). SILK-0066.
+
+    Upload audio via ``POST /v1/media/uploads`` first, then pass the returned
+    asset UUID here.  Returns the transcription plus a detected command intent
+    so the mobile client can act hands-free (EXPLAIN_PLACE, NEXT_STOP, …).
+
+    When ``SILKLENS_OPENAI_API_KEY`` is absent a stub response is returned so
+    the endpoint stays functional in dev/test without real credentials.
+    """
+    settings = get_settings()
+    openai_key: str = settings.openai_api_key.get_secret_value() if settings.openai_api_key else ""
+    if not openai_key:
+        return AsrOut(
+            text="",
+            detected_language=language.split("-")[0].lower() if language else "en",
+            confidence=0.0,
+            command_intent=None,
+            command_params={},
+            stub=True,
+        )
+
+    from src.infrastructure.ai.openai_asr_provider import AsrResult, OpenAiAsrProvider
+
+    # Fetch audio bytes from MinIO via the existing SqlMediaBridge pattern.
+    media = SqlMediaBridge(db)
+    try:
+        audio_bytes, _mime = await media.get_bytes(media_asset_id)
+    except AiError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "media.not_found", "message": str(exc)},
+        ) from exc
+
+    provider = OpenAiAsrProvider(
+        api_key=openai_key,
+        model=settings.openai_asr_model,
+    )
+    try:
+        result: AsrResult = await provider.transcribe(audio_bytes, language=language)
+    except AiError as exc:
+        _raise_ai(exc)
+
+    # Persist generation row for cost tracking (output_tokens ≈ word count).
+    await db.execute(
+        text(
+            """
+            INSERT INTO ai_generations
+                (user_id, residency_region, task_type, model_slug,
+                 input_tokens, output_tokens)
+            VALUES
+                (:uid, :region, 'asr', :model, 0, :out_tokens)
+            """
+        ),
+        {
+            "uid": ctx.user_id,
+            "region": ctx.residency_region.value,
+            "model": provider.model_slug,
+            "out_tokens": len(result.text.split()),
+        },
+    )
+    await db.commit()
+
+    return AsrOut(
+        text=result.text,
+        detected_language=result.detected_language,
+        confidence=result.confidence,
+        command_intent=result.command_intent,
+        command_params=result.command_params,
+    )
+
+
 @router.post("/search", response_model=SearchOut)
 async def search(
     payload: SearchIn,
@@ -339,7 +564,171 @@ async def search(
     )
 
 
+# --- Conversation history --------------------------------------------------
+
+
+@router.get(
+    "/conversations",
+    response_model=ConversationListOut,
+    dependencies=[Depends(rate_limit("60/minute", per="user", scope="ai:chat"))],
+)
+async def list_conversations(
+    ctx: Annotated[AuthContext, Depends(require_user)],
+    db: SessionDep,
+    limit: int = Query(20, ge=1, le=50),
+    offset: int = Query(0, ge=0),
+) -> ConversationListOut:
+    """List the authenticated user's active conversation sessions, newest first."""
+    rows = await db.execute(
+        text(
+            """
+            SELECT id, title, context_kind, language_tag, message_count,
+                   last_message_at, created_at
+            FROM conversation_sessions
+            WHERE user_id = :uid
+              AND residency_region = :region
+              AND is_active = true
+            ORDER BY last_message_at DESC NULLS LAST, created_at DESC
+            LIMIT :limit OFFSET :offset
+            """
+        ),
+        {
+            "uid": ctx.user_id,
+            "region": ctx.residency_region.value,
+            "limit": limit,
+            "offset": offset,
+        },
+    )
+    items = [
+        ConversationSessionOut(
+            id=r._mapping["id"],
+            title=r._mapping["title"],
+            context_kind=r._mapping["context_kind"],
+            language_tag=r._mapping["language_tag"],
+            message_count=r._mapping["message_count"],
+            last_message_at=(
+                r._mapping["last_message_at"].isoformat() if r._mapping["last_message_at"] else None
+            ),
+            created_at=r._mapping["created_at"].isoformat(),
+        )
+        for r in rows.fetchall()
+    ]
+    return ConversationListOut(items=items, limit=limit, offset=offset)
+
+
+@router.get(
+    "/conversations/{session_id}/messages",
+    response_model=ConversationMessagesOut,
+    dependencies=[Depends(rate_limit("60/minute", per="user", scope="ai:chat"))],
+)
+async def get_conversation_messages(
+    session_id: UUID,
+    ctx: Annotated[AuthContext, Depends(require_user)],
+    db: SessionDep,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+) -> ConversationMessagesOut:
+    """Return ordered messages for a conversation session the caller owns."""
+    owner_row = await db.execute(
+        text(
+            """
+            SELECT id FROM conversation_sessions
+            WHERE id = :sid
+              AND user_id = :uid
+              AND residency_region = :region
+            """
+        ),
+        {
+            "sid": str(session_id),
+            "uid": ctx.user_id,
+            "region": ctx.residency_region.value,
+        },
+    )
+    if owner_row.fetchone() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "conversation.not_found", "message": "Conversation not found"},
+        )
+
+    rows = await db.execute(
+        text(
+            """
+            SELECT id, role, content_text, model_slug, created_at
+            FROM conversation_messages
+            WHERE session_id = :sid
+            ORDER BY created_at ASC
+            LIMIT :limit OFFSET :offset
+            """
+        ),
+        {"sid": str(session_id), "limit": limit, "offset": offset},
+    )
+    items = [
+        ConversationMessageOut(
+            id=r._mapping["id"],
+            role=r._mapping["role"],
+            content_text=r._mapping["content_text"],
+            model_slug=r._mapping["model_slug"],
+            created_at=r._mapping["created_at"].isoformat(),
+        )
+        for r in rows.fetchall()
+    ]
+    return ConversationMessagesOut(items=items, limit=limit, offset=offset)
+
+
+@router.delete(
+    "/conversations/{session_id}",
+    dependencies=[Depends(rate_limit("30/minute", per="user", scope="ai:chat"))],
+)
+async def delete_conversation(
+    session_id: UUID,
+    ctx: Annotated[AuthContext, Depends(require_user)],
+    db: SessionDep,
+) -> dict:
+    """Soft-delete a conversation session (sets is_active = false)."""
+    result = await db.execute(
+        text(
+            """
+            UPDATE conversation_sessions
+            SET is_active = false, updated_at = now()
+            WHERE id = :sid
+              AND user_id = :uid
+              AND residency_region = :region
+            RETURNING id
+            """
+        ),
+        {
+            "sid": str(session_id),
+            "uid": ctx.user_id,
+            "region": ctx.residency_region.value,
+        },
+    )
+    await db.commit()
+    if result.fetchone() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "conversation.not_found", "message": "Conversation not found"},
+        )
+    return {"deleted": True, "session_id": str(session_id)}
+
+
 # --- Admin -----------------------------------------------------------------
+
+
+@router.get("/models/public")
+async def list_public_models(db: SessionDep) -> list[dict]:
+    """Public list of enabled AI models — no auth required. Used by mobile app."""
+    rows = await db.execute(
+        text("""
+            SELECT slug, name, task_type, provider_slug
+            FROM ai_models
+            WHERE is_enabled = true
+            ORDER BY sort_order, slug
+        """)
+    )
+    return [
+        {"slug": r.slug, "name": r.name, "task_type": r.task_type, "provider_slug": r.provider_slug}
+        for r in rows.fetchall()
+    ]
 
 
 @router.get(

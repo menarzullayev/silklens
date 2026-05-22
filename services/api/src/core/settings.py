@@ -161,6 +161,40 @@ class Settings(BaseSettings):
     # resolver picks up the model_id consistently between code and DB.
     anthropic_model_default: str = "claude-opus-4-7"
 
+    # OpenAI (TTS audio guides + Whisper ASR — interim until GPU Kokoro/Piper)
+    openai_api_key: SecretStr = SecretStr("")
+    openai_tts_model: str = "tts-1"  # "tts-1" (fast) or "tts-1-hd" (quality)
+    openai_asr_model: str = "whisper-1"
+
+    # DeepL (Translation — interim until GPU NLLB-200)
+    # Free-tier key ends with ":fx"; the provider auto-selects the correct base URL.
+    deepl_api_key: SecretStr = SecretStr("")
+
+    # OpenWeatherMap (free tier: 1,000 calls/day — sufficient for launch)
+    # Leave empty in dev to fall back to StubWeatherClient (always clear Samarkand).
+    # Sign up at openweathermap.org/api — free tier covers /weather + /forecast v2.5.
+    openweather_api_key: str = ""  # plain str — not a credential, public API key
+
+    # --- Facebook OAuth ---
+    # Create an app at developers.facebook.com → "Facebook Login" product.
+    # Required permissions: email, public_profile.
+    facebook_app_id: str = ""
+    facebook_app_secret: SecretStr = SecretStr("")
+
+    # --- Instagram OAuth (Basic Display API) ---
+    # Instagram Basic Display is configured under the same Facebook Developer app.
+    # Add the "Instagram Basic Display" product to the Facebook App, then copy
+    # the Instagram App ID / Secret from the Basic Display settings panel.
+    instagram_app_id: str = ""
+    instagram_app_secret: SecretStr = SecretStr("")
+
+    # Firebase / FCM (Push Notifications — SILK-0059)
+    # Set firebase_credentials_json to the JSON content of your Firebase service account key.
+    # Or set firebase_project_id + firebase_client_email + firebase_private_key separately.
+    # Leave empty to keep stub (no real push delivery).
+    firebase_credentials_json: SecretStr = SecretStr("")
+    firebase_project_id: str = ""
+
     # --- Observability ---
     # Empty DSN keeps Sentry as a no-op (dev/test default).
     sentry_dsn: SecretStr = SecretStr("")

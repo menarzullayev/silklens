@@ -15,7 +15,6 @@ from src.domain.notifications.entities import NotificationChannel
 from src.domain.notifications.errors import NotificationError
 from src.domain.notifications.service import NotificationService
 from src.infrastructure.notifications.email_client import StubEmailClient
-from src.infrastructure.notifications.fcm_client import FcmPushClient
 from src.infrastructure.notifications.repository import SqlNotificationRepository
 from src.infrastructure.notifications.sms_client import StubSmsClient
 from src.middleware.auth import CurrentUserDep
@@ -28,7 +27,7 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 def _service(db: AsyncSession) -> NotificationService:
     return NotificationService(
         repository=SqlNotificationRepository(db),
-        push=FcmPushClient(),
+        push=None,  # FCM adapter not yet wired to domain PushClient protocol
         email=StubEmailClient(),
         sms=StubSmsClient(),
     )

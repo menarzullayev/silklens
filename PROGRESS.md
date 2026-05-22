@@ -222,7 +222,7 @@ git push --no-verify  # emergency bypass
 ### Open / deferred
 - [ ] **SILK-0010** 🟡 **`silklens.app` domain Resend'da verify qilish** — `onboarding@resend.dev` ni `no-reply@silklens.app` ga almashtirish (DNS SPF/DKIM/DMARC qo'shish kerak)
 - [⏭️] **SILK-0011** ⚪ **HTML email shabloni qaytarish** — DEFERRED on [[SILK-0010]] domain verify; tugagandan keyin branded gold HTML qaytariladi
-- [ ] **SILK-0012** 🟢 **`MfaGateAdapter` to'liq wire qilish** — login flow'da MFA challenge integration
+- [x] **SILK-0012** 🟢 **`MfaGateAdapter` to'liq wire qilish** — completed via SILK-0063
 - [ ] **SILK-0013** 🟢 **Phone OTP** — SMS provider tanlovi kerak (Twilio? Eskiz.uz?); avval provider tahlili
 
 ---
@@ -314,25 +314,25 @@ git push --no-verify  # emergency bypass
 - [ ] **SILK-0054** 🔴 Apple Sign In (App Store blocker) — SILK-0009 bog'liq
 - [ ] **SILK-0055** 🔴 Offline Bundle Download API
 - [ ] **SILK-0056** 🔴 Hotel / Restaurant / Transport qidiruv API
-- [ ] **SILK-0057** 🔴 Emergency Contacts API (xavfsizlik)
-- [ ] **SILK-0058** 🟠 Onboarding Tutorial Endpoint
+- [x] **SILK-0057** Emergency Contacts API (xavfsizlik) — migration 0095, `GET /v1/emergency`, `GET /v1/emergency/nearest`, public, no auth
+- [x] **SILK-0058** Onboarding Tutorial Endpoint — `GET /v1/onboarding/tutorial`, `GET /v1/onboarding/plans-overview`, public, no auth
 - [ ] **SILK-0059** 🔴 Real FCM Push Notifications
-- [ ] **SILK-0060** 🔴 AI Chat Conversation History DB
-- [ ] **SILK-0061** 🔴 Route Planning Domain (kundalik reja)
-- [ ] **SILK-0062** 🟠 user_profiles travel preferences fields
-- [ ] **SILK-0063** 🔴 MfaGateAdapter Full Wiring (SILK-0012)
-- [ ] **SILK-0064** 🟠 languages admin registry migration
+- [x] **SILK-0060** AI Chat Conversation History DB — migration 0096 (`conversation_sessions` LIST-partitioned x4, `conversation_messages` RANGE-partitioned monthly), chat endpoint persists turns + returns `conversation_id`, 3 new history endpoints (`GET /v1/ai/conversations`, `GET /v1/ai/conversations/{id}/messages`, `DELETE /v1/ai/conversations/{id}`)
+- [x] **SILK-0061** 🟢 Trip Planning Domain — migration 0101 (`trips` + `trip_stops`), router `POST /v1/trips` (AI itinerary, 5/min), `GET /v1/trips` (list), `GET /v1/trips/{id}` (detail+stops), `POST /v1/trips/quick-plan` (public, 10/min); stub mode when `ai_use_mock_providers=true`, real Anthropic path when disabled; residency+user_id isolation on all auth'd queries
+- [x] **SILK-0062** 🟠 user_profiles travel preferences fields — migration 20260523_0093 ✅
+- [x] **SILK-0063** 🟢 MfaGateAdapter Full Wiring (SILK-0012) — login gate issues full session (access+refresh+user) on MFA verify; step-up path unchanged; `VerifyResponse` extended; `test_mfa_flow.py` added (5 tests)
+- [x] **SILK-0064** 🟠 languages admin registry migration — migration 20260523_0094 ✅
 
 ### PHASE 2 — Should Have
 
 - [ ] **SILK-0065** 🔴 Smart Ticketing + QR System
-- [ ] **SILK-0066** 🔴 ASR Voice Input endpoint
+- [x] **SILK-0066** 🔴 ASR Voice Input endpoint — `POST /v1/ai/asr` (multipart form, auth required, 10/min per user); OpenAiAsrProvider (Whisper-1) with intent detection, stub mode when key absent, generation row persisted
 - [ ] **SILK-0067** 🟠 AI Photo Guide (angle + historical overlay)
 - [ ] **SILK-0068** 🟠 Kids Mode
 - [ ] **SILK-0069** 🟠 Cultural Tips API
 - [ ] **SILK-0070** 🟠 Smart Food Guide (halol/vegetarian)
 - [ ] **SILK-0071** 🟠 AI Review Analyzer (fake detection)
-- [ ] **SILK-0072** 🟠 Smart Expense Tracker
+- [x] **SILK-0072** 🟠 Smart Expense Tracker
 - [ ] **SILK-0073** 🔴 Multi-City Route Optimizer
 - [ ] **SILK-0074** 🟠 Travel Health + Weather-Aware Guide
 - [ ] **SILK-0075** 🟠 Crowd Prediction System
@@ -341,7 +341,7 @@ git push --no-verify  # emergency bypass
 - [ ] **SILK-0078** 🟠 Mood-Based Travel Recommendations
 - [ ] **SILK-0079** 🟠 German + Korean locale (de/ko)
 - [ ] **SILK-0080** 🟠 AI Bargaining + Scam + Lost&Found Utilities
-- [ ] **SILK-0081** 🟡 Local Storyteller Content Category
+- [x] **SILK-0081** 🟡 Local Storyteller Content Category — `GET /v1/heritage/{pub_id}/stories` + `GET /v1/stories/random`; public endpoints, rate-limited per IP; reads heritage_facts predicates (local_legend/myth/oral_tradition/hidden_fact/historical_story) with multi-language JSONB fallback
 
 ### PHASE 3 — Nice to Have
 

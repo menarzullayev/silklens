@@ -151,11 +151,29 @@ class VerifyRequest(BaseModel):
     assertion: dict | None = None
 
 
+class UserOut(BaseModel):
+    """Minimal user projection returned when MFA completes a login gate."""
+
+    id: UUID
+    pub_id: str
+    tenant_id: UUID
+    residency_region: str
+    trust_tier: str
+    preferred_locale: str
+    preferred_timezone: str
+    is_verified: bool
+
+
 class VerifyResponse(BaseModel):
     access_token: str
+    # Populated when this verify call completes a login-gate dance
+    # (challenge purpose == "step_up_or_login").  None for pure step-up.
     refresh_token: str | None = None
     token_type: str = "Bearer"
+    expires_in: int | None = None
     mfa: bool = True
+    # Full user object — present only for login-gate completions.
+    user: UserOut | None = None
 
 
 # --- Routes -----------------------------------------------------------------
@@ -455,11 +473,53 @@ async def verify_challenge(
     except MfaError as exc:
         _raise(exc)
 
-    # Mint an elevated short-lived access token. No refresh token here —
-    # the client should already have one from the original password login
-    # for non-MFA-enrolled accounts, or they completed the
-    # login → mfa_required → verify dance which is meant to layer on top of
-    # the password proof.
+    settings = get_settings()
+
+    # Determine whether this challenge is completing a login gate or a pure step-up.
+    # The login gate sets purpose="step_up_or_login" in MfaGateAdapter.require_if_enrolled
+    # (via MfaService.initiate_challenge which always writes purpose="step_up_or_login").
+    is_login_gate = challenge.metadata.get("purpose") == "step_up_or_login"
+
+    if is_login_gate:
+        # Issue a full real session (access + refresh) so the client can
+        # maintain the session after completing the login → MFA gate dance.
+        # The router is the composition root — wire infra components directly.
+        from uuid import uuid4 as _uuid4
+
+        from src.infrastructure.identity.repositories import SqlSessionRepository
+
+        sessions = SqlSessionRepository(db)
+        issuer = JwtTokenIssuer()
+        family_id = _uuid4()
+        refresh_plain, refresh_hashed, refresh_expires = issuer.issue_refresh()
+        session = await sessions.create_session(
+            user=user,
+            ip_address=None,  # IP not available post-challenge; omit for MFA completion
+            user_agent=None,
+            access_token_expires_at=refresh_expires,
+            refresh_token_hash=refresh_hashed,
+            refresh_token_expires_at=refresh_expires,
+            family_id=family_id,
+        )
+        access_token, _exp = issuer.issue_access(user=user, session_id=session.id, mfa=True)
+        return VerifyResponse(
+            access_token=access_token,
+            refresh_token=refresh_plain,
+            expires_in=settings.jwt_access_token_ttl_seconds,
+            mfa=True,
+            user=UserOut(
+                id=user.id,
+                pub_id=user.pub_id,
+                tenant_id=user.tenant_id,
+                residency_region=user.residency_region.value,
+                trust_tier=user.trust_tier.value,
+                preferred_locale=user.preferred_locale,
+                preferred_timezone=user.preferred_timezone,
+                is_verified=user.is_verified,
+            ),
+        )
+
+    # Pure step-up path: mint a short-lived phantom access token only.
     # SEC-W56-003 fix:
     # (a) Use a fresh phantom UUID for session_id — never collides with real
     #     session rows so revocation keyed on sid can't target this token.
@@ -467,7 +527,6 @@ async def verify_challenge(
     #     than the full jwt_access_token_ttl_seconds (900s / 15 min).
     from uuid import uuid4
 
-    settings = get_settings()
     issuer = JwtTokenIssuer(access_ttl=settings.mfa_step_up_freshness_seconds)
     phantom_session_id = uuid4()
     token, _exp = issuer.issue_access(user=user, session_id=phantom_session_id, mfa=True)
