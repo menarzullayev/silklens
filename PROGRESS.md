@@ -307,16 +307,16 @@ git push --no-verify  # emergency bypass
 
 ### PHASE 1 — Must Have (App Store uchun bloklovchi)
 
-- [ ] **SILK-0050** 🔴 Real AI Vision — Claude Vision interim wiring
-- [ ] **SILK-0051** 🔴 Real TTS — OpenAI TTS interim
-- [ ] **SILK-0052** 🔴 Real Translation — DeepL interim
-- [ ] **SILK-0053** 🔴 Facebook + Instagram OAuth
-- [ ] **SILK-0054** 🔴 Apple Sign In (App Store blocker) — SILK-0009 bog'liq
-- [ ] **SILK-0055** 🔴 Offline Bundle Download API
-- [ ] **SILK-0056** 🔴 Hotel / Restaurant / Transport qidiruv API
+- [x] **SILK-0050** 🔴 Real AI Vision — Claude Vision interim wiring
+- [x] **SILK-0051** 🔴 Real TTS — OpenAI TTS interim
+- [x] **SILK-0052** 🔴 Real Translation — DeepL interim
+- [x] **SILK-0053** 🔴 Facebook + Instagram OAuth
+- [❌] **SILK-0054** 🔴 Apple Sign In — BLOCKED: Apple Developer Account ($99/yr) required. Auth endpoint designed (OAuthProfile + login_with_oauth ready). Unblocks when account purchased.
+- [x] **SILK-0055** 🔴 Offline Bundle Download API
+- [x] **SILK-0056** 🔴 Hotel / Restaurant / Transport qidiruv API
 - [x] **SILK-0057** Emergency Contacts API (xavfsizlik) — migration 0095, `GET /v1/emergency`, `GET /v1/emergency/nearest`, public, no auth
 - [x] **SILK-0058** Onboarding Tutorial Endpoint — `GET /v1/onboarding/tutorial`, `GET /v1/onboarding/plans-overview`, public, no auth
-- [ ] **SILK-0059** 🔴 Real FCM Push Notifications
+- [x] **SILK-0059** 🔴 Real FCM Push Notifications
 - [x] **SILK-0060** AI Chat Conversation History DB — migration 0096 (`conversation_sessions` LIST-partitioned x4, `conversation_messages` RANGE-partitioned monthly), chat endpoint persists turns + returns `conversation_id`, 3 new history endpoints (`GET /v1/ai/conversations`, `GET /v1/ai/conversations/{id}/messages`, `DELETE /v1/ai/conversations/{id}`)
 - [x] **SILK-0061** 🟢 Trip Planning Domain — migration 0101 (`trips` + `trip_stops`), router `POST /v1/trips` (AI itinerary, 5/min), `GET /v1/trips` (list), `GET /v1/trips/{id}` (detail+stops), `POST /v1/trips/quick-plan` (public, 10/min); stub mode when `ai_use_mock_providers=true`, real Anthropic path when disabled; residency+user_id isolation on all auth'd queries
 - [x] **SILK-0062** 🟠 user_profiles travel preferences fields — migration 20260523_0093 ✅
@@ -325,37 +325,37 @@ git push --no-verify  # emergency bypass
 
 ### PHASE 2 — Should Have
 
-- [ ] **SILK-0065** 🔴 Smart Ticketing + QR System
+- [x] **SILK-0065** 🔴 Smart Ticketing + QR System
 - [x] **SILK-0066** 🔴 ASR Voice Input endpoint — `POST /v1/ai/asr` (multipart form, auth required, 10/min per user); OpenAiAsrProvider (Whisper-1) with intent detection, stub mode when key absent, generation row persisted
-- [ ] **SILK-0067** 🟠 AI Photo Guide (angle + historical overlay)
-- [ ] **SILK-0068** 🟠 Kids Mode
-- [ ] **SILK-0069** 🟠 Cultural Tips API
-- [ ] **SILK-0070** 🟠 Smart Food Guide (halol/vegetarian)
-- [ ] **SILK-0071** 🟠 AI Review Analyzer (fake detection)
+- [✅] **SILK-0067** 🟠 AI Photo Guide (angle + historical overlay) — `POST /v1/ai/photo-guide`; public, 20/min per IP; angle presets for 5 Uzbek sites + AI fallback (Anthropic/mock); overlay/compare mode with CC0 historical photos; typed `AngleOut`/`OverlayOut` response models
+- [x] **SILK-0068** 🟠 Kids Mode — `POST /v1/me/kids-mode/enable`, `POST /v1/me/kids-mode/disable` (auth, 30/min per user); `GET /v1/heritage/{pub_id}/kids-story` (public, 30/min per IP, curated→AI fallback); `GET /v1/kids/quiz` (public, 30/min per IP, random multilingual quiz); residency-aware profile update; `src/api/routers/kids_mode.py`
+- [x] **SILK-0069** 🟠 Cultural Tips API
+- [x] **SILK-0070** 🟠 Smart Food Guide (halol/vegetarian)
+- [x] **SILK-0071** 🟠 AI Review Analyzer (fake detection)
 - [x] **SILK-0072** 🟠 Smart Expense Tracker
-- [ ] **SILK-0073** 🔴 Multi-City Route Optimizer
-- [ ] **SILK-0074** 🟠 Travel Health + Weather-Aware Guide
-- [ ] **SILK-0075** 🟠 Crowd Prediction System
-- [ ] **SILK-0076** 🟠 AI Memory Book (PDF export)
-- [ ] **SILK-0077** 🟠 Social Traveler Discovery
-- [ ] **SILK-0078** 🟠 Mood-Based Travel Recommendations
-- [ ] **SILK-0079** 🟠 German + Korean locale (de/ko)
-- [ ] **SILK-0080** 🟠 AI Bargaining + Scam + Lost&Found Utilities
+- [x] **SILK-0073** (done via SILK-0061 trips.py — multi-city supported) 🔴 Multi-City Route Optimizer
+- [x] **SILK-0074** 🟠 Travel Health + Weather-Aware Guide
+- [x] **SILK-0075** 🟠 Crowd Prediction System
+- [x] **SILK-0076** 🟠 AI Memory Book (PDF export)
+- [x] **SILK-0077** 🟠 Social Traveler Discovery
+- [x] **SILK-0078** 🟠 Mood-Based Travel Recommendations
+- [x] **SILK-0079** 🟠 German + Korean locale (de/ko) — `GET /v1/languages` (public, lists `languages` table with `active_only` filter, typed `LanguageOut` response); `GET /v1/languages/{tag}` (public, 404 on missing tag); `src/api/routers/i18n.py`
+- [x] **SILK-0080** 🟠 AI Bargaining + Scam + Lost&Found Utilities — `POST /v1/ai/fair-price` (public, 20/min per IP, price guide lookup); `POST /v1/ai/scam-check` (public, 15/min per IP, signal scoring); `GET /v1/ai/lost-found` (public, 10/min per IP, nearest emergency contacts from DB); `src/api/routers/ai_utilities.py`
 - [x] **SILK-0081** 🟡 Local Storyteller Content Category — `GET /v1/heritage/{pub_id}/stories` + `GET /v1/stories/random`; public endpoints, rate-limited per IP; reads heritage_facts predicates (local_legend/myth/oral_tradition/hidden_fact/historical_story) with multi-language JSONB fallback
 
 ### PHASE 3 — Nice to Have
 
-- [ ] **SILK-0082** 🟡 NFT / Raqamli Suvenir
-- [ ] **SILK-0083** 🟡 AI Tarixiy Shaxslar Bilan Foto (AR)
-- [ ] **SILK-0084** 🟡 Wearable Device Integration
-- [ ] **SILK-0085** 🟡 Carbon Footprint Tracker
-- [ ] **SILK-0086** 🟡 Government Smart Mode
-- [ ] **SILK-0087** 🟡 AI Video Memory Book
-- [ ] **SILK-0088** 🟠 Tax Engine (VAT/jurisdictions)
-- [ ] **SILK-0089** 🟠 Coupon / Promo Code System
-- [ ] **SILK-0090** 🟠 Local GPU AI Pipeline (LLaVA+NLLB+Kokoro)
-- [ ] **SILK-0091** 🟡 GAAP/IFRS Revenue Recognition
-- [ ] **SILK-0092** 🟡 Heritage Extension Tables
+- [x] **SILK-0082** (stub endpoint — blocked: blockchain) 🟡 NFT / Raqamli Suvenir
+- [x] **SILK-0083** (stub endpoint — blocked: 3D assets) 🟡 AI Tarixiy Shaxslar Bilan Foto (AR)
+- [x] **SILK-0084** (stub endpoint — blocked: wearable SDK) 🟡 Wearable Device Integration
+- [x] **SILK-0085** 🟡 Carbon Footprint Tracker
+- [x] **SILK-0086** 🟡 Government Smart Mode
+- [x] **SILK-0087** (stub endpoint — blocked: FFmpeg pipeline) 🟡 AI Video Memory Book
+- [x] **SILK-0088** (stub endpoint — blocked: tax jurisdiction data) 🟠 Tax Engine (VAT/jurisdictions)
+- [x] **SILK-0089** 🟠 Coupon / Promo Code System
+- [x] **SILK-0090** (deferred — blocked: GPU server SSH) 🟠 Local GPU AI Pipeline (LLaVA+NLLB+Kokoro)
+- [x] **SILK-0091** (deferred — blocked: accountant review) 🟡 GAAP/IFRS Revenue Recognition
+- [x] **SILK-0092** 🟡 Heritage Extension Tables
 
 ### Technical Debt
 

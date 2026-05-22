@@ -17,33 +17,46 @@ from src import __version__
 from src.api.routers import (
     admin,
     ai,
+    ai_utilities,
     ar,
     auth,
     billing,
+    carbon,
     compliance,
+    coupons,
     crowd,
     cultural_tips,
     emergency,
     enterprise_sla,
     expenses,
     finetuning,
+    food_guide,
     fundraising,
     gamification,
+    government,
     health,
     heritage,
+    i18n,
+    kids_mode,
     listings,
     media,
+    memory_book,
     mfa,
+    mood_travel,
     notifications,
     offline,
     onboarding,
     partnerships,
+    phase3_stubs,
+    photo_guide,
     public_meta,
     reseller,
+    review_analysis,
     reviews,
     search,
     social,
     storyteller,
+    tickets,
     trips,
     virtual_tours,
     weather,
@@ -153,9 +166,11 @@ def create_app() -> FastAPI:
     app.include_router(media.router)
     app.include_router(social.router)
     app.include_router(reviews.router)
+    app.include_router(review_analysis.router)
     app.include_router(ar.router)
     app.include_router(gamification.router)
     app.include_router(billing.router)
+    app.include_router(coupons.router)
     app.include_router(notifications.router)
     app.include_router(admin.router)
     app.include_router(public_meta.router)
@@ -176,6 +191,17 @@ def create_app() -> FastAPI:
     app.include_router(storyteller.router)
     app.include_router(crowd.router)
     app.include_router(listings.router)
+    app.include_router(tickets.router)
     app.include_router(trips.router)
+    app.include_router(mood_travel.router)
+    app.include_router(ai_utilities.router)
+    app.include_router(i18n.router)
+    app.include_router(kids_mode.router)
+    app.include_router(photo_guide.router)
+    app.include_router(food_guide.router)
+    app.include_router(carbon.router)
+    app.include_router(government.router)
+    app.include_router(memory_book.router)
+    app.include_router(phase3_stubs.router)
 
     return app

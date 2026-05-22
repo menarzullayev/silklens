@@ -310,3 +310,49 @@ async def feed(
         ],
         next_cursor=page.next_cursor,
     )
+
+
+# --- Traveler discovery (SILK-0077) ----------------------------------------
+
+
+@router.get("/travelers/nearby")
+async def nearby_travelers(
+    ctx: CurrentUserDep,
+    db: SessionDep,
+    heritage_pub_id: Annotated[UUID, Query(...)],
+    limit: Annotated[int, Query(ge=1, le=20)] = 10,
+) -> dict:
+    """Find other discoverable travelers near a heritage site.
+
+    Only returns users who have opted in (is_discoverable=true) and
+    checked in within the last 2 hours. Mutual blocks are respected.
+
+    Note: heritage_check_ins table is created in migration 0099.
+    """
+    from sqlalchemy import text
+
+    rows = await db.execute(
+        text("""
+            SELECT DISTINCT u.pub_id, up.display_name, up.avatar_url,
+                   up.travel_style, up.interests
+            FROM heritage_check_ins hci
+            JOIN users u ON u.id = hci.user_id
+            JOIN user_profiles up ON up.user_id = u.id
+            WHERE hci.heritage_pub_id = :pub_id
+              AND hci.checked_in_at > now() - interval '2 hours'
+              AND hci.user_id != :uid
+              AND up.is_discoverable = true
+              AND NOT EXISTS (
+                  SELECT 1 FROM block_list bl
+                  WHERE (bl.blocker_id = :uid AND bl.blocked_id = hci.user_id)
+                     OR (bl.blocker_id = hci.user_id AND bl.blocked_id = :uid)
+              )
+            ORDER BY hci.checked_in_at DESC
+            LIMIT :limit
+        """),
+        {"pub_id": str(heritage_pub_id), "uid": ctx.user_id, "limit": limit},
+    )
+    return {
+        "travelers": [dict(r) for r in rows.mappings().fetchall()],
+        "heritage_pub_id": str(heritage_pub_id),
+    }
