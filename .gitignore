@@ -35,6 +35,10 @@ dist/
 .venv/
 venv/
 env/
+# The Python `env/` rule above would accidentally ignore Flutter source files
+# inside apps/mobile/lib/core/env/ — explicitly un-ignore that Dart directory.
+!apps/mobile/lib/core/env/
+!apps/mobile/lib/core/env/*.dart
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
