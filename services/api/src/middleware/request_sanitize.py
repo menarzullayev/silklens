@@ -225,11 +225,7 @@ async def _send_422(send: Send, reason: str) -> None:
     # accepted response codes. Body still uses the canonical FastAPI
     # ValidationError shape so response_schema_conformance is happy.
     body = json.dumps(
-        {
-            "detail": [
-                {"type": "value_error", "msg": reason, "loc": ["request"]}
-            ]
-        }
+        {"detail": [{"type": "value_error", "msg": reason, "loc": ["request"]}]}
     ).encode("utf-8")
     await send(
         {

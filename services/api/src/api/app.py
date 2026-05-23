@@ -270,9 +270,7 @@ def _inject_auth_responses(app: FastAPI) -> None:
         },
     }
 
-    error_envelope_content = {
-        "application/json": {"schema": error_envelope_schema}
-    }
+    error_envelope_content = {"application/json": {"schema": error_envelope_schema}}
 
     for route in app.routes:
         if not isinstance(route, APIRoute):
@@ -349,9 +347,7 @@ def _inject_auth_responses(app: FastAPI) -> None:
                     "anyOf": [
                         {
                             "type": "array",
-                            "items": {
-                                "$ref": "#/components/schemas/ValidationError"
-                            },
+                            "items": {"$ref": "#/components/schemas/ValidationError"},
                         },
                         {
                             "type": "object",

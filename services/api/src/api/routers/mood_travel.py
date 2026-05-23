@@ -68,9 +68,9 @@ class MoodRequest(BaseModel):
     # ``Literal`` so the OpenAPI schema declares the exact enum the runtime
     # enforces — schemathesis's positive-data-acceptance check then knows
     # that ``""`` / ``"x"`` are schema-violating and won't flag the 422.
-    mood: Literal[
-        "tired", "adventurous", "romantic", "curious", "family"
-    ] = Field(..., description="tired|adventurous|romantic|curious|family")
+    mood: Literal["tired", "adventurous", "romantic", "curious", "family"] = Field(
+        ..., description="tired|adventurous|romantic|curious|family"
+    )
     available_hours: float = Field(2.0, gt=0, le=12)
     lat: StrictFloat | None = None
     lng: StrictFloat | None = None
