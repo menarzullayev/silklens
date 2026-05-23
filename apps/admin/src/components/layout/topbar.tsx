@@ -12,16 +12,17 @@ import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { type Locale, DEFAULT_LOCALE, isLocale, LOCALE_COOKIE } from '@/lib/i18n/config';
 import { cookies } from 'next/headers';
 
-function resolveLocale(): Locale {
-  const value = cookies().get(LOCALE_COOKIE)?.value;
+async function resolveLocale(): Promise<Locale> {
+  const store = await cookies();
+  const value = store.get(LOCALE_COOKIE)?.value;
   return value && isLocale(value) ? value : DEFAULT_LOCALE;
 }
 
 export async function Topbar(): Promise<JSX.Element> {
   const session = await auth();
   const tenants = listKnownTenants();
-  const activeTenant = getActiveTenantId();
-  const locale = resolveLocale();
+  const activeTenant = await getActiveTenantId();
+  const locale = await resolveLocale();
   const initials = (session?.user?.name ?? session?.user?.email ?? 'AD')
     .split(/\s+/)
     .map((s) => s.charAt(0).toUpperCase())

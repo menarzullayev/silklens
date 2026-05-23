@@ -17,7 +17,7 @@ import { TranslationsMatrix } from './translations-matrix';
 import { RevisionsTimeline } from './revisions-timeline';
 
 interface DetailPageProps {
-  readonly params: { readonly pub_id: string };
+  readonly params: Promise<{ readonly pub_id: string }>;
 }
 
 function pickName(name: Record<string, string>): string {
@@ -28,9 +28,10 @@ export default async function HeritageDetailPage({
   params,
 }: DetailPageProps): Promise<JSX.Element> {
   const t = await getTranslations('heritage');
+  const { pub_id: pubId } = await params;
 
   const heritage = await heritageApi
-    .getHeritage(params.pub_id)
+    .getHeritage(pubId)
     .catch((cause: unknown) => {
       if (cause instanceof NotFoundError) return null;
       throw cause;
@@ -40,8 +41,8 @@ export default async function HeritageDetailPage({
   const [kinds, regions, revisions, reviews] = await Promise.all([
     vocabApi.getVocab('heritage_kinds').catch(() => null),
     vocabApi.getVocab('residency_regions').catch(() => null),
-    heritageApi.listHeritageRevisions(params.pub_id, { limit: 20 }).catch(() => null),
-    reviewsApi.listHeritageReviews(params.pub_id, { limit: 5 }).catch(() => null),
+    heritageApi.listHeritageRevisions(pubId, { limit: 20 }).catch(() => null),
+    reviewsApi.listHeritageReviews(pubId, { limit: 5 }).catch(() => null),
   ]);
 
   return (

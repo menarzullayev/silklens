@@ -15,11 +15,13 @@ import { cookies, headers } from 'next/headers';
 export const TENANT_COOKIE = 'silklens.tenant';
 export const TENANT_HEADER = 'x-tenant-id';
 
-export function getActiveTenantId(): string {
-  const fromHeader = headers().get(TENANT_HEADER);
+export async function getActiveTenantId(): Promise<string> {
+  const hdrs = await headers();
+  const fromHeader = hdrs.get(TENANT_HEADER);
   if (fromHeader && isValidUuid(fromHeader)) return fromHeader;
 
-  const fromCookie = cookies().get(TENANT_COOKIE)?.value;
+  const store = await cookies();
+  const fromCookie = store.get(TENANT_COOKIE)?.value;
   if (fromCookie && isValidUuid(fromCookie)) return fromCookie;
 
   return process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;

@@ -12,7 +12,8 @@ export async function setActiveTenant(tenantId: string): Promise<void> {
   if (!isValidUuid(tenantId)) {
     throw new Error(`Invalid tenant id: ${tenantId}`);
   }
-  cookies().set({
+  const store = await cookies();
+  store.set({
     name: TENANT_COOKIE,
     value: tenantId,
     httpOnly: false,
@@ -27,7 +28,8 @@ export async function setActiveLocale(locale: string): Promise<void> {
   if (!isLocale(locale)) {
     throw new Error(`Unsupported locale: ${locale}`);
   }
-  cookies().set({
+  const store = await cookies();
+  store.set({
     name: LOCALE_COOKIE,
     value: locale,
     httpOnly: false,
