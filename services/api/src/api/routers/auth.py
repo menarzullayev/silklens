@@ -48,7 +48,15 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 class RegisterRequest(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=12, max_length=200)
+    password: str = Field(
+        min_length=12,
+        max_length=200,
+        # Pydantic uses Rust regex (no lookaheads), so we embed the policy
+        # only in the OpenAPI JSON schema via json_schema_extra — schemathesis
+        # reads it with Python regex (which does support lookaheads) and
+        # generates passwords that satisfy the mixed-case + digit runtime rule.
+        json_schema_extra={"pattern": r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{12,200}$"},
+    )
     display_name: str | None = Field(default=None, min_length=2, max_length=64)
     preferred_locale: str = Field(default="en", min_length=2, max_length=12)
     preferred_timezone: str = Field(default="UTC", min_length=2, max_length=64)
@@ -240,6 +248,9 @@ async def register(
     "/login",
     response_model=LoginResponse,
     dependencies=[Depends(rate_limit("5/minute", per="ip", scope="auth:login"))],
+    responses={
+        423: {"description": "Account locked after too many failed login attempts"},
+    },
 )
 async def login(
     payload: LoginRequest,
@@ -907,6 +918,9 @@ async def forgot_password(
     "/reset-password",
     response_model=ResetPasswordResponse,
     dependencies=[Depends(rate_limit("5/minute", per="ip", scope="auth:reset"))],
+    responses={
+        422: {"description": "Invalid or expired OTP code, or password does not meet policy"},
+    },
 )
 async def reset_password(
     body: ResetPasswordRequest,

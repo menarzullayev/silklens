@@ -18,7 +18,7 @@ Schema notes (from migration 0053 + 0100):
 from __future__ import annotations
 
 import math
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -124,10 +124,9 @@ class ListingDetail(BaseModel):
 )
 async def search_listings(
     session: SessionDep,
-    category: str = Query(
-        ...,
-        description="hotel|restaurant|transport|tour_agency|souvenir|museum_partner",
-    ),
+    category: Literal[
+        "hotel", "museum_partner", "restaurant", "souvenir", "tour_agency", "transport"
+    ] = Query(..., description="Listing category slug"),
     lat: float | None = Query(None, ge=-90, le=90),
     lng: float | None = Query(None, ge=-180, le=180),
     radius_km: float = Query(10.0, gt=0, le=100),

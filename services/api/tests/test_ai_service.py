@@ -636,4 +636,8 @@ async def test_search_invalid_kind_returns_422(http: AsyncClient) -> None:
     )
     assert resp.status_code == 422
     body = resp.json()
-    assert body["detail"]["code"] == "ai.validation_failed"
+    # SearchIn.kind is now Literal["heritage_text"] — Pydantic catches invalid
+    # values before the domain service and returns a list of field errors.
+    detail = body["detail"]
+    assert isinstance(detail, list), f"expected Pydantic field errors list, got: {detail}"
+    assert any("kind" in str(e.get("loc", [])) for e in detail)

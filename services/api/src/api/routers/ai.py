@@ -15,7 +15,7 @@ PATCH /v1/ai/models/{slug}                   — toggle is_enabled / sort_order 
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, status
@@ -176,7 +176,7 @@ class SearchFilters(BaseModel):
 class SearchIn(BaseModel):
     query: str = Field(min_length=1, max_length=512)
     language: str = "en"
-    kind: str = "heritage_text"
+    kind: Literal["heritage_text"] = "heritage_text"
     filters: SearchFilters = Field(default_factory=SearchFilters)
     limit: int = Field(default=10, ge=1, le=50)
 
@@ -386,6 +386,9 @@ async def chat(
     "/translate",
     response_model=TranslateOut,
     dependencies=[Depends(rate_limit("60/minute", per="user", scope="ai:translate"))],
+    responses={
+        422: {"description": "source_lang must differ from target_lang, or unsupported pair"},
+    },
 )
 async def translate(
     payload: TranslateIn,

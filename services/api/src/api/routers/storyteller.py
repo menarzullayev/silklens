@@ -16,7 +16,7 @@ Both endpoints are public (no bearer required) and rate-limited per IP.
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -67,13 +67,9 @@ async def list_heritage_stories(
     pub_id: str,
     session: SessionDep,
     language: str = Query("en", min_length=2, max_length=10),
-    kind: str | None = Query(
-        None,
-        description=(
-            "Filter by story type: local_legend | myth | oral_tradition"
-            " | hidden_fact | historical_story"
-        ),
-    ),
+    kind: Literal[
+        "local_legend", "myth", "oral_tradition", "hidden_fact", "historical_story"
+    ] | None = Query(None, description="Filter by story type"),
 ) -> list[StoryOut]:
     """Return local legends and hidden stories for a heritage site.
 
