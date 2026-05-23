@@ -20,7 +20,13 @@ export function formatDateTime(value: string | Date, locale = 'en'): string {
   }).format(date);
 }
 
-/** Currency formatter. Defaults to USD; tenants override per `pricing_zones`. */
+/**
+ * Currency formatter. Defaults to USD; tenants override per `pricing_zones`.
+ *
+ * Public utility — used by monetization / invoices pages (planned).
+ *
+ * @public
+ */
 export function formatMoney(amount: number, currency = 'USD', locale = 'en'): string {
   return new Intl.NumberFormat(locale, {
     style: 'currency',

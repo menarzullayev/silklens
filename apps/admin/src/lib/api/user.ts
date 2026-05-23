@@ -22,6 +22,11 @@ import { permissionsForTrustTier } from '@/lib/rbac/permissions';
  * network or parse failure — callers should treat an empty array as "no
  * permissions granted" and redirect to /login if the session is expected to be
  * valid.
+ *
+ * NOTE: Currently unused — kept for SILK-0156 (replace static
+ * permissionsForTrustTier with this once backend endpoint ships).
+ *
+ * @public
  */
 export async function getMyPermissions(accessToken: string): Promise<string[]> {
   try {

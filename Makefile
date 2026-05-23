@@ -1,7 +1,7 @@
 # SilkLens — top-level Makefile.
 # Aggregates per-service tasks so contributors only need one entry point.
 
-.PHONY: help dev down logs ps api-install api-run api-test api-test-random api-test-parallel api-test-cov api-lint api-format api-mypy api-mypy-strict api-migrate api-revision api-shell clean install-hooks
+.PHONY: help dev down logs ps api-install api-run api-test api-test-random api-test-parallel api-test-cov api-lint api-format api-mypy api-mypy-strict api-migrate api-revision api-shell admin-knip mobile-analyze clean install-hooks
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -51,6 +51,12 @@ api-mypy: ## Type-check the API
 
 api-mypy-strict: ## Type-check the API with --strict (no pyproject overrides) — finds hidden type bugs
 	cd services/api && .venv/bin/mypy src --strict --no-incremental --config-file=/dev/null
+
+admin-knip: ## Detect dead code / unused exports / orphan files in admin
+	cd apps/admin && pnpm knip
+
+mobile-analyze: ## Run Flutter analyzer (--fatal-warnings --fatal-infos for CI)
+	cd apps/mobile && flutter analyze --fatal-warnings --fatal-infos lib/
 
 install-hooks: ## Install pre-push + pre-commit git hooks (run once after clone)
 	bash scripts/install-hooks.sh
