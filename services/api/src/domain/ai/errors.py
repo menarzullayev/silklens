@@ -58,3 +58,15 @@ class AiValidationError(AiError):
         super().__init__(f"{field}: {reason}")
         self.field = field
         self.reason = reason
+
+
+class AiConflictError(AiValidationError):
+    """Cross-field constraint violation — surfaces as HTTP 409 Conflict.
+
+    Subclasses AiValidationError so ``pytest.raises(AiValidationError)``
+    still catches it in tests that only care about the validation aspect.
+    Used when two fields are individually valid but mutually incompatible
+    (e.g. source_lang == target_lang in a translation request).
+    """
+
+    status_code = 409

@@ -141,7 +141,7 @@ def _token_bundle(auth: AuthenticatedSession, *, ttl: int) -> TokenBundle:
 
 
 def _raise_identity_error(exc: IdentityError) -> NoReturn:
-    """Translate domain errors → HTTPException; attach ``Retry-After`` on 423."""
+    """Translate domain errors → HTTPException; attach ``Retry-After`` on 403."""
     headers: dict[str, str] | None = None
     if isinstance(exc, AccountLocked):
         headers = {"Retry-After": str(exc.retry_after_seconds)}
@@ -249,7 +249,7 @@ async def register(
     response_model=LoginResponse,
     dependencies=[Depends(rate_limit("5/minute", per="ip", scope="auth:login"))],
     responses={
-        423: {"description": "Account locked after too many failed login attempts"},
+        403: {"description": "Account locked after too many failed login attempts"},
     },
 )
 async def login(
@@ -937,7 +937,7 @@ async def reset_password(
         stored = await r.get(redis_key)
         if stored is None or stored != body.code:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                status_code=status.HTTP_404_NOT_FOUND,
                 detail={
                     "code": "identity.invalid_otp",
                     "message": "Kod noto'g'ri yoki muddati o'tgan",

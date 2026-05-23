@@ -32,6 +32,7 @@ from src.domain.ai.entities import (
     VisionResponse,
 )
 from src.domain.ai.errors import (
+    AiConflictError,
     AiError,
     AiProviderUnavailable,
     AiQuotaExceeded,
@@ -375,7 +376,7 @@ class AiService:
         if not text_input.strip():
             raise AiValidationError("text", "must not be empty")
         if source_lang == target_lang:
-            raise AiValidationError("target_lang", "must differ from source_lang")
+            raise AiConflictError("target_lang", "must differ from source_lang")
 
         source_hash = _sha256(text_input)
         hit = await self._repo.lookup_translation_memory(

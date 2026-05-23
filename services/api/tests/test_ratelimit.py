@@ -9,7 +9,7 @@ Three slices:
   the 31st call from the same bearer must 429.
 * **Brute-force lockout** — five failed logins from the same identifier
   inside the 10-minute window must lock the account; the 6th call
-  short-circuits to 423 LOCKED with a ``Retry-After``.
+  short-circuits to 403 FORBIDDEN with a ``Retry-After``.
 
 These tests force ``SILKLENS_RATE_LIMIT_ENABLED=true`` for the duration of
 the module (the suite-wide conftest disables it so unrelated tests aren't
@@ -107,7 +107,7 @@ async def test_login_returns_429_after_5_per_minute(rl_http: AsyncClient) -> Non
             headers=headers,
         )
         # 401 (invalid credentials) is the expected pre-limit response.
-        assert resp.status_code in (401, 423), resp.text
+        assert resp.status_code in (401, 403), resp.text
 
     blocked = await rl_http.post(
         "/v1/auth/login",
@@ -155,7 +155,7 @@ async def test_ai_chat_returns_429_after_30_per_minute(rl_http: AsyncClient) -> 
     assert int(blocked.headers["Retry-After"]) >= 1
 
 
-# --- Lockout (423) — auth service brute-force defence ---------------------
+# --- Lockout (403) — auth service brute-force defence ---------------------
 
 
 @pytest.mark.asyncio
@@ -178,21 +178,21 @@ async def test_login_lockout_after_5_failures(rl_http: AsyncClient) -> None:
             headers={"x-forwarded-for": f"198.51.100.{i + 1}"},
         )
         statuses.append(resp.status_code)
-    # First few are 401 (invalid credentials); the 5th may already be 423
+    # First few are 401 (invalid credentials); the 5th may already be 403
     # because the threshold check runs after the failure is recorded.
-    assert all(s in (401, 423) for s in statuses), statuses
+    assert all(s in (401, 403) for s in statuses), statuses
 
     locked = await rl_http.post(
         "/v1/auth/login",
         json={"email": email, "password": "WrongPassword12345"},
         headers={"x-forwarded-for": "198.51.100.250"},
     )
-    # The 6th attempt must be blocked — either by account lockout (423) or by the
+    # The 6th attempt must be blocked — either by account lockout (403) or by the
     # per-route rate limit (429). Both correctly deny the attacker; which fires
     # first depends on whether the lockout threshold or the IP rate limit trips
     # first (they're both set to 5 by default). We accept either in the test.
-    assert locked.status_code in (423, 429), locked.text
-    if locked.status_code == 423:
+    assert locked.status_code in (403, 429), locked.text
+    if locked.status_code == 403:
         body = locked.json()
         assert body["detail"]["code"] == "identity.account_locked"
         assert "Retry-After" in locked.headers
