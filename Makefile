@@ -1,7 +1,7 @@
 # SilkLens — top-level Makefile.
 # Aggregates per-service tasks so contributors only need one entry point.
 
-.PHONY: help dev down logs ps api-install api-run api-test api-test-random api-test-parallel api-test-cov api-lint api-format api-mypy api-mypy-strict api-bandit api-bandit-all api-migrate api-revision api-shell admin-test admin-knip mobile-analyze clean install-hooks trivy-install api-trivy-image sbom license-check security
+.PHONY: help dev down logs ps api-install api-run api-test api-test-random api-test-parallel api-test-cov api-lint api-format api-mypy api-mypy-strict api-bandit api-bandit-all api-migrate api-revision api-shell admin-test admin-knip mobile-analyze clean install-hooks trivy-install api-trivy-image sbom license-check security load-smoke load-read load-auth load-test sql-lint api-mutmut admin-mutmut
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -120,6 +120,59 @@ license-check: ## Scan all deps for copyleft / incompatible licenses (fail on CR
 	@echo "✅  License compliance: no CRITICAL/HIGH violations"
 
 security: api-trivy-image sbom license-check ## Run all local security scans (image + SBOM + licenses)
+
+# --- Load tests (k6) ---
+#
+# Requires k6 ≥ 0.50: https://k6.io/docs/get-started/installation/
+# Docker fallback: docker run --rm -it --network host -v "$(pwd)/tests/load:/scripts" grafana/k6 run /scripts/<file>
+# Override API target: make load-smoke API_BASE=http://staging.silklens.app:8000
+
+K6        ?= k6
+K6_BASE   ?= http://localhost:8000
+K6_EMAIL  ?= load@silklens.app
+K6_PASS   ?= LoadTest12345!
+K6_FLAGS  ?=
+
+load-smoke: ## Smoke test: 1 VU × 10 iterations, all 4 endpoints, fails on any 5xx
+	$(K6) run $(K6_FLAGS) \
+	  -e API_BASE=$(K6_BASE) \
+	  -e LOAD_TEST_EMAIL=$(K6_EMAIL) \
+	  -e LOAD_TEST_PASS=$(K6_PASS) \
+	  tests/load/smoke.js
+
+load-read: ## Read-load: ramp 0→20 VUs over 30s, hold 60s, ramp down — simulates production browse traffic
+	$(K6) run $(K6_FLAGS) \
+	  -e API_BASE=$(K6_BASE) \
+	  -e LOAD_TEST_EMAIL=$(K6_EMAIL) \
+	  -e LOAD_TEST_PASS=$(K6_PASS) \
+	  tests/load/read-load.js
+
+load-auth: ## Auth stress: 5 VUs × 30s hammering /v1/auth/login — measures Argon2id throughput
+	$(K6) run $(K6_FLAGS) \
+	  -e API_BASE=$(K6_BASE) \
+	  tests/load/auth-stress.js
+
+load-test: load-smoke load-read load-auth ## Run all load test suites sequentially
+
+# --- Quality checks (mutation testing + SQL lint) ---
+#
+# sql-lint:   sqlfluff lint on the Postgres init script — fast, no Docker.
+# api-mutmut: mutmut mutation testing on domain/ai/errors.py (narrow scope).
+#             Requires Postgres + Redis; run `make dev` first.
+# admin-mutmut: Stryker mutation testing on the 5 pure-logic admin modules.
+#             Requires pnpm deps installed (`cd apps/admin && pnpm install`).
+
+sql-lint: ## Lint infra/docker/postgres/init.sql with sqlfluff
+	sqlfluff lint infra/docker/postgres/init.sql
+
+api-mutmut: ## Mutation-test domain/ai/errors.py with mutmut (narrow scope, < 10 min)
+	cd services/api && .venv/bin/mutmut run \
+	  --paths-to-mutate src/domain/ai/errors.py \
+	  --runner ".venv/bin/python -m pytest tests/test_ai_service.py tests/test_ratelimit.py -x -q --tb=no -p no:randomly"
+	cd services/api && .venv/bin/mutmut results || true
+
+admin-mutmut: ## Mutation-test admin pure-logic modules with Stryker (pnpm)
+	cd apps/admin && pnpm test:mutation
 
 # --- Hygiene ---
 

@@ -103,3 +103,10 @@ sbom-*.cdx.json
 sbom-*.spdx.json
 trivy-*.sarif
 trivy-*.json
+
+# --- Mutation testing outputs ---
+# mutmut (Python) cache and results
+.mutmut-cache
+.mutmut-results
+# Stryker (admin) HTML report — the artifact is uploaded to CI instead
+apps/admin/reports/mutation/

@@ -1,0 +1,34 @@
+# SilkLens — sqlfluff configuration
+# Lints *.sql files under infra/ with PostgreSQL dialect.
+#
+# The only current .sql file is infra/docker/postgres/init.sql which
+# contains psql client meta-commands (\set, \c, \gexec).  These are
+# not standard SQL, so we suppress the parsing-error rule category (PRS)
+# to keep the signal focused on real SQL issues.
+#
+# Reference: https://docs.sqlfluff.com/en/stable/configuration.html
+
+[sqlfluff]
+dialect = postgres
+templater = raw
+max_line_length = 120
+
+# sqlfluff 4.x handles psql meta-commands (\set, \c, \gexec) gracefully —
+# they appear as "meta commands" in the AST and don't cause parse failures.
+# No rule exclusions needed for the current .sql files.
+
+# Enforce UPPERCASE keywords throughout for consistency with existing migrations.
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper
+
+# Identifiers (table/column names) should be lowercase with underscores.
+[sqlfluff:rules:capitalisation.identifiers]
+extended_capitalisation_policy = lower
+
+# Consistent single-space indentation.
+[sqlfluff:indentation]
+indented_joins = false
+indented_using_on = true
+template_blocks_indent = false
+indent_unit = space
+tab_space_size = 4

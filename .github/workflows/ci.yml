@@ -81,6 +81,7 @@ jobs:
             api:
               - 'services/api/**'
               - 'infra/docker/postgres/**'
+              - '.sqlfluff'
               - '.github/workflows/ci.yml'
             mobile:
               - 'apps/mobile/**'
@@ -450,6 +451,51 @@ jobs:
         run: pnpm exec tsc --noEmit
 
   # ---------------------------------------------------------------------------
+  # SQL lint — sqlfluff on infra/docker/postgres/init.sql.
+  #
+  # Fast job (< 1 min): no services, no Docker. Catches keyword casing,
+  # identifier style, and indentation violations in the init script before
+  # they land in prod. Runs whenever SQL or its sqlfluff config changes.
+  # ---------------------------------------------------------------------------
+  sql-lint:
+    name: SQL — sqlfluff lint
+    needs: changes
+    if: needs.changes.outputs.api == 'true' || needs.changes.outputs.ci == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          # Keyed on the API pyproject so the same pip cache serves api-lint too.
+          cache-dependency-path: services/api/pyproject.toml
+
+      - name: Install sqlfluff
+        run: pip install "sqlfluff>=4.0.0,<5.0.0"
+
+      - name: sqlfluff lint — infra/docker/postgres/init.sql
+        run: sqlfluff lint infra/docker/postgres/init.sql
+
+      - name: Post SQL lint summary
+        if: always()
+        run: |
+          {
+            echo "### SQL lint — sqlfluff"
+            echo ""
+            echo "File: \`infra/docker/postgres/init.sql\`"
+            echo "Dialect: PostgreSQL"
+            echo ""
+            sqlfluff lint infra/docker/postgres/init.sql --format github-annotation-native 2>&1 || true
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
   # Fan-in gate. Branch protection should require *only* this check so it
   # automatically picks up future jobs without re-configuring GitHub.
   # ---------------------------------------------------------------------------
@@ -463,6 +509,7 @@ jobs:
       - api-migrations-roundtrip
       - mobile-lint
       - admin-lint
+      - sql-lint
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     permissions:
@@ -477,6 +524,7 @@ jobs:
             [api-lint]="${{ needs.api-lint.result }}"
             [api-test]="${{ needs.api-test.result }}"
             [api-migrations-roundtrip]="${{ needs.api-migrations-roundtrip.result }}"
+            [sql-lint]="${{ needs.sql-lint.result }}"
           )
           failed=0
           for job in "${!results[@]}"; do
