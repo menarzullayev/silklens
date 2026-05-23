@@ -427,6 +427,18 @@ git push --no-verify  # emergency bypass
 - [✅] **SILK-0129** `WeatherGuidePage` (`lib/presentation/pages/map/weather_guide_page.dart`) confirmed wired: `HookConsumerWidget` calls `SilkLensApiClient.getWeatherGuide(lat, lng, language)`; weather card, AI summary, tips bullet list, recommended venues; route `/weather` added with `_slideRightPage`; settings home gains "Ob-havo Gidi" nav row; 4 keys × 4 locales
 - All 3 routes are protected (NOT in `_guestOnlyPaths`); auth redirect guard handles them automatically; 20 new locale keys total across en/uz/ru/zh; `flutter analyze` — 0 errors
 
+### Quality Gates — Mutation / Load / E2E / SQL Lint (2026-05-23)
+
+- [✅] **SILK-0176** Full quality campaign: mutation testing (Stryker + mutmut), k6 load tests, systematic E2E coverage, SQL lint via sqlfluff
+  - **Mutation — Admin (Stryker):** `apps/admin/stryker.config.mjs` mutates 5 pure-logic modules (utils, errors, rbac, tenant, i18n); break < 50%, high ≥ 80%; `test:mutation` pnpm script + `@stryker-mutator/core` + `@stryker-mutator/vitest-runner` added to devDeps
+  - **Mutation — API (mutmut):** narrow scope: `src/domain/ai/errors.py` against 2 test files; `mutmut>=3.0.0` added to pyproject.toml `[dev]`; advisory exit-code handling (exit 1 = survivors OK, exit 2 = test broken → fail)
+  - **Load tests (k6):** `tests/load/smoke.js` (1 VU × 10 iter, 4 endpoints, p95 < 2s); `tests/load/read-load.js` (ramp 0→20 VU, 70/30 stories/heritage); `tests/load/auth-stress.js` (5 VUs × 30s Argon2id throughput); Makefile `load-smoke`, `load-read`, `load-auth`, `load-test` targets
+  - **E2E systematic:** 4 new Playwright specs covering settings, feature-flags, moderation, heritage-detail pages (3 scenarios each)
+  - **SQL lint:** `.sqlfluff` (PostgreSQL dialect, UPPER keywords, lower identifiers); `infra/docker/postgres/init.sql` auto-fixed (19 RF06+LT violations); `sql-lint` job added to `ci.yml` (fast, no services, < 1 min, included in ci-summary gate); `sqlfluff>=4.0.0` in pyproject.toml dev deps
+  - **CI:** `.github/workflows/quality.yml` — weekly Sunday 03:00 UTC + workflow_dispatch; 3 jobs: mutation-admin, mutation-api, load-smoke-ci
+  - **Makefile:** `sql-lint`, `api-mutmut`, `admin-mutmut` targets added
+  - **`.gitignore`:** `.mutmut-cache`, `.mutmut-results`, `apps/admin/reports/mutation/` excluded
+
 ### Admin Panel — Quality Improvements (2026-05-23)
 
 - [✅] **SILK-0167** Playwright E2E tests — `tests/e2e/auth.spec.ts` (login form render, invalid creds stay on /login, unauthenticated redirect) + `tests/e2e/navigation.spec.ts` (root redirect, title check, all protected routes redirect to /login, i18n heading check); `playwright.config.ts` already configured for port 3001
