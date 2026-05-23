@@ -197,7 +197,7 @@ def _tour_out(entity: object) -> VirtualTourOut:
 
 
 LimitQ = Annotated[int, Query(ge=1, le=100)]
-OffsetQ = Annotated[int, Query(ge=0)]
+OffsetQ = Annotated[int, Query(ge=0, le=10_000_000)]
 
 # ---------------------------------------------------------------------------
 # Routes

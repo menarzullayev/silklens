@@ -201,7 +201,7 @@ async def list_offline_bundles(
         Query(min_length=2, max_length=10, description="ISO language code, e.g. en, uz, ru"),
     ] = "en",
     limit: Annotated[int, Query(ge=1, le=50)] = 20,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    offset: Annotated[int, Query(ge=0, le=10_000_000)] = 0,
 ) -> BundleListResponse:
     """List available offline bundles optionally filtered by kind and language.
 
@@ -253,7 +253,11 @@ async def get_bundle_manifest(
     db: SessionDep,
     version: Annotated[
         int | None,
-        Query(ge=1, description="Integer version number; defaults to current version"),
+        Query(
+            ge=1,
+            le=2_147_483_647,
+            description="Integer version number; defaults to current version",
+        ),
     ] = None,
 ) -> BundleManifestResponse:
     """Return bundle manifest with all content file references.
@@ -353,7 +357,7 @@ async def report_bundle_install(
     db: SessionDep,
     installed_version: Annotated[
         int,
-        Query(ge=1, description="Integer version number the device installed"),
+        Query(ge=1, le=2_147_483_647, description="Integer version number the device installed"),
     ],
     device_id: Annotated[
         str,

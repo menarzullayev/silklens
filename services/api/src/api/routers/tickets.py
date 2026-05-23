@@ -122,7 +122,10 @@ def _build_qr_payload(ticket_id: str, visit_date: str | None, qr_secret: str) ->
 )
 async def list_ticket_types(
     session: SessionDep,
-    heritage_pub_id: UUID = Query(..., description="Heritage site public UUID"),  # noqa: B008
+    heritage_pub_id: str = Query(
+        ..., min_length=1, max_length=64,
+        description="Heritage site public slug (e.g., 'in-registan-square')",
+    ),
     language: str = Query("en", min_length=2, max_length=10),
 ) -> list[TicketTypeOut]:
     """Return active ticket types for the given heritage site. No authentication required.
@@ -150,7 +153,7 @@ async def list_ticket_types(
               AND tt.is_active = true
             ORDER BY tt.sort_order, tt.price_usd
         """),
-        {"pub_id": str(heritage_pub_id), "lang": lang},
+        {"pub_id": heritage_pub_id, "lang": lang},
     )
     return [
         TicketTypeOut(
@@ -259,7 +262,7 @@ async def my_tickets(
     ctx: CurrentUserDep,
     session: SessionDep,
     limit: int = Query(20, ge=1, le=50),
-    offset: int = Query(0, ge=0),
+    offset: int = Query(0, ge=0, le=10_000_000),
 ) -> dict[str, Any]:
     """Return a paginated list of tickets belonging to the authenticated user.
 

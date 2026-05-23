@@ -135,7 +135,7 @@ async def search_listings(
     city: str | None = Query(None, max_length=100),
     language: str = Query("en", min_length=2, max_length=10),
     limit: int = Query(20, ge=1, le=50),
-    offset: int = Query(0, ge=0),
+    offset: int = Query(0, ge=0, le=10_000_000),
 ) -> ListingsResponse:
     """Search active B2B listings by category, location and dietary preference.
 

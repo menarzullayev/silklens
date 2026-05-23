@@ -108,8 +108,9 @@ async def list_cultural_tips(
             FROM cultural_tips
             WHERE country_code = :country
               AND is_active = true
-              AND (:context IS NULL OR context = :context)
-              AND (:kind IS NULL OR kind = :kind)
+              -- Cast bind params to text so asyncpg can infer the type even when NULL.
+              AND (cast(:context AS text) IS NULL OR context = cast(:context AS text))
+              AND (cast(:kind AS text) IS NULL OR kind = cast(:kind AS text))
             ORDER BY sort_order, context, kind
             """
         ),
@@ -167,7 +168,8 @@ async def heritage_cultural_tips(
               ON ho.pub_id = :pub_id
             WHERE ct.is_active = true
               AND (
-                  ct.heritage_pub_id = ho.id
+                  -- heritage_pub_id is a text slug — compare to ho.pub_id, not ho.id (uuid).
+                  ct.heritage_pub_id = ho.pub_id
                   OR (
                       ct.heritage_pub_id IS NULL
                       AND ct.country_code = ho.country_code

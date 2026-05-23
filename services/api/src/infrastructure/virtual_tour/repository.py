@@ -27,11 +27,11 @@ from src.domain.virtual_tour.entities import (
 from src.domain.virtual_tour.errors import DuplicateTourSlug
 
 _TOUR_COLS = """
-    id, tenant_id, heritage_id, slug,
-    title, description_md, kind, status,
-    thumbnail_media_id, tour_duration_seconds,
-    viewer_url, embed_code, view_count,
-    created_at, updated_at, deleted_at
+    vt.id, vt.tenant_id, vt.heritage_id, vt.slug,
+    vt.title, vt.description_md, vt.kind, vt.status,
+    vt.thumbnail_media_id, vt.tour_duration_seconds,
+    vt.viewer_url, vt.embed_code, vt.view_count,
+    vt.created_at, vt.updated_at, vt.deleted_at
 """
 
 _SCENE_COLS = """

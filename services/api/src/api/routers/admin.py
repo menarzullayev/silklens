@@ -145,7 +145,7 @@ def _json(payload: object) -> str:
 async def list_tenants(
     db: SessionDep,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    offset: Annotated[int, Query(ge=0, le=10_000_000)] = 0,
 ) -> TenantsPage:
     total = (
         await db.execute(text("SELECT count(*) FROM tenants WHERE deleted_at IS NULL"))

@@ -157,7 +157,7 @@ async def followers(
     pub_id: str,
     db: SessionDep,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    offset: Annotated[int, Query(ge=0, le=10_000_000)] = 0,
 ) -> FollowEdgeListOut:
     try:
         page = await _service(db).followers(target_pub_id=pub_id, limit=limit, offset=offset)
@@ -176,7 +176,7 @@ async def following(
     pub_id: str,
     db: SessionDep,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    offset: Annotated[int, Query(ge=0, le=10_000_000)] = 0,
 ) -> FollowEdgeListOut:
     try:
         page = await _service(db).following(target_pub_id=pub_id, limit=limit, offset=offset)
@@ -319,7 +319,7 @@ async def feed(
 async def nearby_travelers(
     ctx: CurrentUserDep,
     db: SessionDep,
-    heritage_pub_id: Annotated[UUID, Query(...)],
+    heritage_pub_id: Annotated[str, Query(..., min_length=1, max_length=64)],
     limit: Annotated[int, Query(ge=1, le=20)] = 10,
 ) -> dict[str, Any]:
     """Find other discoverable travelers near a heritage site.
@@ -350,9 +350,9 @@ async def nearby_travelers(
             ORDER BY hci.checked_in_at DESC
             LIMIT :limit
         """),
-        {"pub_id": str(heritage_pub_id), "uid": ctx.user_id, "limit": limit},
+        {"pub_id": heritage_pub_id, "uid": ctx.user_id, "limit": limit},
     )
     return {
         "travelers": [dict(r) for r in rows.mappings().fetchall()],
-        "heritage_pub_id": str(heritage_pub_id),
+        "heritage_pub_id": heritage_pub_id,
     }

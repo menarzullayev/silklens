@@ -267,7 +267,7 @@ async def admin_list_applications(
         Query(alias="status"),
     ] = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    offset: Annotated[int, Query(ge=0, le=10_000_000)] = 0,
 ) -> ResellerApplicationPage:
     items, total = await _service(db).list_applications(
         status_filter=status_filter,

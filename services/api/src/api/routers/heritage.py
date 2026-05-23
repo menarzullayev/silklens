@@ -215,7 +215,7 @@ CountryQ = Annotated[str | None, Query(min_length=2, max_length=2)]
 StatusQ = Annotated[HeritageStatus | None, Query(alias="status")]
 SearchQ = Annotated[str | None, Query(max_length=128)]
 LimitQ = Annotated[int, Query(ge=1, le=100)]
-OffsetQ = Annotated[int, Query(ge=0)]
+OffsetQ = Annotated[int, Query(ge=0, le=10_000_000)]
 
 
 @router.get("", response_model=HeritagePageOut)

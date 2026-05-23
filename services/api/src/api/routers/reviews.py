@@ -178,7 +178,7 @@ async def list_reviews_for_heritage(
     db: SessionDep,
     sort: Annotated[ReviewSort, Query()] = ReviewSort.RECENT,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    offset: Annotated[int, Query(ge=0, le=10_000_000)] = 0,
 ) -> ReviewPageOut:
     try:
         page = await _service(db).list_for_heritage(

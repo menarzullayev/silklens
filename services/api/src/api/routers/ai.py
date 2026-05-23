@@ -576,7 +576,7 @@ async def list_conversations(
     ctx: Annotated[AuthContext, Depends(require_user)],
     db: SessionDep,
     limit: int = Query(20, ge=1, le=50),
-    offset: int = Query(0, ge=0),
+    offset: int = Query(0, ge=0, le=10_000_000),
 ) -> ConversationListOut:
     """List the authenticated user's active conversation sessions, newest first."""
     rows = await db.execute(
@@ -626,7 +626,7 @@ async def get_conversation_messages(
     ctx: Annotated[AuthContext, Depends(require_user)],
     db: SessionDep,
     limit: int = Query(50, ge=1, le=200),
-    offset: int = Query(0, ge=0),
+    offset: int = Query(0, ge=0, le=10_000_000),
 ) -> ConversationMessagesOut:
     """Return ordered messages for a conversation session the caller owns."""
     owner_row = await db.execute(
@@ -717,16 +717,23 @@ async def delete_conversation(
 @router.get("/models/public")
 async def list_public_models(db: SessionDep) -> list[dict[str, Any]]:
     """Public list of enabled AI models — no auth required. Used by mobile app."""
+    # provider slug lives on ai_providers; join via provider_id.
     rows = await db.execute(
         text("""
-            SELECT slug, name, task_type, provider_slug
-            FROM ai_models
-            WHERE is_enabled = true
-            ORDER BY sort_order, slug
+            SELECT m.slug, m.name, m.task_type, p.slug AS provider_slug
+            FROM ai_models m
+            JOIN ai_providers p ON p.id = m.provider_id
+            WHERE m.is_enabled = true
+            ORDER BY m.sort_order, m.slug
         """)
     )
     return [
-        {"slug": r.slug, "name": r.name, "task_type": r.task_type, "provider_slug": r.provider_slug}
+        {
+            "slug": r.slug,
+            "name": r.name,
+            "task_type": r.task_type,
+            "provider_slug": r.provider_slug,
+        }
         for r in rows.fetchall()
     ]
 

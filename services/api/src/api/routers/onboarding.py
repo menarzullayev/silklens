@@ -270,11 +270,12 @@ async def get_plans_overview(
             """
             SELECT
                 pp.slug,
-                pp.display_name,
+                pp.name AS display_name,
                 f.feature_list
             FROM product_plans pp
             LEFT JOIN LATERAL (
-                SELECT jsonb_agg(feature_key ORDER BY sort_order) AS feature_list
+                -- plan_features has no sort_order; alphabetise by feature_key.
+                SELECT jsonb_agg(feature_key ORDER BY feature_key) AS feature_list
                 FROM plan_features
                 WHERE plan_id = pp.id AND enabled = true
             ) f ON true

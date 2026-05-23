@@ -292,7 +292,7 @@ async def list_my_invoices(
     ctx: CurrentUserDep,
     db: SessionDep,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    offset: Annotated[int, Query(ge=0, le=10_000_000)] = 0,
 ) -> InvoicesOut:
     items, total = await _service(db).list_invoices(
         user_id=ctx.user_id,

@@ -11,7 +11,7 @@ from typing import Annotated, NoReturn
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_session
@@ -176,10 +176,28 @@ async def register(
 ) -> LoginResponse:
     settings = get_settings()
     service = _service(db)
+    tenant_id = payload.tenant_id or UUID(settings.default_tenant_id)
+
+    # Reject unknown tenant IDs upfront — letting the INSERT trip the FK
+    # constraint surfaces as a 500 (asyncpg ForeignKeyViolationError) and
+    # leaks schema details. Validate against the tenants table first.
+    if payload.tenant_id is not None:
+        from sqlalchemy import text as _text
+
+        check = await db.execute(
+            _text("SELECT 1 FROM tenants WHERE id = :tid"),
+            {"tid": str(tenant_id)},
+        )
+        if check.first() is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"code": "TENANT_NOT_FOUND", "message": "Unknown tenant_id"},
+            )
+
     try:
         user = await service.register(
             RegistrationRequest(
-                tenant_id=payload.tenant_id or UUID(settings.default_tenant_id),
+                tenant_id=tenant_id,
                 residency_region=payload.residency_region,
                 email=str(payload.email),
                 password=payload.password,
@@ -230,10 +248,23 @@ async def login(
 ) -> LoginResponse:
     settings = get_settings()
     service = _service(db)
+    tenant_id = payload.tenant_id or UUID(settings.default_tenant_id)
+    if payload.tenant_id is not None:
+        from sqlalchemy import text as _text
+
+        check = await db.execute(
+            _text("SELECT 1 FROM tenants WHERE id = :tid"),
+            {"tid": str(tenant_id)},
+        )
+        if check.first() is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"code": "TENANT_NOT_FOUND", "message": "Unknown tenant_id"},
+            )
     try:
         auth = await service.login(
             Credentials(email=str(payload.email), password=payload.password),
-            tenant_id=payload.tenant_id or UUID(settings.default_tenant_id),
+            tenant_id=tenant_id,
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
         )
@@ -301,8 +332,29 @@ async def me(ctx: CurrentUserDep, db: SessionDep) -> MeResponse:
     )
 
 
+def _validate_oauth_token(value: str) -> str:
+    """Reject obviously-malformed OAuth bearer tokens before they reach httpx.
+
+    httpx encodes the ``Authorization`` header as ASCII; a non-ASCII or
+    control-character byte raises :class:`UnicodeEncodeError` deep inside the
+    client and surfaces as a 500. Real OAuth bearer tokens issued by Google /
+    Facebook / Instagram are RFC-6750 ``token68`` strings — strictly ASCII
+    [A-Za-z0-9._~+/=-]. Pre-validate at the DTO boundary.
+    """
+    if not value.isascii():
+        raise ValueError("access_token must be ASCII")
+    if any(ord(c) < 0x20 or ord(c) == 0x7F for c in value):
+        raise ValueError("access_token contains control characters")
+    return value
+
+
 class GoogleTokenRequest(BaseModel):
     access_token: str = Field(..., min_length=10, max_length=2048)
+
+    @field_validator("access_token")
+    @classmethod
+    def _ascii_token(cls, v: str) -> str:
+        return _validate_oauth_token(v)
 
 
 class FacebookLoginRequest(BaseModel):
@@ -311,6 +363,11 @@ class FacebookLoginRequest(BaseModel):
     )
     tenant_id: UUID | None = None
     residency_region: ResidencyRegion = ResidencyRegion.GLOBAL
+
+    @field_validator("access_token")
+    @classmethod
+    def _ascii_token(cls, v: str) -> str:
+        return _validate_oauth_token(v)
 
 
 class InstagramLoginRequest(BaseModel):
@@ -322,6 +379,11 @@ class InstagramLoginRequest(BaseModel):
     )
     tenant_id: UUID | None = None
     residency_region: ResidencyRegion = ResidencyRegion.GLOBAL
+
+    @field_validator("access_token")
+    @classmethod
+    def _ascii_token(cls, v: str) -> str:
+        return _validate_oauth_token(v)
 
 
 class LogoutResponse(BaseModel):
@@ -446,6 +508,9 @@ async def google_sign_in(
     response_model=LoginResponse,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(rate_limit("10/minute", per="ip", scope="auth:facebook"))],
+    responses={
+        401: {"description": "Token validation failed or provider not available"},
+    },
 )
 async def facebook_sign_in(
     payload: FacebookLoginRequest,
@@ -470,9 +535,16 @@ async def facebook_sign_in(
     app_id = settings.facebook_app_id
     app_secret = settings.facebook_app_secret.get_secret_value()
     if not app_id or not app_secret:
+        # OAuth is not wired in this deployment. From the caller's perspective
+        # this is identical to "your token is unusable here" — return 401 so
+        # mobile clients fall back to email/password gracefully instead of
+        # surfacing 5xx to the user.
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={"code": "PROVIDER_NOT_CONFIGURED", "message": "Facebook OAuth not configured"},
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "code": "PROVIDER_NOT_CONFIGURED",
+                "message": "Facebook OAuth not available",
+            },
         )
 
     async with httpx.AsyncClient(timeout=15.0) as client:
@@ -582,6 +654,9 @@ async def facebook_sign_in(
     response_model=LoginResponse,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(rate_limit("10/minute", per="ip", scope="auth:instagram"))],
+    responses={
+        401: {"description": "Token validation failed or provider not available"},
+    },
 )
 async def instagram_sign_in(
     payload: InstagramLoginRequest,
@@ -604,8 +679,11 @@ async def instagram_sign_in(
     ig_app_secret = settings.instagram_app_secret.get_secret_value()
     if not ig_app_id or not ig_app_secret:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={"code": "PROVIDER_NOT_CONFIGURED", "message": "Instagram OAuth sozlanmagan"},
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "code": "PROVIDER_NOT_CONFIGURED",
+                "message": "Instagram OAuth not available",
+            },
         )
 
     async with httpx.AsyncClient(timeout=15.0) as client:

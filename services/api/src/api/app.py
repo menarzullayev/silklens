@@ -142,6 +142,12 @@ def create_app() -> FastAPI:
     # Trace ID binding runs outermost so every log line — including auth
     # decode failures — carries trace_id, method, route in structlog context.
     app.add_middleware(TraceContextMiddleware)
+    # Sanitize obviously-malformed inputs (null bytes in JSON, query ints over
+    # int64) before they reach handlers and crash the asyncpg encoder. Added
+    # outermost so the 422 is emitted with proper trace_id propagation.
+    from src.middleware.request_sanitize import RequestSanitizeMiddleware
+
+    app.add_middleware(RequestSanitizeMiddleware)
 
     # Prometheus instrumentation. The instrumentator exposes ``/metrics`` and
     # adds RED-method metrics; our custom counters live in src.core.metrics

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import datetime
 from typing import Annotated
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel
@@ -28,12 +27,12 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 class CheckInRequest(BaseModel):
-    heritage_pub_id: UUID
+    heritage_pub_id: str  # heritage_objects.pub_id is a text slug, not UUID
 
 
 class CheckInResponse(BaseModel):
     checked_in: bool
-    heritage_pub_id: UUID
+    heritage_pub_id: str  # heritage_objects.pub_id is a text slug, not UUID
 
 
 class BestTimeSlot(BaseModel):
@@ -43,7 +42,7 @@ class BestTimeSlot(BaseModel):
 
 
 class CrowdForecastResponse(BaseModel):
-    heritage_pub_id: UUID
+    heritage_pub_id: str  # heritage_objects.pub_id is a text slug, not UUID
     current_crowd: str
     live_check_ins_2h: int
     predicted_crowd: str
@@ -84,7 +83,7 @@ async def check_in(
             """
         ),
         {
-            "pub_id": str(payload.heritage_pub_id),
+            "pub_id": payload.heritage_pub_id,
             "user_id": str(user_id) if user_id else None,
         },
     )
@@ -98,7 +97,7 @@ async def check_in(
     response_model=CrowdForecastResponse,
 )
 async def crowd_forecast(
-    pub_id: UUID,
+    pub_id: str,
     session: SessionDep,
 ) -> CrowdForecastResponse:
     """Return crowd forecast for a heritage site. Public — no auth required.
@@ -131,7 +130,7 @@ async def crowd_forecast(
             """
         ),
         {
-            "pub_id": str(pub_id),
+            "pub_id": pub_id,
             "dow": current_dow,
             "hour": current_hour,
             "month": current_month,
@@ -156,7 +155,7 @@ async def crowd_forecast(
             LIMIT 5
             """
         ),
-        {"pub_id": str(pub_id), "month": current_month},
+        {"pub_id": pub_id, "month": current_month},
     )
     best_times = [
         BestTimeSlot(
@@ -177,7 +176,7 @@ async def crowd_forecast(
               AND checked_in_at > now() - interval '2 hours'
             """
         ),
-        {"pub_id": str(pub_id)},
+        {"pub_id": pub_id},
     )
     recent_count: int = live_row.scalar() or 0
 

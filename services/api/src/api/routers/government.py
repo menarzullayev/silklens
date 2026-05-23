@@ -41,7 +41,7 @@ async def list_government_info(
             FROM government_info
             WHERE country_code = :country
               AND is_active = true
-              AND (:kind IS NULL OR kind = :kind)
+              AND (cast(:kind AS text) IS NULL OR kind = cast(:kind AS text))
               AND (expires_date IS NULL OR expires_date >= CURRENT_DATE)
             ORDER BY sort_order, kind, created_at DESC
         """),

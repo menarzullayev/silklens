@@ -24,7 +24,8 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 class PhotoGuideRequest(BaseModel):
-    heritage_pub_id: UUID
+    # heritage_objects.pub_id is a text slug (e.g., "in-registan-square"), not a UUID.
+    heritage_pub_id: str = Field(..., min_length=1, max_length=64)
     mode: str = Field("angle", description="angle | overlay | compare")
     current_photo_media_id: UUID | None = None
     language: str = Field("en", min_length=2, max_length=10)
@@ -246,14 +247,14 @@ async def photo_guide(
             SELECT
                 COALESCE(name->>:lang, name->>'en') AS name,
                 kind_slug,
-                lat,
-                lng
+                latitude AS lat,
+                longitude AS lng
             FROM heritage_objects
             WHERE pub_id   = :pub_id
               AND status   = 'published'
               AND deleted_at IS NULL
         """),
-        {"pub_id": str(body.heritage_pub_id), "lang": lang},
+        {"pub_id": body.heritage_pub_id, "lang": lang},
     )
     heritage = row.mappings().fetchone()
     if heritage is None:
@@ -291,7 +292,7 @@ async def photo_guide(
 
         return AngleOut(
             mode="angle",
-            heritage_pub_id=str(body.heritage_pub_id),
+            heritage_pub_id=body.heritage_pub_id,
             heritage_name=site_name,
             suggested_azimuth_deg=int(angle_data.get("azimuth_deg", 315)),
             suggested_elevation_deg=int(angle_data.get("elevation_deg", 10)),
@@ -321,7 +322,7 @@ async def photo_guide(
 
         return OverlayOut(
             mode=body.mode,
-            heritage_pub_id=str(body.heritage_pub_id),
+            heritage_pub_id=body.heritage_pub_id,
             heritage_name=site_name,
             historical_photo=hist_photo,
             overlay_available=hist_photo is not None,

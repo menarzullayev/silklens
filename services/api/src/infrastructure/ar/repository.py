@@ -486,13 +486,21 @@ class ArRepository:
         params: dict[str, Any] = {"pub_id": heritage_pub_id}
 
         if reference_date:
+            # asyncpg requires a datetime.date instance for date columns —
+            # a raw ISO string fails with `'str' object has no attribute 'toordinal'`.
+            # Parse to date here (router validates the input as date type).
+            from datetime import date as _date_type
+            try:
+                parsed = _date_type.fromisoformat(reference_date)
+            except (TypeError, ValueError):
+                parsed = None
             date_filter = (
                 "AND (ao.display_from_date IS NULL"
-                " OR ao.display_from_date <= CAST(:ref_date AS date))\n"
+                " OR ao.display_from_date <= :ref_date)\n"
                 "AND (ao.display_until_date IS NULL"
-                " OR ao.display_until_date >= CAST(:ref_date AS date))"
+                " OR ao.display_until_date >= :ref_date)"
             )
-            params["ref_date"] = reference_date
+            params["ref_date"] = parsed
         else:
             date_filter = (
                 "AND (ao.display_from_date IS NULL"

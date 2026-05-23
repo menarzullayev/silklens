@@ -399,7 +399,7 @@ async def list_trips(
     ctx: CurrentUserDep,
     db: SessionDep,
     limit: int = Query(20, ge=1, le=50),
-    offset: int = Query(0, ge=0),
+    offset: int = Query(0, ge=0, le=10_000_000),
 ) -> TripListOut:
     """List the authenticated user's trips, newest first."""
     rows = await db.execute(
