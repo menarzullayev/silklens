@@ -75,21 +75,22 @@ declare module 'next-auth' {
   }
 }
 
-declare module 'next-auth/jwt' {
-  interface JWT {
-    accessToken?: string;
-    refreshToken?: string;
-    accessTokenExpiresAt?: number;
-    pubId?: string;
-    tenantId?: string;
-    /** Tenant slug — persisted in JWT so every server render can use it without a DB round-trip. */
-    tenantSlug?: string;
-    residencyRegion?: string;
-    trustTier?: string;
-    preferredLocale?: string;
-    permissions?: readonly string[];
-    error?: 'RefreshAccessTokenError';
-  }
+// SilkLens custom JWT fields persisted across NextAuth JWT callbacks.
+interface SilkJWT {
+  accessToken?: string;
+  refreshToken?: string;
+  accessTokenExpiresAt?: number;
+  pubId?: string;
+  tenantId?: string;
+  /** Tenant slug — persisted in JWT so every server render can use it without a DB round-trip. */
+  tenantSlug?: string;
+  residencyRegion?: string;
+  trustTier?: string;
+  preferredLocale?: string;
+  permissions?: readonly string[];
+  error?: 'RefreshAccessTokenError';
+  sub?: string;
+  [key: string]: unknown;
 }
 
 const REFRESH_THRESHOLD_MS = 60_000; // refresh 60s before expiry
@@ -264,6 +265,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     },
 
     async jwt({ token, user, account, trigger }) {
+      const t = token as SilkJWT;
       // Initial sign-in — Credentials provider populates `user` with tokens.
       if (user && account?.provider === 'credentials') {
         token.accessToken = user.accessToken;
@@ -305,56 +307,57 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       }
 
       // Force-refresh on explicit `update()` calls.
-      if (trigger === 'update' && token.refreshToken) {
-        const refreshed = await callRefresh(token.refreshToken);
+      if (trigger === 'update' && t.refreshToken) {
+        const refreshed = await callRefresh(t.refreshToken);
         if (refreshed) {
-          token.accessToken = refreshed.tokens.access_token;
-          token.refreshToken = refreshed.tokens.refresh_token;
-          token.accessTokenExpiresAt =
+          t.accessToken = refreshed.tokens.access_token;
+          t.refreshToken = refreshed.tokens.refresh_token;
+          t.accessTokenExpiresAt =
             Date.now() + refreshed.tokens.expires_in * 1000;
-          token.error = undefined;
-          return token;
+          t.error = undefined;
+          return t;
         }
-        token.error = 'RefreshAccessTokenError';
-        return token;
+        t.error = 'RefreshAccessTokenError';
+        return t;
       }
 
       // Silent refresh near expiry.
-      const expiresAt = token.accessTokenExpiresAt;
+      const expiresAt = t.accessTokenExpiresAt;
       if (
         expiresAt !== undefined &&
         Date.now() >= expiresAt - REFRESH_THRESHOLD_MS &&
-        token.refreshToken
+        t.refreshToken
       ) {
-        const refreshed = await callRefresh(token.refreshToken);
+        const refreshed = await callRefresh(t.refreshToken);
         if (refreshed) {
-          token.accessToken = refreshed.tokens.access_token;
-          token.refreshToken = refreshed.tokens.refresh_token;
-          token.accessTokenExpiresAt =
+          t.accessToken = refreshed.tokens.access_token;
+          t.refreshToken = refreshed.tokens.refresh_token;
+          t.accessTokenExpiresAt =
             Date.now() + refreshed.tokens.expires_in * 1000;
-          token.error = undefined;
+          t.error = undefined;
         } else {
-          token.error = 'RefreshAccessTokenError';
+          t.error = 'RefreshAccessTokenError';
         }
       }
 
-      return token;
+      return t;
     },
     async session({ session, token }) {
-      session.accessToken = token.accessToken;
-      session.refreshToken = token.refreshToken;
-      session.accessTokenExpiresAt = token.accessTokenExpiresAt;
-      session.error = token.error;
-      session.user.id = (token.sub as string | undefined) ?? session.user.id;
-      session.user.pubId = token.pubId ?? '';
+      const t = token as SilkJWT;
+      session.accessToken = t.accessToken;
+      session.refreshToken = t.refreshToken;
+      session.accessTokenExpiresAt = t.accessTokenExpiresAt;
+      session.error = t.error;
+      session.user.id = (t.sub as string | undefined) ?? session.user.id;
+      session.user.pubId = t.pubId ?? '';
       session.user.tenantId =
-        token.tenantId ?? process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
+        t.tenantId ?? process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
       session.user.tenantSlug =
-        token.tenantSlug ?? process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG ?? 'silklens';
-      session.user.residencyRegion = token.residencyRegion ?? 'global';
-      session.user.trustTier = token.trustTier ?? 'authenticated';
-      session.user.preferredLocale = token.preferredLocale ?? 'uz';
-      session.user.permissions = token.permissions ?? [];
+        t.tenantSlug ?? process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG ?? 'silklens';
+      session.user.residencyRegion = t.residencyRegion ?? 'global';
+      session.user.trustTier = t.trustTier ?? 'authenticated';
+      session.user.preferredLocale = t.preferredLocale ?? 'uz';
+      session.user.permissions = t.permissions ?? [];
       return session;
     },
   },

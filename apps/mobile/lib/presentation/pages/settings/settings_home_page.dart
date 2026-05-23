@@ -113,9 +113,55 @@ class SettingsHomePage extends StatelessWidget {
 
             const _SectionHeader('SAYOHAT'),
             _SettingsRow(
+              icon: Icons.route_outlined,
+              label: 'Sayohat Rejalash',
+              onTap: () => context.go('/trips'),
+            ),
+            _SettingsRow(
+              icon: Icons.restaurant_outlined,
+              label: 'Ovqat Gidi',
+              onTap: () => context.go('/food-guide'),
+            ),
+            _SettingsRow(
+              icon: Icons.account_balance_wallet_outlined,
+              label: 'Xarajatlar',
+              onTap: () => context.go('/expenses'),
+            ),
+            _SettingsRow(
+              icon: Icons.eco_outlined,
+              label: 'Karbon Izi',
+              onTap: () => context.go('/carbon'),
+            ),
+            _SettingsRow(
+              icon: Icons.mood_outlined,
+              label: 'Kayfiyat Sayohati',
+              onTap: () => context.go('/mood'),
+            ),
+            _SettingsRow(
               icon: Icons.wb_sunny_outlined,
               label: 'Ob-havo Gidi',
               onTap: () => context.go('/weather'),
+            ),
+            _SettingsRow(
+              icon: Icons.auto_stories_outlined,
+              label: 'Sayohat Kundaligi',
+              onTap: () => context.go('/memory-book'),
+            ),
+            _SettingsRow(
+              icon: Icons.lightbulb_outline,
+              label: 'Madaniy Maslahatlar',
+              onTap: () => context.go('/cultural-tips'),
+            ),
+            _SettingsRow(
+              icon: Icons.psychology_outlined,
+              label: 'AI Vositalar',
+              iconColor: _gold,
+              onTap: () => context.go('/ai-utilities'),
+            ),
+            _SettingsRow(
+              icon: Icons.account_balance_outlined,
+              label: "Hukumat Ma'lumotlari",
+              onTap: () => context.go('/government'),
             ),
             _SettingsRow(
               icon: Icons.emergency_outlined,

@@ -869,4 +869,98 @@ class SilkLensApiClient {
     );
     return r.data!;
   }
+
+  // --- AI Utilities (SILK-0080) -----------------------------------------------
+
+  Future<Map<String, dynamic>> checkFairPrice({
+    required String item,
+    required String market,
+    String currency = 'USD',
+    String language = 'en',
+  }) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '/v1/ai/fair-price',
+      data: {'item': item, 'market': market, 'currency': currency, 'language': language},
+    );
+    return r.data!;
+  }
+
+  Future<Map<String, dynamic>> checkScam({
+    required String venueName,
+    required String serviceDescription,
+    required double quotedPriceUsd,
+    String language = 'en',
+  }) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '/v1/ai/scam-check',
+      data: {
+        'venue_name': venueName,
+        'service_description': serviceDescription,
+        'quoted_price_usd': quotedPriceUsd,
+        'language': language,
+      },
+    );
+    return r.data!;
+  }
+
+  Future<Map<String, dynamic>> getLostFoundHelp({
+    required String itemType,
+    double lat = 39.65,
+    double lng = 66.97,
+    String language = 'en',
+  }) async {
+    final r = await _dio.get<Map<String, dynamic>>(
+      '/v1/ai/lost-found',
+      queryParameters: {'item_type': itemType, 'lat': lat, 'lng': lng, 'language': language},
+    );
+    return r.data!;
+  }
+
+  // --- Government Info (SILK-0086) ------------------------------------------
+
+  Future<List<dynamic>> getGovernmentInfo({
+    String countryCode = 'UZ',
+    String language = 'en',
+    String? kind,
+  }) async {
+    final r = await _dio.get<List<dynamic>>(
+      '/v1/government',
+      queryParameters: {
+        'country_code': countryCode,
+        'language': language,
+        if (kind != null) 'kind': kind,
+      },
+    );
+    return r.data ?? [];
+  }
+
+  // --- Memory Book (SILK-0076) -----------------------------------------------
+
+  Future<Map<String, dynamic>> getMemoryBookPreview({int limit = 5}) async {
+    final r = await _dio.get<Map<String, dynamic>>(
+      '/v1/me/memory-book/preview',
+      queryParameters: {'limit': limit},
+    );
+    return r.data!;
+  }
+
+  Future<Map<String, dynamic>> generateMemoryBook({
+    String? title,
+    String? dateFrom,
+    String? dateTo,
+    String language = 'en',
+    String format = 'json',
+  }) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '/v1/me/memory-book/generate',
+      data: {
+        if (title != null) 'title': title,
+        if (dateFrom != null) 'date_from': dateFrom,
+        if (dateTo != null) 'date_to': dateTo,
+        'language': language,
+        'format': format,
+      },
+    );
+    return r.data!;
+  }
 }

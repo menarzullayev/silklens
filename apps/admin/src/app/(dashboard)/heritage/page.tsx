@@ -41,7 +41,7 @@ export default async function HeritagePage({
         limit,
         offset,
       })
-      .catch((cause: unknown) => cause),
+      .catch((cause: unknown) => cause as Error),
     vocabApi.getVocab('heritage_kinds').catch(() => null),
     vocabApi.getVocab('residency_regions').catch(() => null),
   ]);

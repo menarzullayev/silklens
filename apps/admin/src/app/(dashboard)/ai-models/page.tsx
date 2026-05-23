@@ -18,8 +18,8 @@ export default async function AiModelsPage(): Promise<JSX.Element> {
   const tCommon = await getTranslations('common');
 
   const [models, chains] = await Promise.all([
-    aiApi.listAiModels().catch((cause: unknown) => cause),
-    aiApi.listAiFallbackChains().catch((cause: unknown) => cause),
+    aiApi.listAiModels().catch((cause: unknown) => cause as Error),
+    aiApi.listAiFallbackChains().catch((cause: unknown) => cause as Error),
   ]);
 
   return (

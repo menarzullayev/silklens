@@ -33,8 +33,12 @@ import 'package:silklens/presentation/pages/map/food_guide_page.dart';
 import 'package:silklens/presentation/pages/map/map_page.dart';
 import 'package:silklens/presentation/pages/map/trip_planner_page.dart';
 import 'package:silklens/presentation/pages/map/weather_guide_page.dart';
+import 'package:silklens/presentation/pages/settings/ai_utilities_page.dart';
 import 'package:silklens/presentation/pages/settings/carbon_page.dart';
+import 'package:silklens/presentation/pages/settings/cultural_tips_page.dart';
 import 'package:silklens/presentation/pages/settings/expense_tracker_page.dart';
+import 'package:silklens/presentation/pages/settings/government_page.dart';
+import 'package:silklens/presentation/pages/profile/memory_book_page.dart';
 import 'package:silklens/presentation/pages/profile/user_profile_page.dart';
 import 'package:silklens/presentation/pages/settings/about_page.dart';
 import 'package:silklens/presentation/pages/settings/delete_account_page.dart';
@@ -463,6 +467,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/carbon',
         pageBuilder: (ctx, state) =>
             _slideRightPage(ctx, state, const CarbonPage()),
+      ),
+      // ── SILK-0128 / SILK-0132 / SILK-0135 / SILK-0137 ──────────────────────
+      GoRoute(
+        path: '/cultural-tips',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const CulturalTipsPage()),
+      ),
+      GoRoute(
+        path: '/memory-book',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const MemoryBookPage()),
+      ),
+      GoRoute(
+        path: '/government',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const GovernmentPage()),
+      ),
+      GoRoute(
+        path: '/ai-utilities',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const AIUtilitiesPage()),
       ),
     ],
   );

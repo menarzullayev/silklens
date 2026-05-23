@@ -13,7 +13,7 @@ export default async function SettingsPage(): Promise<JSX.Element> {
   const t = await getTranslations('settings');
   const settings = await systemApi
     .listSystemSettings()
-    .catch((cause: unknown) => cause);
+    .catch((cause: unknown) => cause as Error);
 
   return (
     <PermissionGuard

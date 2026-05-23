@@ -13,7 +13,7 @@ export interface ActionResult {
 
 const schema = z.object({
   key: z.string().min(2).max(128),
-  value: z.unknown(),
+  value: z.unknown().transform((v) => v ?? null),
   value_type: z.enum(['string', 'int', 'float', 'bool', 'json', 'duration', 'color', 'url']),
   scope: z.enum(['tenant', 'global', 'user_overrideable']).default('tenant'),
   description: z.string().max(512).nullable().optional(),

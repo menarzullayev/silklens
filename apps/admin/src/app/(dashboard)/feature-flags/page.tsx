@@ -13,7 +13,7 @@ export default async function FeatureFlagsPage(): Promise<JSX.Element> {
   const t = await getTranslations('featureFlags');
   const flags = await systemApi
     .listFeatureFlags()
-    .catch((cause: unknown) => cause);
+    .catch((cause: unknown) => cause as Error);
   return (
     <PermissionGuard
       permission={PERMISSIONS.SETTINGS_MANAGE}

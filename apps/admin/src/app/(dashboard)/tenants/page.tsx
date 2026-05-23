@@ -13,7 +13,7 @@ export default async function TenantsPage(): Promise<JSX.Element> {
   const t = await getTranslations('tenants');
   const page = await tenantsApi
     .listTenants({ limit: 50 })
-    .catch((cause: unknown) => cause);
+    .catch((cause: unknown) => cause as Error);
 
   return (
     <PermissionGuard
