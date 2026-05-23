@@ -148,7 +148,7 @@ def init_tracing(app: Any | None = None) -> bool:
     try:
         from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
 
-        AsyncPGInstrumentor().instrument()
+        AsyncPGInstrumentor().instrument()  # type: ignore[no-untyped-call]
     except Exception as exc:
         log.debug("tracing.asyncpg_skip", error=str(exc))
 

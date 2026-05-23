@@ -24,7 +24,7 @@ def get_celery_app() -> Any:
     """Return (and cache) the shared Celery app."""
     global _celery_app
     if _celery_app is None:
-        from celery import Celery
+        from celery import Celery  # type: ignore[import-untyped]
 
         settings = get_settings()
         _celery_app = Celery(

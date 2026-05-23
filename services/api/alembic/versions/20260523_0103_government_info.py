@@ -18,7 +18,7 @@ depends_on = None
 def upgrade() -> None:
     op.execute("""
         CREATE TABLE IF NOT EXISTS government_info (
-            id          uuid         PRIMARY KEY DEFAULT app.uuidv7(),
+            id          uuid         PRIMARY KEY DEFAULT gen_uuid_v7(),
             country_code char(2)     NOT NULL,
             kind        varchar(30)  NOT NULL,
             title       jsonb        NOT NULL DEFAULT '{}',

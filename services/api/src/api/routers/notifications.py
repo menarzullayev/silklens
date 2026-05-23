@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, time
+from datetime import UTC, datetime, time
 from typing import Annotated
 from uuid import UUID
 
@@ -124,7 +124,7 @@ def _notif_out(n: Notification) -> NotificationOut:
         action_url=n.action_url,
         is_read=n.is_read,
         read_at=n.read_at,
-        created_at=n.created_at,
+        created_at=n.created_at if n.created_at is not None else datetime.now(UTC),
     )
 
 

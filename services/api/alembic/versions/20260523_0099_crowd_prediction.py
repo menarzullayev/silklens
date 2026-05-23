@@ -20,7 +20,7 @@ def upgrade() -> None:
     op.execute(
         """
         CREATE TABLE IF NOT EXISTS heritage_check_ins (
-            id              uuid         PRIMARY KEY DEFAULT app.uuidv7(),
+            id              uuid         PRIMARY KEY DEFAULT gen_uuid_v7(),
             heritage_pub_id uuid         NOT NULL,
             user_id         uuid,
             checked_in_at   timestamptz  NOT NULL DEFAULT now(),

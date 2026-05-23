@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
@@ -46,7 +46,9 @@ def _fake_detection_score(reviews: list[dict[str, Any]]) -> tuple[float, list[st
 
     # Flag 3: All reviews posted within 24 hours
     if total >= 3:
-        times = [r.get("created_at") for r in reviews if r.get("created_at")]
+        times: list[datetime] = [
+            v for r in reviews if isinstance((v := r.get("created_at")), datetime)
+        ]
         if times:
             spread = (max(times) - min(times)).total_seconds() if len(times) > 1 else 0
             if spread < 86400 and total >= 5:
@@ -115,7 +117,8 @@ Return JSON only:
             raw = raw.split("```")[1]
             if raw.startswith("json"):
                 raw = raw[4:]
-        return json.loads(raw)
+        parsed: dict[str, Any] = json.loads(raw)
+        return parsed
     except Exception:
         return {
             "summary_md": f"{len(reviews)} reviews analyzed.",

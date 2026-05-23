@@ -18,7 +18,7 @@ depends_on = None
 def upgrade() -> None:
     op.execute("""
         CREATE TABLE IF NOT EXISTS coupons (
-            id              uuid         PRIMARY KEY DEFAULT app.uuidv7(),
+            id              uuid         PRIMARY KEY DEFAULT gen_uuid_v7(),
             code            varchar(50)  NOT NULL UNIQUE,
             kind            varchar(20)  NOT NULL DEFAULT 'percent',
             discount_value  numeric(8,2) NOT NULL,
@@ -47,7 +47,7 @@ def upgrade() -> None:
 
     op.execute("""
         CREATE TABLE IF NOT EXISTS coupon_redemptions (
-            id                   uuid         PRIMARY KEY DEFAULT app.uuidv7(),
+            id                   uuid         PRIMARY KEY DEFAULT gen_uuid_v7(),
             coupon_id            uuid         NOT NULL REFERENCES coupons(id) ON DELETE RESTRICT,
             user_id              uuid         NOT NULL,
             subscription_id      uuid,

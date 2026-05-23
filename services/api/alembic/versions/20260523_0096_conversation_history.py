@@ -34,7 +34,7 @@ def upgrade() -> None:
     op.execute(
         """
         CREATE TABLE conversation_sessions (
-            id               uuid         NOT NULL DEFAULT app.uuidv7(),
+            id               uuid         NOT NULL DEFAULT gen_uuid_v7(),
             user_id          uuid         NOT NULL,
             residency_region varchar(20)  NOT NULL,
             tenant_id        uuid         NOT NULL,
@@ -152,7 +152,7 @@ def upgrade() -> None:
     op.execute(
         """
         CREATE TABLE conversation_messages (
-            id               uuid         NOT NULL DEFAULT app.uuidv7(),
+            id               uuid         NOT NULL DEFAULT gen_uuid_v7(),
             session_id       uuid         NOT NULL,
             residency_region varchar(20)  NOT NULL,
             role             varchar(10)  NOT NULL,

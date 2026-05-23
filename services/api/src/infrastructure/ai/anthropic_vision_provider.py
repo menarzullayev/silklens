@@ -183,13 +183,15 @@ class AnthropicVisionProvider:
     def _parse_json(raw: str) -> dict[str, Any]:
         """Parse JSON, falling back to markdown fence extraction on failure."""
         try:
-            return json.loads(raw)
+            result: dict[str, Any] = json.loads(raw)
+            return result
         except json.JSONDecodeError:
             pass
         match = _JSON_FENCE_RE.search(raw)
         if match:
             try:
-                return json.loads(match.group(1))
+                fence_result: dict[str, Any] = json.loads(match.group(1))
+                return fence_result
             except json.JSONDecodeError:
                 pass
         # Last resort: return a minimal fallback rather than raising so the

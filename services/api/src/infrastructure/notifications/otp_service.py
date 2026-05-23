@@ -24,7 +24,9 @@ def _key(email: str) -> str:
 
 def _client() -> aioredis.Redis:
     settings = get_settings()
-    return aioredis.from_url(settings.redis_url, decode_responses=True)
+    return aioredis.from_url(  # type: ignore[no-untyped-call, no-any-return]
+        settings.redis_url, decode_responses=True
+    )
 
 
 async def generate_and_store(email: str) -> str:

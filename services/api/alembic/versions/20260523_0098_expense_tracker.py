@@ -19,7 +19,7 @@ def upgrade() -> None:
     op.execute(
         """
         CREATE TABLE travel_budgets (
-            id               uuid          PRIMARY KEY DEFAULT app.uuidv7(),
+            id               uuid          PRIMARY KEY DEFAULT gen_uuid_v7(),
             user_id          uuid          NOT NULL,
             residency_region varchar(20)   NOT NULL DEFAULT 'global',
             title            varchar(200),
@@ -52,7 +52,7 @@ def upgrade() -> None:
     op.execute(
         """
         CREATE TABLE budget_entries (
-            id          uuid         PRIMARY KEY DEFAULT app.uuidv7(),
+            id          uuid         PRIMARY KEY DEFAULT gen_uuid_v7(),
             budget_id   uuid         NOT NULL
                             REFERENCES travel_budgets(id) ON DELETE CASCADE,
             category    varchar(30)  NOT NULL DEFAULT 'other',

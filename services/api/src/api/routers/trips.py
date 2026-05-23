@@ -189,7 +189,8 @@ Return only valid JSON, no markdown."""
             raw = raw.split("```")[1]
             if raw.startswith("json"):
                 raw = raw[4:]
-        return json.loads(raw)
+        parsed: dict[str, Any] = json.loads(raw)
+        return parsed
     except Exception:
         return _stub_itinerary(cities, days or len(cities))
 

@@ -21,7 +21,7 @@ def upgrade() -> None:
     # People associated with heritage (architects, patrons, rulers)
     op.execute("""
         CREATE TABLE IF NOT EXISTS people (
-            id           uuid        PRIMARY KEY DEFAULT app.uuidv7(),
+            id           uuid        PRIMARY KEY DEFAULT gen_uuid_v7(),
             full_name    jsonb       NOT NULL DEFAULT '{}',
             birth_year   int,
             death_year   int,
@@ -49,7 +49,7 @@ def upgrade() -> None:
     # M:N heritage <-> people with role
     op.execute("""
         CREATE TABLE IF NOT EXISTS heritage_people_roles (
-            id           uuid        PRIMARY KEY DEFAULT app.uuidv7(),
+            id           uuid        PRIMARY KEY DEFAULT gen_uuid_v7(),
             heritage_id  uuid        NOT NULL,
             person_id    uuid        NOT NULL REFERENCES people(id) ON DELETE RESTRICT,
             role         varchar(50) NOT NULL DEFAULT 'associated',
@@ -74,7 +74,7 @@ def upgrade() -> None:
     # Building materials controlled vocabulary
     op.execute("""
         CREATE TABLE IF NOT EXISTS materials (
-            id             uuid        PRIMARY KEY DEFAULT app.uuidv7(),
+            id             uuid        PRIMARY KEY DEFAULT gen_uuid_v7(),
             name           jsonb       NOT NULL DEFAULT '{}',
             kind           varchar(30) NOT NULL DEFAULT 'stone',
             description_md jsonb       NOT NULL DEFAULT '{}',
@@ -102,7 +102,7 @@ def upgrade() -> None:
     # Localized strings — central translation table for arbitrary entity fields
     op.execute("""
         CREATE TABLE IF NOT EXISTS localized_strings (
-            id              uuid         PRIMARY KEY DEFAULT app.uuidv7(),
+            id              uuid         PRIMARY KEY DEFAULT gen_uuid_v7(),
             entity_kind     varchar(50)  NOT NULL,
             entity_id       uuid         NOT NULL,
             field_name      varchar(100) NOT NULL,

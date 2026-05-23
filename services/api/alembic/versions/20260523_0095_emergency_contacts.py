@@ -32,7 +32,7 @@ def upgrade() -> None:
     op.execute(
         """
         CREATE TABLE IF NOT EXISTS emergency_contacts (
-            id              uuid         PRIMARY KEY DEFAULT app.uuidv7(),
+            id              uuid         PRIMARY KEY DEFAULT gen_uuid_v7(),
             country_code    char(2)      NOT NULL,
             kind            varchar(30)  NOT NULL,
             name            jsonb        NOT NULL DEFAULT '{}',

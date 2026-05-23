@@ -137,7 +137,7 @@ class WebAuthnAdapterImpl:
         return {
             "credential_id": cred_id,
             "public_key": public_key,
-            "sign_count": int(attestation.get("sign_count", 0) or 0),
+            "sign_count": int(str(attestation.get("sign_count", 0) or 0)),
             "transports": tuple(attestation.get("transports") or ()),  # type: ignore[arg-type]
             "attestation_format": attestation.get("attestation_format"),
             "aaguid": attestation.get("aaguid"),
@@ -194,7 +194,7 @@ class WebAuthnAdapterImpl:
             except Exception as exc:
                 raise ValueError(f"webauthn assertion verification failed: {exc}") from exc
         # Fallback: accept the supplied new_sign_count if monotonic.
-        new_count = int(assertion.get("new_sign_count", stored_sign_count + 1))
+        new_count = int(str(assertion.get("new_sign_count", stored_sign_count + 1)))
         if new_count <= stored_sign_count:
             raise ValueError("sign_count must be strictly increasing")
         return {"new_sign_count": new_count}
@@ -216,7 +216,7 @@ def _options_to_dict(opts: object) -> dict[str, object]:
         from typing import cast as _cast
 
         from webauthn.helpers import options_to_json
-        from webauthn.helpers.structs import (  # type: ignore[import-untyped]
+        from webauthn.helpers.structs import (
             PublicKeyCredentialCreationOptions,
             PublicKeyCredentialRequestOptions,
         )

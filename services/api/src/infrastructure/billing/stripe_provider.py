@@ -228,7 +228,7 @@ class StripeProvider:
             raise ProviderUnavailable("provider_unavailable") from exc
 
         try:
-            event = stripe.Webhook.construct_event(
+            event = stripe.Webhook.construct_event(  # type: ignore[no-untyped-call]
                 payload=payload,
                 sig_header=signature,
                 secret=self._webhook_secret,
@@ -237,11 +237,13 @@ class StripeProvider:
             log.warning("billing.stripe.webhook.invalid_signature", detail=str(exc))
             raise InvalidWebhookSignature("invalid_signature") from exc
 
+        from typing import cast
+
         # ``stripe.Event`` is dict-like (subclasses ``StripeObject``). Use the
         # SDK-supplied serializer to get a plain dict so callers don't need to
         # import the SDK to inspect fields.
         if hasattr(event, "to_dict_recursive"):
-            return dict(event.to_dict_recursive())  # type: ignore[arg-type]
+            return cast("dict[str, Any]", event.to_dict_recursive())
         if hasattr(event, "to_dict"):
-            return dict(event.to_dict())  # type: ignore[arg-type]
+            return cast("dict[str, Any]", event.to_dict())
         return {k: event[k] for k in event.keys()}  # noqa: SIM118

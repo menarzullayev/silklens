@@ -279,7 +279,7 @@ async def _resolve_tenant_id(db: AsyncSession, slug: str) -> UUID:
     ).one_or_none()
     if row is None:
         raise HTTPException(status_code=404, detail={"code": "tenant.not_found"})
-    return row[0]
+    return UUID(str(row[0]))
 
 
 @router.get(

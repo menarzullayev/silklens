@@ -812,7 +812,7 @@ async def forgot_password(
         code = f"{__import__('secrets').randbelow(1_000_000):06d}"
         import redis.asyncio as aioredis
 
-        async with aioredis.from_url(settings.redis_url, decode_responses=True) as r:
+        async with aioredis.from_url(settings.redis_url, decode_responses=True) as r:  # type: ignore[no-untyped-call]
             await r.setex(
                 f"{_RESET_KEY_PREFIX}{body.email.lower().strip()}",
                 settings.email_otp_ttl_seconds,
@@ -847,7 +847,7 @@ async def reset_password(
     settings = get_settings()
     redis_key = f"{_RESET_KEY_PREFIX}{body.email.lower().strip()}"
 
-    async with aioredis.from_url(settings.redis_url, decode_responses=True) as r:
+    async with aioredis.from_url(settings.redis_url, decode_responses=True) as r:  # type: ignore[no-untyped-call]
         stored = await r.get(redis_key)
         if stored is None or stored != body.code:
             raise HTTPException(

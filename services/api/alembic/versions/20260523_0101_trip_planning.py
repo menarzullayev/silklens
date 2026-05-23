@@ -18,7 +18,7 @@ depends_on = None
 def upgrade() -> None:
     op.execute("""
         CREATE TABLE IF NOT EXISTS trips (
-            id              uuid         PRIMARY KEY DEFAULT app.uuidv7(),
+            id              uuid         PRIMARY KEY DEFAULT gen_uuid_v7(),
             user_id         uuid         NOT NULL,
             residency_region varchar(20) NOT NULL DEFAULT 'global',
             title           varchar(200),
@@ -52,7 +52,7 @@ def upgrade() -> None:
 
     op.execute("""
         CREATE TABLE IF NOT EXISTS trip_stops (
-            id              uuid         PRIMARY KEY DEFAULT app.uuidv7(),
+            id              uuid         PRIMARY KEY DEFAULT gen_uuid_v7(),
             trip_id         uuid         NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
             day_number      int          NOT NULL,
             order_in_day    int          NOT NULL DEFAULT 0,

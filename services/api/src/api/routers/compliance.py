@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
@@ -510,7 +510,7 @@ async def admin_process_request(
 # --- helpers --------------------------------------------------------
 
 
-def _request_to_out(req) -> GdprRequestOut:
+def _request_to_out(req: Any) -> GdprRequestOut:
     return GdprRequestOut(
         id=req.id,
         request_kind=req.request_kind,

@@ -18,7 +18,7 @@ depends_on = None
 def upgrade() -> None:
     op.execute("""
         CREATE TABLE IF NOT EXISTS ticket_types (
-            id              uuid         PRIMARY KEY DEFAULT app.uuidv7(),
+            id              uuid         PRIMARY KEY DEFAULT gen_uuid_v7(),
             heritage_pub_id uuid         NOT NULL,
             name            jsonb        NOT NULL DEFAULT '{}',
             kind            varchar(20)  NOT NULL DEFAULT 'standard',
@@ -43,7 +43,7 @@ def upgrade() -> None:
 
     op.execute("""
         CREATE TABLE IF NOT EXISTS tickets (
-            id                  uuid         PRIMARY KEY DEFAULT app.uuidv7(),
+            id                  uuid         PRIMARY KEY DEFAULT gen_uuid_v7(),
             user_id             uuid         NOT NULL,
             residency_region    varchar(20)  NOT NULL DEFAULT 'global',
             ticket_type_id      uuid         NOT NULL REFERENCES ticket_types(id),
