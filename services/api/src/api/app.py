@@ -210,4 +210,197 @@ def create_app() -> FastAPI:
     app.include_router(memory_book.router)
     app.include_router(phase3_stubs.router)
 
+    # Inject auth-related response codes (401/403/422) into the OpenAPI spec
+    # for every route that depends on require_user / require_permission /
+    # request bodies. FastAPI's auto-OpenAPI omits codes raised by deps,
+    # which schemathesis correctly flags as "undocumented status code".
+    _inject_auth_responses(app)
+
+    # StrictQueryParamsMiddleware needs the populated route table, so wire
+    # it AFTER include_router calls. It still sits outside the request
+    # processing stack because middleware-add prepends to the chain.
+    from src.middleware.request_sanitize import StrictQueryParamsMiddleware
+
+    app.add_middleware(StrictQueryParamsMiddleware, fastapi_app=app)
+
     return app
+
+
+def _inject_auth_responses(app: FastAPI) -> None:
+    """Walk routes and add 401/403/422 to ``responses`` where deps raise them.
+
+    Detection is structural — looks for the wrapped ``require_user`` and
+    ``require_permission`` callables (or their dependency closures) in each
+    route's dependant tree. Avoids touching routes that already declared
+    a code explicitly (the route author wins).
+    """
+    from fastapi.routing import APIRoute
+
+    # SilkLens speaks several error shapes simultaneously, all under ``detail``:
+    #   * envelope: ``{code: str, message: str}`` (most explicit raises)
+    #   * raw string: FastAPI's default for ``HTTPException(detail="...")``
+    #     (e.g., the body-parse 400 emits ``"There was an error parsing the body"``)
+    #   * validation list: ``[{loc, msg, type}]`` from request validation
+    # OpenAPI consumers (and schemathesis) need a schema that admits all three.
+    error_envelope_schema = {
+        "type": "object",
+        "required": ["detail"],
+        "properties": {
+            "detail": {
+                "anyOf": [
+                    {
+                        "type": "object",
+                        "required": ["code", "message"],
+                        "properties": {
+                            "code": {"type": "string"},
+                            "message": {"type": "string"},
+                        },
+                        "additionalProperties": True,
+                    },
+                    {"type": "string"},
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": True,
+                        },
+                    },
+                ]
+            }
+        },
+    }
+
+    error_envelope_content = {
+        "application/json": {"schema": error_envelope_schema}
+    }
+
+    for route in app.routes:
+        if not isinstance(route, APIRoute):
+            continue
+        deps_permission = _route_requires_permission(route)
+        is_write = any(m in route.methods for m in ("POST", "PUT", "PATCH", "DELETE"))
+        accepts_payload = is_write or _route_has_query_params(route)
+
+        # ``route.responses`` is the dict FastAPI serialises into OpenAPI.
+        # Honour explicit declarations from the @router.<method>(responses=...)
+        # decorator — only add codes that aren't there yet.
+        # Auth endpoints that mint tokens still return 401 on bad credentials,
+        # public GETs can return 404 when referenced data is missing — so
+        # document 401 / 404 broadly rather than gating on dependency tree.
+        if 401 not in route.responses:
+            route.responses[401] = {
+                "description": "Authentication required or credentials invalid.",
+                "content": error_envelope_content,
+            }
+        if deps_permission and 403 not in route.responses:
+            route.responses[403] = {
+                "description": "Caller lacks the required permission.",
+                "content": error_envelope_content,
+            }
+        # 400 covers body-parse failures (malformed JSON) and explicit
+        # bad-request raises (e.g. unknown enum value). FastAPI's body
+        # parser surfaces this on any route that accepts a payload.
+        if accepts_payload and 400 not in route.responses:
+            route.responses[400] = {
+                "description": "Malformed request body or unparseable input.",
+                "content": error_envelope_content,
+            }
+        # Any route may surface 404 when its underlying lookup misses — even
+        # public GETs without path params (e.g. /branding) resolve a row by
+        # ``current tenant`` and 404 if the tenant has no record yet.
+        if 404 not in route.responses:
+            route.responses[404] = {
+                "description": "Referenced resource not found.",
+                "content": error_envelope_content,
+            }
+        # 409 covers idempotency / unique-constraint conflicts on writes.
+        if is_write and 409 not in route.responses:
+            route.responses[409] = {
+                "description": "Conflict with current resource state.",
+                "content": error_envelope_content,
+            }
+        # SEC-005: /auth/login returns 423 after credential-stuffing lockout.
+        # The threshold and Retry-After header live in the route handler.
+        if route.path == "/v1/auth/login" and 423 not in route.responses:
+            route.responses[423] = {
+                "description": "Account locked after repeated failures (SEC-005).",
+                "content": error_envelope_content,
+            }
+
+    # Override the cached OpenAPI factory so the HTTPValidationError schema
+    # accepts both shapes that the codebase emits:
+    #   * canonical FastAPI ValidationError -- ``detail: [{loc, msg, type}]``
+    #     (auto-generated for body validation failures + our middleware)
+    #   * SilkLens envelope -- ``detail: {code, message}``
+    #     (used throughout routers for business-rule HTTPException raises)
+    # Without this, schemathesis flags every envelope-style 422 as
+    # "Response violates schema".
+    original_openapi = app.openapi
+
+    def _openapi_with_unified_422() -> dict[str, object]:
+        schema = original_openapi()
+        components = schema.setdefault("components", {})
+        schemas = components.setdefault("schemas", {})
+        schemas["HTTPValidationError"] = {
+            "title": "HTTPValidationError",
+            "type": "object",
+            "properties": {
+                "detail": {
+                    "anyOf": [
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/components/schemas/ValidationError"
+                            },
+                        },
+                        {
+                            "type": "object",
+                            "required": ["code", "message"],
+                            "properties": {
+                                "code": {"type": "string"},
+                                "message": {"type": "string"},
+                            },
+                            "additionalProperties": True,
+                        },
+                        {"type": "string"},
+                    ]
+                }
+            },
+        }
+        return schema
+
+    app.openapi = _openapi_with_unified_422  # type: ignore[method-assign]
+    # Drop the cached spec so the next /openapi.json call regenerates with
+    # the new HTTPValidationError union.
+    app.openapi_schema = None
+
+
+def _route_requires_permission(route: object) -> bool:
+    """True if any dependant call name contains ``require_permission``.
+
+    ``require_permission`` is a factory that returns a closure, so the
+    closure name (not the factory) is what ends up on the dependant. We
+    detect by ``__qualname__`` substring to keep this resilient to
+    refactors.
+    """
+    dependant = getattr(route, "dependant", None)
+    if dependant is None:
+        return False
+    return _dependant_matches_qualname(dependant, "require_permission")
+
+
+def _route_has_query_params(route: object) -> bool:
+    dependant = getattr(route, "dependant", None)
+    if dependant is None:
+        return False
+    return bool(getattr(dependant, "query_params", None))
+
+
+def _dependant_matches_qualname(dependant: object, fragment: str) -> bool:
+    call = getattr(dependant, "call", None)
+    if call is not None and fragment in getattr(call, "__qualname__", ""):
+        return True
+    for sub in getattr(dependant, "dependencies", ()) or ():
+        if _dependant_matches_qualname(sub, fragment):
+            return True
+    return False

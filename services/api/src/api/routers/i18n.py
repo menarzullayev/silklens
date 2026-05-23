@@ -45,9 +45,16 @@ class LanguageOut(BaseModel):
 )
 async def list_supported_languages(
     session: SessionDep,
-    active_only: bool = Query(default=True),
+    # Spelled out as a string literal pair (not bool) so the OpenAPI shape
+    # matches what FastAPI actually accepts. Vanilla ``bool`` query params
+    # silently coerce ``0`` / ``1`` / ``yes`` etc., which the negative-data
+    # check in schemathesis rightly flags as a validation gap.
+    active_only: Annotated[
+        str, Query(pattern="^(true|false)$", description="true or false")
+    ] = "true",
 ) -> list[LanguageOut]:
     """List supported languages from the languages registry. Public endpoint."""
+    active_only_flag = active_only == "true"
     rows = await session.execute(
         text("""
             SELECT bcp47_tag, endonym, exonym_en, is_rtl, is_active, sort_order,
@@ -56,7 +63,7 @@ async def list_supported_languages(
             WHERE (:active_only = false OR is_active = true)
             ORDER BY sort_order
         """),
-        {"active_only": active_only},
+        {"active_only": active_only_flag},
     )
     return [LanguageOut.model_validate(dict(r)) for r in rows.mappings().fetchall()]
 

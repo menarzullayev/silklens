@@ -714,9 +714,16 @@ async def delete_conversation(
 # --- Admin -----------------------------------------------------------------
 
 
-@router.get("/models/public")
+@router.get("/public-models")
 async def list_public_models(db: SessionDep) -> list[dict[str, Any]]:
-    """Public list of enabled AI models — no auth required. Used by mobile app."""
+    """Public list of enabled AI models — no auth required. Used by mobile app.
+
+    Note: the path lives under ``/public-models`` (not ``/models/public``)
+    so it does not collide with the admin-only ``PATCH /models/{slug}``
+    path; OpenAPI sees those as the same path and schemathesis flags PATCH
+    on ``/models/public`` as a missing 405. Mobile clients have been
+    updated to follow this URL.
+    """
     # provider slug lives on ai_providers; join via provider_id.
     rows = await db.execute(
         text("""

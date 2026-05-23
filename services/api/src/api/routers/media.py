@@ -163,7 +163,7 @@ async def upload_media(
     )
 
 
-@router.get("/{asset_id}", response_model=MediaOut)
+@router.get("/{asset_id:uuid}", response_model=MediaOut)
 async def get_media(
     asset_id: UUID,
     db: SessionDep,
@@ -182,7 +182,7 @@ async def get_media(
     return _to_out(asset)
 
 
-@router.get("/{asset_id}/signed-url", response_model=SignedUrlOut)
+@router.get("/{asset_id:uuid}/signed-url", response_model=SignedUrlOut)
 async def get_signed_url(
     asset_id: UUID,
     db: SessionDep,
@@ -208,7 +208,7 @@ async def get_signed_url(
     )
 
 
-@router.delete("/{asset_id}", response_model=MediaDeleteOut)
+@router.delete("/{asset_id:uuid}", response_model=MediaDeleteOut)
 async def delete_media(
     asset_id: UUID,
     db: SessionDep,

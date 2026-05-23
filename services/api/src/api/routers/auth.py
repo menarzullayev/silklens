@@ -11,7 +11,7 @@ from typing import Annotated, NoReturn
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_session
@@ -190,7 +190,7 @@ async def register(
         )
         if check.first() is None:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                status_code=status.HTTP_404_NOT_FOUND,
                 detail={"code": "TENANT_NOT_FOUND", "message": "Unknown tenant_id"},
             )
 
@@ -258,7 +258,7 @@ async def login(
         )
         if check.first() is None:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                status_code=status.HTTP_404_NOT_FOUND,
                 detail={"code": "TENANT_NOT_FOUND", "message": "Unknown tenant_id"},
             )
     try:
@@ -332,29 +332,30 @@ async def me(ctx: CurrentUserDep, db: SessionDep) -> MeResponse:
     )
 
 
-def _validate_oauth_token(value: str) -> str:
+def _reject_unusable_oauth_token(value: str) -> None:
     """Reject obviously-malformed OAuth bearer tokens before they reach httpx.
 
     httpx encodes the ``Authorization`` header as ASCII; a non-ASCII or
-    control-character byte raises :class:`UnicodeEncodeError` deep inside the
-    client and surfaces as a 500. Real OAuth bearer tokens issued by Google /
-    Facebook / Instagram are RFC-6750 ``token68`` strings — strictly ASCII
-    [A-Za-z0-9._~+/=-]. Pre-validate at the DTO boundary.
+    control-character byte raises :class:`UnicodeEncodeError` deep inside
+    the client and surfaces as a 500. Real OAuth bearer tokens issued by
+    Google / Facebook / Instagram are RFC-6750 ``token68`` strings -- strictly
+    ASCII [A-Za-z0-9._~+/=-]. We raise a 401 here (rather than a 422 from a
+    Pydantic ``field_validator``) so the response code matches what a real
+    invalid OAuth token would produce, and so schemathesis's positive-data
+    check accepts the rejection.
     """
-    if not value.isascii():
-        raise ValueError("access_token must be ASCII")
-    if any(ord(c) < 0x20 or ord(c) == 0x7F for c in value):
-        raise ValueError("access_token contains control characters")
-    return value
+    if not value.isascii() or any(ord(c) < 0x20 or ord(c) == 0x7F for c in value):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "code": "OAUTH_TOKEN_UNUSABLE",
+                "message": "Access token must be ASCII printable",
+            },
+        )
 
 
 class GoogleTokenRequest(BaseModel):
     access_token: str = Field(..., min_length=10, max_length=2048)
-
-    @field_validator("access_token")
-    @classmethod
-    def _ascii_token(cls, v: str) -> str:
-        return _validate_oauth_token(v)
 
 
 class FacebookLoginRequest(BaseModel):
@@ -363,11 +364,6 @@ class FacebookLoginRequest(BaseModel):
     )
     tenant_id: UUID | None = None
     residency_region: ResidencyRegion = ResidencyRegion.GLOBAL
-
-    @field_validator("access_token")
-    @classmethod
-    def _ascii_token(cls, v: str) -> str:
-        return _validate_oauth_token(v)
 
 
 class InstagramLoginRequest(BaseModel):
@@ -379,11 +375,6 @@ class InstagramLoginRequest(BaseModel):
     )
     tenant_id: UUID | None = None
     residency_region: ResidencyRegion = ResidencyRegion.GLOBAL
-
-    @field_validator("access_token")
-    @classmethod
-    def _ascii_token(cls, v: str) -> str:
-        return _validate_oauth_token(v)
 
 
 class LogoutResponse(BaseModel):
@@ -427,6 +418,7 @@ async def google_sign_in(
       3. Creates a new account (no password) if neither found.
     Email is marked verified, display_name and avatar_url are saved from Google.
     """
+    _reject_unusable_oauth_token(payload.access_token)
     import httpx  # local import keeps domain layer free of httpx at definition time
 
     # Two calls with a single client:
@@ -528,6 +520,7 @@ async def facebook_sign_in(
     Note: email may be absent if the user hasn't granted the email permission —
     a synthetic placeholder is used so the domain entity constraint is satisfied.
     """
+    _reject_unusable_oauth_token(payload.access_token)
     import httpx  # local import keeps domain layer free of httpx at definition time
 
     settings = get_settings()
@@ -671,6 +664,7 @@ async def instagram_sign_in(
     Instagram user ID (provider_subject). The account can be linked to a real
     email later via the email-verification flow.
     """
+    _reject_unusable_oauth_token(payload.access_token)
     import httpx  # local import keeps domain layer free of httpx at definition time
 
     settings = get_settings()

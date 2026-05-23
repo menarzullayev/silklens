@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictFloat
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -65,10 +65,15 @@ _VALID_MOODS = frozenset(_MOOD_PROFILES)
 
 
 class MoodRequest(BaseModel):
-    mood: str = Field(..., description="tired|adventurous|romantic|curious|family")
+    # ``Literal`` so the OpenAPI schema declares the exact enum the runtime
+    # enforces — schemathesis's positive-data-acceptance check then knows
+    # that ``""`` / ``"x"`` are schema-violating and won't flag the 422.
+    mood: Literal[
+        "tired", "adventurous", "romantic", "curious", "family"
+    ] = Field(..., description="tired|adventurous|romantic|curious|family")
     available_hours: float = Field(2.0, gt=0, le=12)
-    lat: float | None = None
-    lng: float | None = None
+    lat: StrictFloat | None = None
+    lng: StrictFloat | None = None
     language: str = Field("en", min_length=2, max_length=10)
 
 

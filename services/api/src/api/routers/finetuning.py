@@ -18,7 +18,7 @@ from decimal import Decimal
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -222,7 +222,7 @@ async def list_pending(
     slug: str,
     db: SessionDep,
     ctx: AdminDep,
-    limit: int = 50,
+    limit: Annotated[int, Query(ge=1, le=1_000)] = 50,
 ) -> list[ExampleOut]:
     """List unapproved examples in a dataset (curator queue)."""
     svc = _svc(db)

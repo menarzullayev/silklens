@@ -13,7 +13,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictFloat
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -81,8 +81,11 @@ class TripDetailOut(BaseModel):
 
 class QuickPlanRequest(BaseModel):
     available_hours: float = Field(2.0, gt=0, le=24)
-    lat: float | None = None
-    lng: float | None = None
+    # ``StrictFloat`` so ``"lng": false`` / ``"lng": 0`` (int) are rejected
+    # before they reach the planner — vanilla ``float`` coerces booleans
+    # to ``0.0`` / ``1.0`` and produces nonsensical coordinates.
+    lat: StrictFloat | None = None
+    lng: StrictFloat | None = None
     city: str | None = Field(None, max_length=100)
     interests: list[str] = Field(default_factory=list)
     language: str = Field("en", min_length=2, max_length=10)
@@ -437,7 +440,7 @@ async def list_trips(
 
 
 @router.get(
-    "/{trip_id}",
+    "/{trip_id:uuid}",
     response_model=TripDetailOut,
     dependencies=[Depends(rate_limit("60/minute", per="user", scope="trips:read"))],
 )

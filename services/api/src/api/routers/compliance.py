@@ -27,7 +27,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, StrictBool, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_session
@@ -152,11 +152,14 @@ class CancelDeletionIn(BaseModel):
 
 
 class CookieConsentIn(BaseModel):
+    # GDPR consent must be an explicit user choice — ``StrictBool`` rejects
+    # the implicit ``0`` / ``1`` / ``"true"`` coercions so the audit trail
+    # records only deliberate true/false values.
     session_cookie_id: str = Field(min_length=4, max_length=128)
-    strictly_necessary: bool = True
-    analytics: bool = False
-    marketing: bool = False
-    ad_targeting: bool = False
+    strictly_necessary: StrictBool = True
+    analytics: StrictBool = False
+    marketing: StrictBool = False
+    ad_targeting: StrictBool = False
     region: str | None = Field(default=None, max_length=8)
 
 

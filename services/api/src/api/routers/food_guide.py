@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictFloat
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,13 +19,18 @@ router = APIRouter(tags=["food"])
 
 
 class FoodQuery(BaseModel):
+    # ``StrictFloat`` so ``"lng": false`` / ``"lng": "0.1"`` etc. are rejected
+    # at parse time; vanilla ``float`` coerces booleans which produces
+    # nonsensical geographic coordinates downstream.
+    model_config = {"strict": False}
+
     message: str = Field(
         ...,
         max_length=500,
         description="e.g. 'I am vegetarian, recommend a good restaurant near Registon'",
     )
-    lat: float | None = None
-    lng: float | None = None
+    lat: StrictFloat | None = None
+    lng: StrictFloat | None = None
     language: str = Field("en", min_length=2, max_length=10)
     dietary_preferences: list[str] = Field(
         default_factory=list,
