@@ -27,7 +27,7 @@ from src.domain.media.errors import MediaError
 from src.domain.media.service import MediaService, MediaStorage
 from src.infrastructure.media.minio_client import get_minio_client
 from src.infrastructure.media.repository import SqlMediaRepository
-from src.middleware.auth import require_user
+from src.middleware.auth import AuthContext, require_user
 from src.middleware.ratelimit import rate_limit
 
 router = APIRouter(prefix="/v1/media", tags=["media"])
@@ -113,7 +113,7 @@ def _raise_media_error(exc: MediaError) -> None:
     ) from exc
 
 
-async def _has_perm(db: AsyncSession, ctx: object, perm: str) -> bool:
+async def _has_perm(db: AsyncSession, ctx: AuthContext, perm: str) -> bool:
     row = await db.execute(
         text("SELECT app.has_permission(:uid, :residency, :perm, :tenant)"),
         {
@@ -137,7 +137,7 @@ async def _has_perm(db: AsyncSession, ctx: object, perm: str) -> bool:
 )
 async def upload_media(
     db: SessionDep,
-    ctx: Annotated[object, Depends(require_user)],
+    ctx: Annotated[AuthContext, Depends(require_user)],
     file: Annotated[UploadFile, File(description="Asset bytes")],
     kind: Annotated[MediaKind, Form()] = MediaKind.IMAGE,
     license_type_slug: Annotated[str, Form()] = "cc_by_sa",
@@ -167,7 +167,7 @@ async def upload_media(
 async def get_media(
     asset_id: UUID,
     db: SessionDep,
-    ctx: Annotated[object, Depends(require_user)],
+    ctx: Annotated[AuthContext, Depends(require_user)],
 ) -> MediaOut:
     # SEC-003 fix: enforce tenant scope; moderators bypass.
     is_moderator = await _has_perm(db, ctx, "heritage:moderate")
@@ -187,7 +187,7 @@ async def get_signed_url(
     asset_id: UUID,
     db: SessionDep,
     request: Request,
-    ctx: Annotated[object, Depends(require_user)],
+    ctx: Annotated[AuthContext, Depends(require_user)],
 ) -> SignedUrlOut:
     is_moderator = await _has_perm(db, ctx, "heritage:moderate")
     client_ip = request.client.host if request.client else None
@@ -212,7 +212,7 @@ async def get_signed_url(
 async def delete_media(
     asset_id: UUID,
     db: SessionDep,
-    ctx: Annotated[object, Depends(require_user)],
+    ctx: Annotated[AuthContext, Depends(require_user)],
 ) -> MediaDeleteOut:
     is_moderator = await _has_perm(db, ctx, "heritage:moderate")
     try:

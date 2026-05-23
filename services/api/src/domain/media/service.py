@@ -246,7 +246,7 @@ def _compute_perceptual_hash(content: bytes) -> tuple[str | None, int | None]:
     try:  # pragma: no cover - optional dependency
         import io
 
-        import imagehash  # type: ignore[import-untyped]
+        import imagehash  # type: ignore[import-not-found]
         from PIL import Image
     except ImportError:
         return None, None

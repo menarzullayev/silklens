@@ -32,6 +32,7 @@ from src.core.database import get_session
 from src.domain.reseller.entities import (
     ApplicationStatus,
     PlanKind,
+    ResellerApplication,
     ResellerApplicationDraft,
 )
 from src.domain.reseller.errors import ResellerError
@@ -146,7 +147,7 @@ def _service(db: AsyncSession) -> ResellerService:
     return ResellerService(repository=SqlResellerRepository(db))
 
 
-def _admin_out(application: object) -> ResellerApplicationAdminOut:
+def _admin_out(application: ResellerApplication) -> ResellerApplicationAdminOut:
     return ResellerApplicationAdminOut(
         id=application.id,
         applicant_email=application.applicant_email,
@@ -166,7 +167,7 @@ def _admin_out(application: object) -> ResellerApplicationAdminOut:
     )
 
 
-def _public_out(application: object) -> ResellerApplicationPublicOut:
+def _public_out(application: ResellerApplication) -> ResellerApplicationPublicOut:
     return ResellerApplicationPublicOut(
         id=application.id,
         status=application.status,

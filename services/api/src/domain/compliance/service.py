@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Protocol
+from typing import Callable, Protocol
 from uuid import UUID
 
 from src.domain.compliance.entities import (
@@ -68,7 +68,7 @@ class ComplianceService:
         *,
         repository: ComplianceRepository,
         tasks: TaskQueue | None = None,
-        now: callable | None = None,
+        now: Callable[[], datetime] | None = None,
     ) -> None:
         self._repo = repository
         self._tasks = tasks

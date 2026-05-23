@@ -274,6 +274,8 @@ class PartnershipService:
             },
         )
         row2 = result.mappings().first()
+        if row2 is None:
+            raise RuntimeError("SlaReport INSERT returned no row")
         await self._db.commit()
 
         return SlaReport(
@@ -324,6 +326,8 @@ class PartnershipService:
             {"aid": agreement_id, "bk": badge_kind.value},
         )
         row = result.mappings().first()
+        if row is None:
+            raise RuntimeError("PartnerBadge INSERT returned no row")
         await self._db.commit()
 
         return PartnerBadge(

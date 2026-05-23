@@ -8,6 +8,7 @@ are deferred (status=pending) and handled by a background worker.
 from __future__ import annotations
 
 import json
+from typing import Any
 from uuid import UUID
 
 from src.domain.finetuning.entities import (
@@ -76,6 +77,7 @@ class FinetuningService:
 
         lines: list[str] = []
         for ex in examples:
+            record: dict[str, Any]
             if ex.kind in (ExampleKind.PROMPT_RESPONSE, ExampleKind.CONVERSATION):
                 record = {
                     "messages": [
@@ -157,7 +159,7 @@ class FinetuningService:
         provider: JobProvider,
         base_model_slug: str,
         job_kind: JobKind,
-        hyperparams: dict,
+        hyperparams: dict[str, Any],
         actor: UUID,  # reserved for audit log; passed to repo in future
     ) -> FinetuningJob:
         """Scaffold a fine-tuning job (status=pending).

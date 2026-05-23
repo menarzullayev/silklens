@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_session
-from src.domain.notifications.entities import NotificationChannel
+from src.domain.notifications.entities import Notification, NotificationChannel
 from src.domain.notifications.errors import NotificationError
 from src.domain.notifications.service import NotificationService
 from src.infrastructure.notifications.email_client import StubEmailClient
@@ -115,7 +115,7 @@ class QuietHoursOut(BaseModel):
 # --- Helpers -------------------------------------------------------------
 
 
-def _notif_out(n: object) -> NotificationOut:
+def _notif_out(n: Notification) -> NotificationOut:
     return NotificationOut(
         id=n.id,
         category_slug=n.category_slug,

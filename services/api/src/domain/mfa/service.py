@@ -9,7 +9,7 @@ import hashlib
 import secrets
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Protocol
+from typing import Protocol, cast
 from uuid import UUID, uuid4
 
 from src.domain.mfa.entities import (
@@ -275,9 +275,9 @@ class MfaService:
         cred = _Cred(
             mfa_id=mfa_id,
             residency_region=user_ctx.residency_region,
-            credential_id=bytes(result["credential_id"]),  # type: ignore[arg-type]
-            public_key_bytes=bytes(result["public_key"]),  # type: ignore[arg-type]
-            sign_count=int(result.get("sign_count", 0) or 0),
+            credential_id=cast(bytes, result["credential_id"]),
+            public_key_bytes=cast(bytes, result["public_key"]),
+            sign_count=cast(int, result.get("sign_count", 0)) or 0,
             transports=tuple(result.get("transports") or ()),  # type: ignore[arg-type]
             attestation_format=str(result["attestation_format"])
             if result.get("attestation_format")
@@ -330,7 +330,7 @@ class MfaService:
                 stored_sign_count=cred.sign_count,
                 credential_id=cred.credential_id,
             )
-            new_count = int(result.get("new_sign_count", cred.sign_count + 1))
+            new_count = cast(int, result.get("new_sign_count", cred.sign_count + 1))
             await self._repo.update_webauthn_sign_count(
                 method.id, method.residency_region, new_sign_count=new_count
             )

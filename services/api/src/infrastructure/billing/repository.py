@@ -130,7 +130,7 @@ class SqlPlanRepository:
         ).one_or_none()
         if row is None:
             return None
-        m = row._mapping  # type: ignore[attr-defined]
+        m = row._mapping
         return Plan(
             id=m["id"],
             tenant_id=m["tenant_id"],
