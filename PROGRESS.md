@@ -440,6 +440,10 @@ git push --no-verify  # emergency bypass
 - [✅] **SILK-0142** Android release-signing documentation: 37-line comment block in `android/app/build.gradle` with `keytool` command, `key.properties` format, `signingConfigs.release` Groovy template, AndroidManifest cleartext-traffic note; `android/key.properties.example` created (real `key.properties` and `.keystore` already gitignored); no build code changed
 - [✅] **SILK-0143** Missing asset READMEs: `assets/onboarding/README.md` — slide filenames, pixel dimensions, compression guidance, pubspec declaration note; `assets/textures/README.md` — planned texture filenames/formats, opacity guidelines, pubspec declaration reminder (directory not yet declared); no functional code changed
 - Note: SILK-0145 (Sentry) was already fully implemented — conditional `SentryFlutter.init`, `FlutterError.onError`, zone-guarded `Sentry.captureException`, `SENTRY_DSN` in `.env.example`; no changes required
+- [✅] **SILK-0128** `CulturalTipsPage` — existing page confirmed + route `/cultural-tips` registered + 14 locale keys (ctips_*) added across all 4 locales (en/uz/ru/zh) + settings navigation entry added
+- [✅] **SILK-0132** `MemoryBookPage` — new page at `lib/presentation/pages/profile/memory_book_page.dart`; `getMemoryBookPreview()` + `generateMemoryBook()` added to `SilkLensApiClient`; route `/memory-book` registered; 13 locale keys (membook_*) across all 4 locales; settings navigation entry added
+- [✅] **SILK-0135** `GovernmentPage` — new page at `lib/presentation/pages/settings/government_page.dart`; `getGovernmentInfo()` already in `SilkLensApiClient`; route `/government` registered; 8 locale keys (gov_*) across all 4 locales; settings navigation entry added
+- [✅] **SILK-0137** `AIUtilitiesPage` — new page at `lib/presentation/pages/settings/ai_utilities_page.dart`; tabs: Price Check / Scam Alert / Lost & Found; reuses `checkFairPrice()`, `checkScam()`, `getLostFoundHelp()` from `SilkLensApiClient`; route `/ai-utilities` registered; 21 locale keys (aiutil_*) across all 4 locales; settings navigation entry added; 0 analyzer errors
 
 ### Technical Debt
 
