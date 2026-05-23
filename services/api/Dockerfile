@@ -6,12 +6,18 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     UV_LINK_MODE=copy
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Apply all available OS security patches before installing app deps.
+# This ensures Trivy's --ignore-unfixed scan sees zero fixable CVEs.
+# The upgrade layer is cached separately from app deps so it only reruns
+# when a new base image is pulled (weekly via Dependabot / renovate).
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
         libpq5 \
         libmagic1 \
-        && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 # uv is faster than pip for resolution + install; pinned for reproducibility
 RUN pip install --no-cache-dir uv==0.4.30
