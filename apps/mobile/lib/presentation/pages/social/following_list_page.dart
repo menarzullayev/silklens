@@ -1,28 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/core/l10n/app_strings.dart';
+import 'package:silklens/core/l10n/locale_service.dart';
+import 'package:silklens/presentation/providers/auth_provider.dart';
+import 'package:silklens/presentation/providers/social_provider.dart';
 
-class FollowingListPage extends StatefulWidget {
+class FollowingListPage extends ConsumerStatefulWidget {
   const FollowingListPage({super.key});
 
   @override
-  State<FollowingListPage> createState() => _FollowingListPageState();
+  ConsumerState<FollowingListPage> createState() => _FollowingListPageState();
 }
 
-class _FollowingListPageState extends State<FollowingListPage> {
+class _FollowingListPageState extends ConsumerState<FollowingListPage> {
   static const _gold = Color(0xFFB78628);
   static const _bg = Color(0xFF0D2337);
 
   int _activeFilter = 0;
-  final _filters = const ['Barchasi', 'Kuzatuvchilar', 'Kuzatilayotganlar'];
   final _searchController = TextEditingController();
 
-  static const _users = [
-    ('Aziz Karimov', '@aziz.heritage', 'Daraja 12', true),
-    ('Dilnoza Yusupova', '@dilnoza.uz', 'Daraja 8', false),
-    ('Jasur Rahimov', '@jasur.explorer', 'Daraja 15', true),
-    ('Malika Tosheva', '@malika.t', 'Daraja 5', false),
-    ('Sherzod Qodirov', '@sherzod.qod', 'Daraja 10', true),
-    ('Nodira Ergasheva', '@nodira.e', 'Daraja 7', false),
-  ];
+  String _s(String key) =>
+      AppStrings.get(LocaleService.instance.locale, key);
+
+  List<String> get _filters => [
+        _s('following_filter_all'),
+        _s('following_filter_followers'),
+        _s('following_filter_following'),
+      ];
+
+  String get _userPubId => ref.read(currentUserProvider)?.pubId ?? '';
 
   @override
   void dispose() {
@@ -30,8 +36,43 @@ class _FollowingListPageState extends State<FollowingListPage> {
     super.dispose();
   }
 
+  List<Map<String, dynamic>> _applySearch(
+    List<Map<String, dynamic>> users,
+  ) {
+    final q = _searchController.text.trim().toLowerCase();
+    if (q.isEmpty) return users;
+    return users.where((u) {
+      final name =
+          (u['display_name'] as String? ?? '').toLowerCase();
+      final handle =
+          (u['username'] as String? ?? '').toLowerCase();
+      return name.contains(q) || handle.contains(q);
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final pubId = _userPubId;
+    final state = ref.watch(followingListProvider(pubId));
+    final notifier =
+        ref.read(followingListProvider(pubId).notifier);
+
+    // Merge following + followers for "All" tab, deduped by pub_id
+    final allUsers = <String, Map<String, dynamic>>{};
+    for (final u in [...state.following, ...state.followers]) {
+      final id = u['pub_id'] as String? ?? '';
+      if (id.isNotEmpty) allUsers[id] = u;
+    }
+
+    final rawList = switch (_activeFilter) {
+      1 => state.followers,
+      2 => state.following,
+      _ => allUsers.values.toList(),
+    };
+
+    final displayed =
+        _applySearch(rawList.where((u) => u.isNotEmpty).toList());
+
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
@@ -44,9 +85,9 @@ class _FollowingListPageState extends State<FollowingListPage> {
             size: 20,
           ),
         ),
-        title: const Text(
-          "Do'stlar",
-          style: TextStyle(
+        title: Text(
+          _s('following_title'),
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.w700,
@@ -69,9 +110,10 @@ class _FollowingListPageState extends State<FollowingListPage> {
               ),
               child: TextField(
                 controller: _searchController,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
+                style:
+                    const TextStyle(color: Colors.white, fontSize: 14),
                 decoration: InputDecoration(
-                  hintText: 'Foydalanuvchi qidirish...',
+                  hintText: _s('following_search_hint'),
                   hintStyle: TextStyle(
                     color: Colors.white.withValues(alpha: 0.4),
                     fontSize: 14,
@@ -82,7 +124,8 @@ class _FollowingListPageState extends State<FollowingListPage> {
                     size: 20,
                   ),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 12),
                 ),
                 onChanged: (_) => setState(() {}),
               ),
@@ -131,19 +174,64 @@ class _FollowingListPageState extends State<FollowingListPage> {
             ),
           ),
           const SizedBox(height: 8),
-          // User list
+          // User list / loading / empty
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: _users.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (_, i) => _UserRow(
-                name: _users[i].$1,
-                handle: _users[i].$2,
-                level: _users[i].$3,
-                isFollowing: _users[i].$4,
-              ),
-            ),
+            child: state.isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: _gold,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : displayed.isEmpty
+                    ? Center(
+                        child: Text(
+                          _s('following_empty'),
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            fontSize: 15,
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        itemCount: displayed.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 8),
+                        itemBuilder: (_, i) {
+                          final user = displayed[i];
+                          final id =
+                              user['pub_id'] as String? ?? '';
+                          final name =
+                              user['display_name'] as String? ??
+                                  user['username'] as String? ??
+                                  '?';
+                          final handle =
+                              user['username'] as String? ?? id;
+                          final levelNum =
+                              (user['level_number'] as num?)
+                                  ?.toInt() ??
+                                  1;
+                          final levelLabel =
+                              user['level_name'] as String? ??
+                                  'Level $levelNum';
+                          final isFollowing =
+                              user['is_following'] as bool? ?? false;
+
+                          return _UserRow(
+                            pubId: id,
+                            name: name,
+                            handle: '@$handle',
+                            levelLabel: levelLabel,
+                            isFollowing: isFollowing,
+                            onFollow: () => notifier.follow(id),
+                            onUnfollow: () => notifier.unfollow(id),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
@@ -151,18 +239,28 @@ class _FollowingListPageState extends State<FollowingListPage> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// User row — local optimistic toggle, syncs from provider via didUpdateWidget
+// ---------------------------------------------------------------------------
+
 class _UserRow extends StatefulWidget {
   const _UserRow({
+    required this.pubId,
     required this.name,
     required this.handle,
-    required this.level,
+    required this.levelLabel,
     required this.isFollowing,
+    required this.onFollow,
+    required this.onUnfollow,
   });
 
+  final String pubId;
   final String name;
   final String handle;
-  final String level;
+  final String levelLabel;
   final bool isFollowing;
+  final VoidCallback onFollow;
+  final VoidCallback onUnfollow;
 
   @override
   State<_UserRow> createState() => _UserRowState();
@@ -170,6 +268,7 @@ class _UserRow extends StatefulWidget {
 
 class _UserRowState extends State<_UserRow> {
   static const _gold = Color(0xFFB78628);
+
   late bool _following;
 
   @override
@@ -179,104 +278,147 @@ class _UserRowState extends State<_UserRow> {
   }
 
   @override
+  void didUpdateWidget(_UserRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isFollowing != widget.isFollowing) {
+      _following = widget.isFollowing;
+    }
+  }
+
+  void _toggle() {
+    final willFollow = !_following;
+    setState(() => _following = willFollow);
+    if (willFollow) {
+      widget.onFollow();
+    } else {
+      widget.onUnfollow();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding:
+          const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.10),
+        ),
       ),
-      child: Row(children: [
-        // Avatar
-        Container(
-          width: 44,
-          height: 44,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [Color(0xFF1F3A93), Color(0xFFB78628)],
-            ),
-          ),
-          child: Center(
-            child: Text(
-              widget.name[0],
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
+      child: Row(
+        children: [
+          // Avatar
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [Color(0xFF1F3A93), Color(0xFFB78628)],
               ),
             ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        // Name + handle
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.name,
+            child: Center(
+              child: Text(
+                widget.name.isNotEmpty
+                    ? widget.name[0].toUpperCase()
+                    : '?',
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                widget.handle,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.45),
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ),
-        // Level badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          margin: const EdgeInsets.only(right: 10),
-          decoration: BoxDecoration(
-            color: _gold.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            widget.level,
-            style: const TextStyle(
-              color: _gold,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
             ),
           ),
-        ),
-        // Follow button
-        GestureDetector(
-          onTap: () => setState(() => _following = !_following),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          const SizedBox(width: 12),
+          // Name + handle
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  widget.handle,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.45),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Level badge
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 3,
+            ),
+            margin: const EdgeInsets.only(right: 10),
             decoration: BoxDecoration(
-              color: _following
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : _gold,
-              borderRadius: BorderRadius.circular(10),
-              border: _following
-                  ? Border.all(color: Colors.white.withValues(alpha: 0.2))
-                  : null,
+              color: _gold.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              _following ? 'Kuzatilmoqda' : 'Kuzatish',
-              style: TextStyle(
-                color: _following ? Colors.white : const Color(0xFF1A1200),
-                fontSize: 12,
+              widget.levelLabel,
+              style: const TextStyle(
+                color: _gold,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
-        ),
-      ],),
+          // Follow / Unfollow button
+          GestureDetector(
+            onTap: _toggle,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 7,
+              ),
+              decoration: BoxDecoration(
+                color: _following
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : _gold,
+                borderRadius: BorderRadius.circular(10),
+                border: _following
+                    ? Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                      )
+                    : null,
+              ),
+              child: Text(
+                _following
+                    ? AppStrings.get(
+                        LocaleService.instance.locale,
+                        'following_action_following',
+                      )
+                    : AppStrings.get(
+                        LocaleService.instance.locale,
+                        'following_action_follow',
+                      ),
+                style: TextStyle(
+                  color: _following
+                      ? Colors.white
+                      : const Color(0xFF1A1200),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

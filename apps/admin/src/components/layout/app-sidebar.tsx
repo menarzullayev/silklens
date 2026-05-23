@@ -10,11 +10,15 @@ import {
   Cog,
   CreditCard,
   Flag,
+  Globe,
   Image as ImageIcon,
+  Languages,
   LayoutDashboard,
+  Phone,
   ScanFace,
   ShieldCheck,
   Sparkles,
+  Tag,
   Users,
 } from 'lucide-react';
 
@@ -39,7 +43,17 @@ const NAV_LINKS: readonly NavLink[] = [
   { href: '/branding', labelKey: 'branding', icon: ImageIcon, permission: PERMISSIONS.BRANDING_MANAGE },
   { href: '/feature-flags', labelKey: 'featureFlags', icon: Flag, permission: PERMISSIONS.SETTINGS_MANAGE },
   { href: '/analytics', labelKey: 'analytics', icon: BarChart3, permission: PERMISSIONS.ANALYTICS_READ },
+  // SILK-0158: Emergency contacts directory
+  { href: '/emergency', labelKey: 'emergency', icon: Phone, permission: PERMISSIONS.SETTINGS_MANAGE },
+  // SILK-0159: Cultural tips for travellers
+  { href: '/cultural-tips', labelKey: 'culturalTips', icon: Globe, permission: PERMISSIONS.SETTINGS_MANAGE },
+  // SILK-0160: Government information
+  { href: '/government', labelKey: 'government', icon: Building2, permission: PERMISSIONS.SETTINGS_MANAGE },
+  // SILK-0161: Coupon management
+  { href: '/billing/coupons', labelKey: 'coupons', icon: Tag, permission: PERMISSIONS.MONETIZATION_READ },
   { href: '/settings', labelKey: 'settings', icon: Cog, permission: PERMISSIONS.SETTINGS_MANAGE },
+  // SILK-0166: Language registry
+  { href: '/settings/languages', labelKey: 'languages', icon: Languages, permission: PERMISSIONS.SETTINGS_MANAGE },
 ];
 
 interface AppSidebarProps {
@@ -59,7 +73,12 @@ interface IntlMessages {
     | 'branding'
     | 'featureFlags'
     | 'analytics'
-    | 'settings',
+    | 'settings'
+    | 'emergency'
+    | 'culturalTips'
+    | 'government'
+    | 'coupons'
+    | 'languages',
     string
   >;
 }

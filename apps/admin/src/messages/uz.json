@@ -5,6 +5,7 @@
     "cancel": "Bekor qilish",
     "delete": "O'chirish",
     "edit": "Tahrirlash",
+    "create": "Yaratish",
     "loading": "Yuklanmoqda…",
     "search": "Qidirish",
     "comingSoon": "Tez orada",
@@ -14,7 +15,8 @@
     "themeDark": "Qorong'i",
     "themeSystem": "Tizim",
     "signOut": "Chiqish",
-    "tenant": "Ijarachi"
+    "tenant": "Ijarachi",
+    "errorTitle": "Backend mavjud emas"
   },
   "nav": {
     "overview": "Bosh sahifa",
@@ -25,8 +27,14 @@
     "monetization": "Monetizatsiya",
     "tenants": "Tenantlar",
     "branding": "Brending",
+    "featureFlags": "Xususiyat bayroqlari",
     "analytics": "Analitika",
-    "settings": "Sozlamalar"
+    "emergency": "Favqulodda",
+    "culturalTips": "Madaniy maslahatlar",
+    "government": "Hukumat",
+    "coupons": "Kuponlar",
+    "settings": "Sozlamalar",
+    "languages": "Tillar"
   },
   "auth": {
     "loginTitle": "Kirish",
@@ -40,12 +48,32 @@
   },
   "dashboard": {
     "title": "Bosh sahifa",
-    "subtitle": "SilkLens'ning bugungi operatsion ko'rinishi.",
-    "metricUsers24h": "Faol foydalanuvchilar (24s)",
-    "metricUsers7d": "Faol foydalanuvchilar (7 kun)",
-    "metricHeritageViews": "Obida ko'rishlar (24s)",
-    "metricPremium": "Premium obunachilar",
-    "metricRevenueMtd": "Oylik daromad"
+    "subtitle": "SilkLens'ning operatsion ko'rinishi.",
+    "metricHeritageTotal": "Jami obidalar",
+    "metricHeritagePublished": "Nashr etilgan",
+    "metricTenants": "Tenantlar",
+    "metricAiCalls": "AI so'rovlar (24s)",
+    "recentActivity": "So'nggi faollik",
+    "recentActivityHint": "Faollik oqimi events pipeline meta-endpointi ishga tushgandan so'ng paydo bo'ladi.",
+    "aiPerformance": "AI model samaradorligi",
+    "aiPerformanceHint": "Token sarfi + xarajat / kechikish / fallback chastotasi Token Usage bo'limida ko'rsatiladi."
+  },
+  "heritage": {
+    "title": "Obidalar",
+    "subtitle": "Yodgorliklar, ob'ektlar va AI tomonidan yaratilgan tavsiflar.",
+    "newEntry": "Yangi obida",
+    "createTitle": "Obida yaratish",
+    "createSubtitle": "Ko'p tilli nom + xulosa, turi, mamlakat, davr.",
+    "tabOverview": "Umumiy ko'rinish",
+    "tabTranslations": "Tarjimalar",
+    "tabAliases": "Taxalluslar",
+    "tabRevisions": "Tahrirlar",
+    "tabReviews": "Sharhlar"
+  },
+  "tenants": {
+    "title": "Tenantlar",
+    "subtitle": "White-label tenantlarni yaratish va status / tarif rejasini boshqarish.",
+    "errorTitle": "Tenantlarni yuklab bo'lmadi"
   },
   "branding": {
     "title": "Brending",
@@ -54,10 +82,41 @@
     "logoUrl": "Logotip URL",
     "primaryColor": "Asosiy rang",
     "splashImage": "Splash rasm URL",
-    "saved": "Brending qoralamasi mahalliy saqlandi (backend hali yo'q)."
+    "saved": "Brending saqlandi.",
+    "errorTitle": "Brendingni yuklab bo'lmadi"
+  },
+  "settings": {
+    "title": "Tizim sozlamalari",
+    "subtitle": "Kalit prefiksi bo'yicha guruhlangan tenant konfiguratsiyasi.",
+    "errorTitle": "Sozlamalarni yuklab bo'lmadi"
+  },
+  "featureFlags": {
+    "title": "Xususiyat bayroqlari",
+    "subtitle": "Bayroqlarni almashtirish, bosqichli chiqarish foizlari, ruxsat ro'yxatlari.",
+    "errorTitle": "Xususiyat bayroqlarini yuklab bo'lmadi"
+  },
+  "aiModels": {
+    "title": "AI modellar",
+    "subtitle": "Vision, TTS, tarjima, LLM — provayder matritsasi + fallback zanjirlari.",
+    "tabModels": "Modellar",
+    "tabChains": "Fallback zanjirlari",
+    "tabUsage": "Token sarfi",
+    "errorTitle": "AI modellarni yuklab bo'lmadi",
+    "usageHint": "Har bir tenant uchun token sarfi jadvallari `ai_token_usage` bu paneldan so'ralganda ko'rsatiladi."
+  },
+  "moderation": {
+    "title": "Moderatsiya",
+    "subtitle": "AI-baholangan UGC navbati.",
+    "placeholderTitle": "Moderatsiya API keyingi sprintda",
+    "placeholderHint": "Backend hozirda faqat flag/report endpointlarini taqdim etadi; maxsus admin navbati Wave 4 bilan chiqadi."
   },
   "rbac": {
     "denied": "Bu bo'limni ko'rish uchun ruxsatingiz yo'q.",
     "deniedSubtitle": "Workspace administratoridan tegishli huquqni so'rang."
+  },
+  "dataTable": {
+    "noResults": "Natija topilmadi.",
+    "columns": "Ustunlar",
+    "searchPlaceholder": "Qidirish…"
   }
 }

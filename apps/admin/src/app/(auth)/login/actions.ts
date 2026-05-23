@@ -43,13 +43,30 @@ export async function signInWithCredentialsAction(
 export async function signInWithProviderAction(
   provider: 'google' | 'apple' | 'telegram',
   nextPath: string,
-): Promise<void> {
-  // TODO(identity): once provider IDs/secrets are in `.env`, this will route
-  // through the configured OAuth provider. Today it falls back to credentials
-  // since no real provider is registered yet.
-  await signIn('credentials', {
-    email: `${provider}-demo@silklens.app`,
-    password: 'demo',
-    redirectTo: nextPath,
-  });
+): Promise<{ ok: boolean; message?: string }> {
+  // SILK-0155: Route through the real OAuth provider when credentials are
+  // present in env. Return an error result (no redirect) when they are not
+  // configured so the client can surface an informative toast.
+  const providerConfigured =
+    provider === 'google'
+      ? Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET)
+      : false; // Apple / Telegram not wired yet.
+
+  if (!providerConfigured) {
+    return {
+      ok: false,
+      message: `${provider.charAt(0).toUpperCase() + provider.slice(1)} OAuth is not configured yet. Use email/password login.`,
+    };
+  }
+
+  try {
+    await signIn(provider, { redirectTo: nextPath });
+    return { ok: true };
+  } catch (cause) {
+    if (isRedirectError(cause)) throw cause;
+    return {
+      ok: false,
+      message: cause instanceof Error ? cause.message : `${provider} sign-in failed.`,
+    };
+  }
 }

@@ -238,6 +238,23 @@ class AppStrings {
       'audio_guide_loading': 'Generating audio...',
       'audio_guide_error': 'Could not load audio',
       'audio_guide_retry': 'Retry',
+      // Offline Mode (SILK-0097)
+      'offline_banner_text': "Offline mode — cached data",
+      'offline_refresh_btn': 'Refresh',
+      'offline_status_available': 'Available offline',
+      'offline_status_needs_internet': 'Internet required',
+      'offline_download_btn': 'Download',
+      'offline_downloading': 'Downloading...',
+      'offline_download_error': 'Download failed. Please try again.',
+      'offline_empty': 'No offline bundles available.',
+      // Heritage Detail — Kids & Culture tabs (SILK-0098)
+      'heritage_tab_kids': 'Kids',
+      'heritage_tab_culture': 'Culture',
+      'heritage_kids_loading': 'Generating kids story...',
+      'heritage_kids_empty': 'Kids story coming soon for this site.',
+      'heritage_culture_loading': 'Loading cultural tips...',
+      'heritage_culture_empty': 'Cultural tips coming soon for this site.',
+      'heritage_culture_severity': 'Severity',
       // Bottom nav
       'nav_home': 'Home',
       'nav_map': 'Map',

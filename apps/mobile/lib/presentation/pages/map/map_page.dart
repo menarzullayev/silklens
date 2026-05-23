@@ -1,27 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:silklens/core/l10n/app_strings.dart';
+import 'package:silklens/domain/heritage/entities/heritage.dart';
+import 'package:silklens/presentation/providers/heritage_list_provider.dart';
+import 'package:silklens/presentation/providers/locale_provider.dart';
 
-class MapPage extends StatefulWidget {
+class MapPage extends ConsumerStatefulWidget {
   const MapPage({super.key});
+
   @override
-  State<MapPage> createState() => _MapPageState();
+  ConsumerState<MapPage> createState() => _MapPageState();
 }
 
-class _MapPageState extends State<MapPage> {
+class _MapPageState extends ConsumerState<MapPage> {
   final _mapCtrl = MapController();
   static const _center = LatLng(39.6542, 66.9597); // Samarqand
   static const _gold = Color(0xFFB78628);
 
-  static const _heritage = [
-    (LatLng(39.6542, 66.9597), 'Registon', true),
-    (LatLng(39.7747, 64.4286), "Ark Qal'asi", false),
-    (LatLng(41.5611, 60.3639), 'Itchan Kala', true),
-    (LatLng(39.7681, 64.4194), 'Kalon Minorasi', false),
-  ];
+  String _s(String key) {
+    final locale = ref.read(activeLocaleProvider).languageCode;
+    return AppStrings.get(locale, key);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final heritageState = ref.watch(heritageListProvider);
+    final lang = ref.watch(activeLocaleProvider).languageCode;
+
+    final geoItems =
+        heritageState.items.where((h) => h.hasGeolocation).toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFF0D2337),
       body: Stack(
@@ -39,19 +50,17 @@ class _MapPageState extends State<MapPage> {
                 userAgentPackageName: 'com.silklens.app',
               ),
               MarkerLayer(
-                markers: _heritage
+                markers: geoItems
                     .map(
                       (h) => Marker(
-                        point: h.$1,
+                        point: LatLng(h.latitude!, h.longitude!),
                         width: 40,
                         height: 40,
                         child: GestureDetector(
-                          onTap: () => _showBottomSheet(h.$2),
+                          onTap: () => _showHeritageSheet(h, lang),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: h.$3
-                                  ? _gold
-                                  : const Color(0xFF1A3A5C),
+                              color: _gold,
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: Colors.white,
@@ -105,13 +114,25 @@ class _MapPageState extends State<MapPage> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Meros joylarini qidiring...',
+                          _s('map_search_hint'),
                           style: TextStyle(
                             color: Colors.grey.shade500,
                             fontSize: 14,
                           ),
                         ),
                       ),
+                      if (heritageState.isLoading)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -137,7 +158,7 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  void _showBottomSheet(String name) {
+  void _showHeritageSheet(Heritage h, String lang) {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -164,7 +185,7 @@ class _MapPageState extends State<MapPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              name,
+              h.localizedName(lang),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 22,
@@ -173,7 +194,10 @@ class _MapPageState extends State<MapPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Meros joyi · Samarqand',
+              [
+                AppStrings.get(lang, 'map_heritage_type'),
+                if (h.countryCode != null) h.countryCode!,
+              ].join(' · '),
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.6),
                 fontSize: 14,
@@ -188,17 +212,18 @@ class _MapPageState extends State<MapPage> {
                   size: 16,
                 ),
                 const SizedBox(width: 4),
-                const Text(
-                  '4.9',
+                Text(
+                  h.kindSlug,
                   style: TextStyle(
-                    color: Color(0xFFB78628),
-                    fontWeight: FontWeight.w700,
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontSize: 12,
                   ),
                 ),
                 const Spacer(),
                 GestureDetector(
                   onTap: () {
                     Navigator.pop(context);
+                    context.push('/home/heritage/${h.pubId}');
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -211,9 +236,9 @@ class _MapPageState extends State<MapPage> {
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
-                      "Ko'rish",
-                      style: TextStyle(
+                    child: Text(
+                      AppStrings.get(lang, 'map_view_detail'),
+                      style: const TextStyle(
                         color: Color(0xFF1A1200),
                         fontWeight: FontWeight.w700,
                       ),

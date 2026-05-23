@@ -17,3 +17,7 @@ export * as systemApi from './system';
 export * as aiApi from './ai';
 export * as vocabApi from './vocab';
 export * as reviewsApi from './reviews';
+export * as analyticsApi from './analytics';
+export * as billingApi from './billing';
+export * as moderationApi from './moderation';
+export * as userApi from './user';

@@ -1,11 +1,14 @@
 /**
+ * Manual API type definitions.
+ * For auto-generated types from OpenAPI, see src/types/api.gen.ts.
+ * Run `pnpm generate:types` to regenerate from a running backend instance.
+ *
  * Hand-written types for the SilkLens FastAPI backend.
- *
  * Mirrors the Pydantic response models in `services/api/src/api/routers/*`.
- * Until OpenAPI regen is wired (see README), these are the contract.
  *
- *   pnpm dlx openapi-typescript http://localhost:8000/openapi.json \
- *     -o src/types/api.ts
+ * To regenerate fully:
+ *   make api-run   # start backend on :8000
+ *   cd apps/admin && pnpm generate:types
  */
 
 // --- Auth ------------------------------------------------------------------
@@ -322,6 +325,121 @@ export interface ReviewPage {
   total: number;
   limit: number;
   offset: number;
+}
+
+// --- Emergency contacts (SILK-0157) ----------------------------------------
+
+export interface EmergencyContact {
+  id: string;
+  country_code: string;
+  kind: string;
+  name: string;
+  phone?: string;
+  phone_alt?: string;
+  address?: string;
+  languages_spoken: string[];
+  is_24h: boolean;
+}
+
+// --- Cultural tips (SILK-0157) ---------------------------------------------
+
+export interface CulturalTip {
+  id: string;
+  country_code: string;
+  context: string;
+  kind: string;
+  severity: 'info' | 'warning' | 'critical';
+  title: string;
+  body_md: string;
+}
+
+// --- Trip planning (SILK-0157) ---------------------------------------------
+
+export interface Trip {
+  id: string;
+  title?: string;
+  status: string;
+  cities: string[];
+  start_date?: string;
+  end_date?: string;
+  budget_usd?: number;
+  created_at: string;
+  ai_plan?: Record<string, unknown>;
+}
+
+// --- Tickets (SILK-0157) ---------------------------------------------------
+
+export interface TicketType {
+  id: string;
+  heritage_pub_id: string;
+  name: string;
+  kind: string;
+  price_usd: number;
+  valid_days: number;
+}
+
+export interface Ticket {
+  id: string;
+  status: 'valid' | 'used' | 'expired' | 'cancelled';
+  ticket_type_id: string;
+  visit_date?: string;
+  qr_payload?: string;
+  created_at: string;
+}
+
+// --- Weather guide (SILK-0157) ---------------------------------------------
+
+export interface WeatherGuideResponse {
+  language: string;
+  weather: {
+    city: string;
+    temperature_c: number;
+    condition: string;
+    description: string;
+    humidity_pct: number;
+    icon_code: string;
+  };
+  recommendations: {
+    activity_tip: string;
+    recommended_venue_kinds: string[];
+    health_tips: string[];
+  };
+}
+
+// --- Government information (SILK-0160) ------------------------------------
+
+export interface GovernmentInfo {
+  id: string;
+  country_code: string;
+  kind: string;
+  title: string;
+  body_md: string;
+  effective_date?: string;
+  source_url?: string;
+}
+
+// --- Coupons (SILK-0161) ---------------------------------------------------
+
+export interface CouponOut {
+  id: string;
+  code: string;
+  discount_type: 'pct' | 'flat';
+  discount_value: number;
+  max_redemptions?: number;
+  redemption_count?: number;
+  expires_at?: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+// --- Languages (SILK-0166) -------------------------------------------------
+
+export interface LanguageOut {
+  bcp47_tag: string;
+  endonym: string;
+  exonym_en: string;
+  is_rtl: boolean;
+  is_active: boolean;
 }
 
 // --- Generic ---------------------------------------------------------------

@@ -1,91 +1,104 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/core/l10n/app_strings.dart';
+import 'package:silklens/core/l10n/locale_service.dart';
+import 'package:silklens/presentation/providers/social_provider.dart';
 
-class NotificationsPage extends StatefulWidget {
+class NotificationsPage extends ConsumerStatefulWidget {
   const NotificationsPage({super.key});
 
   @override
-  State<NotificationsPage> createState() => _NotificationsPageState();
+  ConsumerState<NotificationsPage> createState() => _NotificationsPageState();
 }
 
-class _NotificationsPageState extends State<NotificationsPage> {
+class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   static const _gold = Color(0xFFB78628);
   static const _bg = Color(0xFF0D2337);
 
   int _activeFilter = 0;
-  static const _filters = ['Barchasi', "O'qilmagan", 'Ijtimoiy', 'Daraja'];
 
-  final _notifications = [
-    _NotifData(
-      icon: Icons.favorite_rounded,
-      iconColor: Colors.redAccent,
-      title: 'Aziz Karimov sizning postingizga like bosdi',
-      time: '5 daqiqa oldin',
-      isRead: false,
-      category: 'Ijtimoiy',
-    ),
-    _NotifData(
-      icon: Icons.workspace_premium_rounded,
-      iconColor: const Color(0xFFB78628),
-      title: "Yangi nishon qo'lga kiritildi: Sayyoh I",
-      time: '1 soat oldin',
-      isRead: false,
-      category: 'Daraja',
-    ),
-    _NotifData(
-      icon: Icons.person_add_rounded,
-      iconColor: const Color(0xFF1F3A93),
-      title: 'Dilnoza Yusupova sizni kuzata boshladi',
-      time: '3 soat oldin',
-      isRead: false,
-      category: 'Ijtimoiy',
-    ),
-    _NotifData(
-      icon: Icons.trending_up_rounded,
-      iconColor: Colors.greenAccent,
-      title: "Tabriklaymiz! Daraja 12 ga ko'tarildingiz",
-      time: 'Kecha',
-      isRead: true,
-      category: 'Daraja',
-    ),
-    _NotifData(
-      icon: Icons.chat_bubble_rounded,
-      iconColor: const Color(0xFF7B68EE),
-      title: 'Jasur Rahimov sharhingizga javob berdi',
-      time: 'Kecha',
-      isRead: true,
-      category: 'Ijtimoiy',
-    ),
-    _NotifData(
-      icon: Icons.local_fire_department_rounded,
-      iconColor: Colors.orange,
-      title: '12 kunlik streak — davom eting!',
-      time: '2 kun oldin',
-      isRead: true,
-      category: 'Daraja',
-    ),
-  ];
+  String _s(String key) =>
+      AppStrings.get(LocaleService.instance.locale, key);
 
-  List<_NotifData> get _filtered {
-    if (_activeFilter == 0) return _notifications;
-    if (_activeFilter == 1) {
-      return _notifications.where((n) => !n.isRead).toList();
-    }
-    final cat = _filters[_activeFilter];
-    return _notifications.where((n) => n.category == cat).toList();
+  List<String> get _filters => [
+        _s('notif_filter_all'),
+        _s('notif_filter_unread'),
+        _s('notif_filter_social'),
+        _s('notif_filter_level'),
+      ];
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+      ref.read(notificationsProvider.notifier).refresh,
+    );
   }
 
-  void _markAllRead() {
-    setState(() {
-      for (final n in _notifications) {
-        n.isRead = true;
-      }
-    });
+  List<Map<String, dynamic>> _filtered(
+    List<Map<String, dynamic>> notifications,
+  ) {
+    if (_activeFilter == 0) return notifications;
+    if (_activeFilter == 1) {
+      return notifications.where((n) => n['is_read'] != true).toList();
+    }
+    final typeMap = {
+      2: ['follow', 'like', 'comment'],
+      3: ['badge', 'level', 'streak', 'leaderboard', 'mission'],
+    };
+    final types = typeMap[_activeFilter] ?? [];
+    return notifications.where((n) {
+      final kind = (n['kind'] as String? ?? '').toLowerCase();
+      return types.any((t) => kind.contains(t));
+    }).toList();
+  }
+
+  IconData _iconForKind(String kind) {
+    return switch (kind.toLowerCase()) {
+      'like' => Icons.favorite_rounded,
+      'follow' => Icons.person_add_rounded,
+      'badge' || 'badge_unlock' => Icons.workspace_premium_rounded,
+      'comment' => Icons.chat_bubble_rounded,
+      'streak' => Icons.local_fire_department_rounded,
+      'leaderboard' || 'level' || 'level_up' => Icons.trending_up_rounded,
+      'mission' => Icons.flag_rounded,
+      _ => Icons.notifications_rounded,
+    };
+  }
+
+  Color _colorForKind(String kind) {
+    return switch (kind.toLowerCase()) {
+      'like' => Colors.redAccent,
+      'follow' => const Color(0xFF1F3A93),
+      'badge' || 'badge_unlock' => _gold,
+      'comment' => const Color(0xFF7B68EE),
+      'streak' => Colors.orange,
+      'leaderboard' || 'level' || 'level_up' => Colors.greenAccent,
+      'mission' => const Color(0xFF00BCD4),
+      _ => Colors.white60,
+    };
+  }
+
+  String _relativeTime(String? isoString) {
+    if (isoString == null) return '';
+    try {
+      final dt = DateTime.parse(isoString).toLocal();
+      final diff = DateTime.now().difference(dt);
+      if (diff.inMinutes < 60) return '${diff.inMinutes} min';
+      if (diff.inHours < 24) return '${diff.inHours}h';
+      if (diff.inDays == 1) return '1d';
+      return '${diff.inDays}d';
+    } catch (_) {
+      return isoString;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filtered;
-    final unreadCount = _notifications.where((n) => !n.isRead).length;
+    final notifications = ref.watch(notificationsProvider);
+    final filtered = _filtered(notifications);
+    final unreadCount =
+        notifications.where((n) => n['is_read'] != true).length;
 
     return Scaffold(
       backgroundColor: _bg,
@@ -99,41 +112,47 @@ class _NotificationsPageState extends State<NotificationsPage> {
             size: 20,
           ),
         ),
-        title: Row(children: [
-          const Text(
-            'Bildirishnomalar',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          if (unreadCount > 0) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: _gold,
-                borderRadius: BorderRadius.circular(10),
+        title: Row(
+          children: [
+            Text(
+              _s('notif_title'),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
               ),
-              child: Text(
-                '$unreadCount',
-                style: const TextStyle(
-                  color: Color(0xFF1A1200),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
+            ),
+            if (unreadCount > 0) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 7,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: _gold,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$unreadCount',
+                  style: const TextStyle(
+                    color: Color(0xFF1A1200),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
-        ],),
+        ),
         actions: [
           if (unreadCount > 0)
             TextButton(
-              onPressed: _markAllRead,
-              child: const Text(
-                "Hammasi o'qildi",
-                style: TextStyle(color: _gold, fontSize: 12),
+              onPressed: () =>
+                  ref.read(notificationsProvider.notifier).markAllRead(),
+              child: Text(
+                _s('notif_mark_all_read'),
+                style: const TextStyle(color: _gold, fontSize: 12),
               ),
             ),
         ],
@@ -187,7 +206,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
             child: filtered.isEmpty
                 ? Center(
                     child: Text(
-                      "Bildirishnoma yo'q",
+                      _s('notif_empty'),
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.4),
                         fontSize: 15,
@@ -201,10 +220,31 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     ),
                     itemCount: filtered.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (_, i) => _NotifCard(
-                      data: filtered[i],
-                      onTap: () => setState(() => filtered[i].isRead = true),
-                    ),
+                    itemBuilder: (_, i) {
+                      final n = filtered[i];
+                      final id = n['id'] as String? ?? '';
+                      final kind = n['kind'] as String? ?? 'system';
+                      final isRead = n['is_read'] as bool? ?? false;
+                      final title = n['text'] as String? ??
+                          n['title'] as String? ??
+                          n['body'] as String? ??
+                          kind;
+                      final createdAt = n['created_at'] as String? ??
+                          n['timestamp'] as String?;
+
+                      return _NotifCard(
+                        icon: _iconForKind(kind),
+                        iconColor: _colorForKind(kind),
+                        title: title,
+                        time: _relativeTime(createdAt),
+                        isRead: isRead,
+                        onTap: isRead
+                            ? null
+                            : () => ref
+                                .read(notificationsProvider.notifier)
+                                .markRead(id),
+                      );
+                    },
                   ),
           ),
         ],
@@ -213,29 +253,26 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 }
 
-class _NotifData {
-  _NotifData({
+// ---------------------------------------------------------------------------
+// Notification card — mirrors original visual design
+// ---------------------------------------------------------------------------
+
+class _NotifCard extends StatelessWidget {
+  const _NotifCard({
     required this.icon,
     required this.iconColor,
     required this.title,
     required this.time,
     required this.isRead,
-    required this.category,
+    this.onTap,
   });
 
   final IconData icon;
   final Color iconColor;
   final String title;
   final String time;
-  bool isRead;
-  final String category;
-}
-
-class _NotifCard extends StatelessWidget {
-  const _NotifCard({required this.data, required this.onTap});
-
-  final _NotifData data;
-  final VoidCallback onTap;
+  final bool isRead;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -243,72 +280,72 @@ class _NotifCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: data.isRead ? 0.04 : 0.08),
+          color: Colors.white.withValues(alpha: isRead ? 0.04 : 0.08),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Colors.white.withValues(alpha: data.isRead ? 0.08 : 0.14),
+            color: Colors.white.withValues(alpha: isRead ? 0.08 : 0.14),
           ),
         ),
-        child: Row(children: [
-          // Left gold bar for unread
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            width: 4,
-            height: 64,
-            decoration: BoxDecoration(
-              color: data.isRead
-                  ? Colors.transparent
-                  : const Color(0xFFB78628),
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(16),
+        child: Row(
+          children: [
+            // Left gold bar for unread
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              width: 4,
+              height: 64,
+              decoration: BoxDecoration(
+                color:
+                    isRead ? Colors.transparent : const Color(0xFFB78628),
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(16),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          // Icon circle
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: data.iconColor.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
+            const SizedBox(width: 12),
+            // Icon circle
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
-            child: Icon(data.icon, color: data.iconColor, size: 20),
-          ),
-          const SizedBox(width: 12),
-          // Text
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    data.title,
-                    style: TextStyle(
-                      color: Colors.white.withValues(
-                        alpha: data.isRead ? 0.65 : 1.0,
+            const SizedBox(width: 12),
+            // Text
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: Colors.white.withValues(
+                          alpha: isRead ? 0.65 : 1.0,
+                        ),
+                        fontSize: 13,
+                        fontWeight:
+                            isRead ? FontWeight.w400 : FontWeight.w600,
                       ),
-                      fontSize: 13,
-                      fontWeight: data.isRead
-                          ? FontWeight.w400
-                          : FontWeight.w600,
                     ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    data.time,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
-                      fontSize: 11,
+                    const SizedBox(height: 3),
+                    Text(
+                      time,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        fontSize: 11,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-        ],),
+            const SizedBox(width: 12),
+          ],
+        ),
       ),
     );
   }

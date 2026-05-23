@@ -29,7 +29,12 @@
     "branding": "Branding",
     "featureFlags": "Feature flags",
     "analytics": "Analytics",
-    "settings": "Settings"
+    "emergency": "Emergency",
+    "culturalTips": "Cultural tips",
+    "government": "Government",
+    "coupons": "Coupons",
+    "settings": "Settings",
+    "languages": "Languages"
   },
   "auth": {
     "loginTitle": "Sign in",
@@ -108,5 +113,10 @@
   "rbac": {
     "denied": "You don't have permission to view this section.",
     "deniedSubtitle": "Ask a workspace admin to grant the right scope."
+  },
+  "dataTable": {
+    "noResults": "No results.",
+    "columns": "Columns",
+    "searchPlaceholder": "Search…"
   }
 }

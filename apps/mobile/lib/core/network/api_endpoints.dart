@@ -31,4 +31,19 @@ abstract final class ApiEndpoints {
   static String vocab(String slug) => '/v1/vocab/$slug';
 
   static const String featureFlags = '/v1/feature-flags';
+
+  // Notifications
+  static const String notificationPreferences = '/v1/notifications/preferences';
+  static const String quietHours = '/v1/notifications/quiet-hours';
+
+  // GDPR / account
+  static const String consents = '/v1/me/consents';
+  static const String dataExport = '/v1/me/data-export';
+  static const String deleteAccount = '/v1/me/account/delete';
+
+  // Search (SILK-0095)
+  static const String search = '/v1/search';
+
+  // AI — Text-to-Speech (SILK-0096)
+  static const String aiTts = '/v1/ai/tts';
 }

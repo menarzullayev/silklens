@@ -92,3 +92,4 @@ android/local.properties
 # --- Design scratch (AI prompts, zip exports, working analyses) ---
 design/
 finalDesign/
+.claude/worktrees/

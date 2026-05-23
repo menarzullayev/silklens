@@ -104,6 +104,25 @@ class SettingsHomePage extends StatelessWidget {
               label: "To'lov tarixi",
               onTap: () => context.go('/billing/invoices'),
             ),
+            _SettingsRow(
+              icon: Icons.confirmation_number_outlined,
+              label: 'Mening chiptalarim',
+              onTap: () => context.go('/billing/tickets'),
+            ),
+            const SizedBox(height: 16),
+
+            const _SectionHeader('SAYOHAT'),
+            _SettingsRow(
+              icon: Icons.wb_sunny_outlined,
+              label: 'Ob-havo Gidi',
+              onTap: () => context.go('/weather'),
+            ),
+            _SettingsRow(
+              icon: Icons.emergency_outlined,
+              label: 'Favqulodda yordam',
+              iconColor: const Color(0xFFE53935),
+              onTap: () => context.go('/emergency'),
+            ),
             const SizedBox(height: 16),
 
             const _SectionHeader('YORDAM'),

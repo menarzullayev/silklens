@@ -29,7 +29,12 @@
     "branding": "品牌",
     "featureFlags": "功能开关",
     "analytics": "分析",
-    "settings": "设置"
+    "emergency": "紧急联系",
+    "culturalTips": "文化提示",
+    "government": "政府信息",
+    "coupons": "优惠券",
+    "settings": "设置",
+    "languages": "语言"
   },
   "auth": {
     "loginTitle": "登录",
@@ -108,5 +113,10 @@
   "rbac": {
     "denied": "您没有查看此区域的权限。",
     "deniedSubtitle": "请管理员授予相应作用域。"
+  },
+  "dataTable": {
+    "noResults": "无结果。",
+    "columns": "列",
+    "searchPlaceholder": "搜索…"
   }
 }

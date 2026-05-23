@@ -87,6 +87,10 @@ function pickName(name: Record<string, string>): string {
   return name.en ?? name.uz ?? name.ru ?? Object.values(name)[0] ?? '—';
 }
 
+// TODO SILK-0169: Migrate to shared DataTable component when types align.
+// Current table uses custom columns to handle multilingual jsonb fields,
+// server-side pagination, and cross-field filter routing — these features
+// are not yet available in the generic DataTable component.
 export function HeritageTable({
   page,
   limit,

@@ -114,7 +114,8 @@ export function LoginForm({ nextPath, error, labels }: LoginFormProps): JSX.Elem
       <div className="space-y-2">
         <form
           action={async () => {
-            await signInWithProviderAction('google', nextPath);
+            const result = await signInWithProviderAction('google', nextPath);
+            if (result && !result.ok && result.message) toast.error(result.message);
           }}
         >
           <Button type="submit" variant="outline" className="w-full" disabled={pending}>
@@ -123,7 +124,8 @@ export function LoginForm({ nextPath, error, labels }: LoginFormProps): JSX.Elem
         </form>
         <form
           action={async () => {
-            await signInWithProviderAction('apple', nextPath);
+            const result = await signInWithProviderAction('apple', nextPath);
+            if (result && !result.ok && result.message) toast.error(result.message);
           }}
         >
           <Button type="submit" variant="outline" className="w-full" disabled={pending}>
@@ -132,7 +134,8 @@ export function LoginForm({ nextPath, error, labels }: LoginFormProps): JSX.Elem
         </form>
         <form
           action={async () => {
-            await signInWithProviderAction('telegram', nextPath);
+            const result = await signInWithProviderAction('telegram', nextPath);
+            if (result && !result.ok && result.message) toast.error(result.message);
           }}
         >
           <Button type="submit" variant="outline" className="w-full" disabled={pending}>

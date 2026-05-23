@@ -29,7 +29,12 @@
     "branding": "Брендинг",
     "featureFlags": "Feature flags",
     "analytics": "Аналитика",
-    "settings": "Настройки"
+    "emergency": "Экстренная связь",
+    "culturalTips": "Культурные советы",
+    "government": "Государство",
+    "coupons": "Купоны",
+    "settings": "Настройки",
+    "languages": "Языки"
   },
   "auth": {
     "loginTitle": "Войти",
@@ -108,5 +113,10 @@
   "rbac": {
     "denied": "Недостаточно прав для просмотра.",
     "deniedSubtitle": "Попросите администратора назначить нужную роль."
+  },
+  "dataTable": {
+    "noResults": "Нет результатов.",
+    "columns": "Столбцы",
+    "searchPlaceholder": "Поиск…"
   }
 }

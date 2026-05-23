@@ -1,7 +1,9 @@
 import NextAuth, { type DefaultSession } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
+import Google from 'next-auth/providers/google';
 import { z } from 'zod';
 
+import { permissionsForTrustTier } from '@/lib/rbac/permissions';
 import type { LoginResponse, MeResponse } from '@/types/api';
 
 /**
@@ -50,6 +52,8 @@ declare module 'next-auth' {
       id: string;
       pubId: string;
       tenantId: string;
+      /** Tenant slug (e.g. "silklens") — used for branding and tenant-scoped API calls. */
+      tenantSlug: string;
       residencyRegion: string;
       trustTier: string;
       preferredLocale: string;
@@ -60,6 +64,8 @@ declare module 'next-auth' {
   interface User {
     pubId?: string;
     tenantId?: string;
+    /** Tenant slug resolved from /v1/admin/tenants or env NEXT_PUBLIC_DEFAULT_TENANT_SLUG. */
+    tenantSlug?: string;
     residencyRegion?: string;
     trustTier?: string;
     preferredLocale?: string;
@@ -76,6 +82,8 @@ declare module 'next-auth/jwt' {
     accessTokenExpiresAt?: number;
     pubId?: string;
     tenantId?: string;
+    /** Tenant slug — persisted in JWT so every server render can use it without a DB round-trip. */
+    tenantSlug?: string;
     residencyRegion?: string;
     trustTier?: string;
     preferredLocale?: string;
@@ -90,48 +98,8 @@ function resolveApiBase(): string {
   return process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL;
 }
 
-/**
- * Fetch the user's permission set. The backend doesn't currently expose a
- * dedicated endpoint, so we mirror the permissions we know are seeded for
- * the trust-tier the JWT was issued for. This list is kept in sync with
- * `permissions.slug` rows seeded by migration 0006.
- *
- * TODO(identity): expose `GET /v1/auth/me/permissions` and read it here.
- */
-function permissionsForTrustTier(tier: string): readonly string[] {
-  if (tier === 'super_admin' || tier === 'system_actor' || tier === 'staff') {
-    return [
-      'heritage:read',
-      'heritage:create',
-      'heritage:update',
-      'heritage:delete',
-      'heritage:moderate',
-      'heritage:write',
-      'users:read',
-      'users:write',
-      'users:ban',
-      'moderation:read',
-      'moderation:act',
-      'ai-models:read',
-      'ai-models:write',
-      'ai:configure',
-      'monetization:read',
-      'monetization:write',
-      'tenants:manage',
-      'tenant:read',
-      'tenant:create',
-      'tenant:branding',
-      'branding:manage',
-      'analytics:read',
-      'settings:manage',
-      'system:settings',
-      'system:feature_flags',
-    ];
-  }
-  // Authenticated non-staff: read-only catalog access. Adjust as new tiers
-  // are introduced.
-  return ['heritage:read', 'analytics:read'];
-}
+// SILK-0156: permissionsForTrustTier is now the canonical export from
+// src/lib/rbac/permissions.ts — imported above and used in jwt callback.
 
 async function callLogin(
   email: string,
@@ -217,12 +185,18 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           // /me confirms the token works and refreshes the user shape.
           const me = await callMe(login.tokens.access_token);
           const user = me?.user ?? login.user;
+          // SILK-0168: tenantSlug is not yet returned by /me.
+          // Fall back to NEXT_PUBLIC_DEFAULT_TENANT_SLUG so branding calls
+          // use the correct tenant without a separate tenant API round-trip.
+          const tenantSlug =
+            process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG ?? 'silklens';
           return {
             id: user.id,
             name: parsed.data.email,
             email: parsed.data.email,
             pubId: user.pub_id,
             tenantId: user.tenant_id,
+            tenantSlug,
             residencyRegion: user.residency_region,
             trustTier: user.trust_tier,
             preferredLocale: user.preferred_locale,
@@ -242,20 +216,90 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         }
       },
     }),
+    // SILK-0155: Google OAuth — only registered when both env vars are present.
+    // Callback URI to add in Google Cloud Console:
+    //   http://localhost:3001/api/auth/callback/google  (dev)
+    //   https://<prod-domain>/api/auth/callback/google  (prod)
+    ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
+      ? [
+          Google({
+            clientId: process.env.AUTH_GOOGLE_ID,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET,
+          }),
+        ]
+      : []),
   ],
   callbacks: {
-    async jwt({ token, user, trigger }) {
-      // Initial sign-in.
-      if (user) {
+    // SILK-0155: Exchange Google access_token for SilkLens JWT via the backend.
+    // For Credentials the signIn callback is not invoked; authorize() handles it.
+    async signIn({ account }) {
+      if (account?.provider === 'google') {
+        if (!account.access_token) return false;
+        try {
+          const base = resolveApiBase().replace(/\/+$/, '');
+          const response = await fetch(`${base}/v1/auth/google`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({ access_token: account.access_token }),
+            cache: 'no-store',
+          });
+          if (!response.ok) return false;
+          const data = (await response.json()) as LoginResponse;
+          // Stash SilkLens tokens on the account object so the jwt callback
+          // can pick them up via the `account` parameter on initial sign-in.
+          (account as Record<string, unknown>).silklensAccessToken =
+            data.tokens.access_token;
+          (account as Record<string, unknown>).silklensRefreshToken =
+            data.tokens.refresh_token;
+          (account as Record<string, unknown>).silklensExpiresIn =
+            data.tokens.expires_in;
+          (account as Record<string, unknown>).silklensUser = data.user;
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      // All other providers (Credentials authorize() already returned the user).
+      return true;
+    },
+
+    async jwt({ token, user, account, trigger }) {
+      // Initial sign-in — Credentials provider populates `user` with tokens.
+      if (user && account?.provider === 'credentials') {
         token.accessToken = user.accessToken;
         token.refreshToken = user.refreshToken;
         token.accessTokenExpiresAt = user.accessTokenExpiresAt;
         token.pubId = user.pubId;
         token.tenantId = user.tenantId;
+        token.tenantSlug = user.tenantSlug ?? process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG ?? 'silklens';
         token.residencyRegion = user.residencyRegion;
         token.trustTier = user.trustTier ?? 'authenticated';
         token.preferredLocale = user.preferredLocale;
         token.permissions = permissionsForTrustTier(user.trustTier ?? 'authenticated');
+        token.error = undefined;
+        return token;
+      }
+
+      // SILK-0155: Google OAuth — tokens were stashed on account in signIn().
+      if (account?.provider === 'google') {
+        const acc = account as Record<string, unknown>;
+        const silklensUser = acc.silklensUser as
+          | { pub_id: string; tenant_id: string; residency_region: string; trust_tier: string; preferred_locale: string }
+          | undefined;
+        token.accessToken = acc.silklensAccessToken as string | undefined;
+        token.refreshToken = acc.silklensRefreshToken as string | undefined;
+        token.accessTokenExpiresAt =
+          typeof acc.silklensExpiresIn === 'number'
+            ? Date.now() + acc.silklensExpiresIn * 1000
+            : undefined;
+        token.pubId = silklensUser?.pub_id;
+        token.tenantId = silklensUser?.tenant_id;
+        token.tenantSlug = process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG ?? 'silklens';
+        token.residencyRegion = silklensUser?.residency_region;
+        const tier = silklensUser?.trust_tier ?? 'authenticated';
+        token.trustTier = tier;
+        token.preferredLocale = silklensUser?.preferred_locale;
+        token.permissions = permissionsForTrustTier(tier);
         token.error = undefined;
         return token;
       }
@@ -305,6 +349,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       session.user.pubId = token.pubId ?? '';
       session.user.tenantId =
         token.tenantId ?? process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID;
+      session.user.tenantSlug =
+        token.tenantSlug ?? process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG ?? 'silklens';
       session.user.residencyRegion = token.residencyRegion ?? 'global';
       session.user.trustTier = token.trustTier ?? 'authenticated';
       session.user.preferredLocale = token.preferredLocale ?? 'uz';

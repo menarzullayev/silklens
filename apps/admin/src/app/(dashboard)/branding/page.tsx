@@ -4,22 +4,27 @@ import { PageHeader } from '@/components/layout/page-header';
 import { PermissionGuard } from '@/components/rbac/permission-guard';
 import { AccessDenied } from '@/components/rbac/access-denied';
 import { PERMISSIONS } from '@/lib/rbac/permissions';
+import { auth } from '@/lib/auth/auth';
 import { tenantsApi } from '@/lib/api';
 import { ApiError } from '@/lib/api/errors';
 import { ErrorState } from '@/components/ui/empty-state';
 import { BrandingForm } from './branding-form';
 import type { BrandingOut } from '@/types/api';
 
-const DEFAULT_SLUG = 'silklens';
+// SILK-0168: slug is now resolved from the session JWT (tenantSlug field).
+// Falls back to NEXT_PUBLIC_DEFAULT_TENANT_SLUG → 'silklens' when no session
+// is available (e.g. pre-render without auth context in tests).
 
 export default async function BrandingPage(): Promise<JSX.Element> {
   const t = await getTranslations('branding');
+  const session = await auth();
+  const slug: string =
+    session?.user?.tenantSlug ??
+    process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG ??
+    'silklens';
 
-  // The branding endpoint is per-tenant slug; for now we work against the
-  // root tenant. A future iteration will read `silklens.tenant` cookie →
-  // resolve slug via `GET /v1/admin/tenants`.
   const branding: BrandingOut | ApiError | Error = await tenantsApi
-    .getBranding(DEFAULT_SLUG)
+    .getBranding(slug)
     .catch((cause: unknown) => (cause instanceof Error ? cause : new Error(String(cause))));
 
   return (
@@ -32,7 +37,7 @@ export default async function BrandingPage(): Promise<JSX.Element> {
         <ErrorState title={t('errorTitle')} message={branding.message} />
       ) : (
         <BrandingForm
-          slug={DEFAULT_SLUG}
+          slug={slug}
           initial={branding}
           labels={{
             appName: t('appName'),
