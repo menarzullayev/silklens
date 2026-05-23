@@ -34,7 +34,12 @@
     "government": "Hukumat",
     "coupons": "Kuponlar",
     "settings": "Sozlamalar",
-    "languages": "Tillar"
+    "languages": "Tillar",
+    "tripsAnalytics": "Sayohat tahlili",
+    "crowdAnalytics": "Tashrif zichligi",
+    "storyteller": "Hikoyachi",
+    "heritagePeople": "Shaxslar va materiallar",
+    "ticketTypes": "Chipta turlari"
   },
   "auth": {
     "loginTitle": "Kirish",

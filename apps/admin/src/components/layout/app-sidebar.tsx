@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   BarChart3,
+  BookOpen,
   Box,
   Building2,
   Cog,
@@ -14,12 +15,16 @@ import {
   Image as ImageIcon,
   Languages,
   LayoutDashboard,
+  Map as MapIcon,
   Phone,
   ScanFace,
   ShieldCheck,
   Sparkles,
   Tag,
+  Ticket as TicketIcon,
   Users,
+  UsersRound,
+  Waves,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -35,6 +40,12 @@ interface NavLink {
 const NAV_LINKS: readonly NavLink[] = [
   { href: '/dashboard', labelKey: 'overview', icon: LayoutDashboard, permission: PERMISSIONS.ANALYTICS_READ },
   { href: '/heritage', labelKey: 'heritage', icon: Box, permission: PERMISSIONS.HERITAGE_READ },
+  // SILK-0150: People + materials taxonomy
+  { href: '/heritage/people', labelKey: 'heritagePeople', icon: UsersRound, permission: PERMISSIONS.HERITAGE_READ },
+  // SILK-0163: Ticket types (per-site management)
+  { href: '/heritage/tickets', labelKey: 'ticketTypes', icon: TicketIcon, permission: PERMISSIONS.HERITAGE_READ },
+  // SILK-0165: Heritage storyteller scripts
+  { href: '/heritage/storyteller', labelKey: 'storyteller', icon: BookOpen, permission: PERMISSIONS.HERITAGE_READ },
   { href: '/users', labelKey: 'users', icon: Users, permission: PERMISSIONS.USERS_READ },
   { href: '/moderation', labelKey: 'moderation', icon: ShieldCheck, permission: PERMISSIONS.MODERATION_READ },
   { href: '/ai-models', labelKey: 'aiModels', icon: Sparkles, permission: PERMISSIONS.AI_MODELS_READ },
@@ -43,6 +54,10 @@ const NAV_LINKS: readonly NavLink[] = [
   { href: '/branding', labelKey: 'branding', icon: ImageIcon, permission: PERMISSIONS.BRANDING_MANAGE },
   { href: '/feature-flags', labelKey: 'featureFlags', icon: Flag, permission: PERMISSIONS.SETTINGS_MANAGE },
   { href: '/analytics', labelKey: 'analytics', icon: BarChart3, permission: PERMISSIONS.ANALYTICS_READ },
+  // SILK-0162: Trip planner analytics
+  { href: '/analytics/trips', labelKey: 'tripsAnalytics', icon: MapIcon, permission: PERMISSIONS.ANALYTICS_READ },
+  // SILK-0164: Crowd density signals
+  { href: '/analytics/crowd', labelKey: 'crowdAnalytics', icon: Waves, permission: PERMISSIONS.ANALYTICS_READ },
   // SILK-0158: Emergency contacts directory
   { href: '/emergency', labelKey: 'emergency', icon: Phone, permission: PERMISSIONS.SETTINGS_MANAGE },
   // SILK-0159: Cultural tips for travellers
@@ -78,7 +93,12 @@ interface IntlMessages {
     | 'culturalTips'
     | 'government'
     | 'coupons'
-    | 'languages',
+    | 'languages'
+    | 'tripsAnalytics'
+    | 'crowdAnalytics'
+    | 'storyteller'
+    | 'heritagePeople'
+    | 'ticketTypes',
     string
   >;
 }

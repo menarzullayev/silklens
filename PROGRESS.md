@@ -444,6 +444,11 @@ git push --no-verify  # emergency bypass
 - [✅] **SILK-0132** `MemoryBookPage` — new page at `lib/presentation/pages/profile/memory_book_page.dart`; `getMemoryBookPreview()` + `generateMemoryBook()` added to `SilkLensApiClient`; route `/memory-book` registered; 13 locale keys (membook_*) across all 4 locales; settings navigation entry added
 - [✅] **SILK-0135** `GovernmentPage` — new page at `lib/presentation/pages/settings/government_page.dart`; `getGovernmentInfo()` already in `SilkLensApiClient`; route `/government` registered; 8 locale keys (gov_*) across all 4 locales; settings navigation entry added
 - [✅] **SILK-0137** `AIUtilitiesPage` — new page at `lib/presentation/pages/settings/ai_utilities_page.dart`; tabs: Price Check / Scam Alert / Lost & Found; reuses `checkFairPrice()`, `checkScam()`, `getLostFoundHelp()` from `SilkLensApiClient`; route `/ai-utilities` registered; 21 locale keys (aiutil_*) across all 4 locales; settings navigation entry added; 0 analyzer errors
+- [✅] **SILK-0130** `ExpenseTrackerPage` (`lib/presentation/pages/settings/expense_tracker_page.dart`) confirmed wired; `listBudgets()` added to `SilkLensApiClient`; route `/expenses` registered
+- [✅] **SILK-0131** `MoodTravelPage` (`lib/presentation/pages/home/mood_travel_page.dart`) confirmed wired; route `/mood` registered; 5 mood cards call `getMoodRecommendations()`
+- [✅] **SILK-0133** `FoodGuidePage` (`lib/presentation/pages/map/food_guide_page.dart`) confirmed wired; `searchListings()` added to `SilkLensApiClient`; route `/food-guide` registered
+- [✅] **SILK-0134** `CarbonPage` (`lib/presentation/pages/settings/carbon_page.dart`) confirmed wired; route `/carbon` registered; journey legs + CO₂ grade display
+- [✅] **SILK-0138** `ReviewAnalysisWidget` (`lib/presentation/widgets/review_analysis_widget.dart`) created; `reviewAnalysisProvider` (`lib/presentation/providers/review_analysis_provider.dart`) created; `getReviewAnalysis()`, `getCrowdForecast()`, `checkIn()`, `getTicketQr()`, `getNearestEmergency()`, `getHealthTips()`, `listBudgets()`, `searchListings()` added to `SilkLensApiClient`; 10 locale keys (review_analysis_*) × 4 locales; widget embeddable in HeritageDetailPage
 
 ### Technical Debt
 
