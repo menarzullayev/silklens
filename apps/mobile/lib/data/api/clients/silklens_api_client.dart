@@ -792,3 +792,22 @@ class SilkLensApiClient {
     return r.data!;
   }
 }
+
+  // --- Food Guide ---
+
+  Future<Map<String, dynamic>> getFoodRecommendations({
+    required String message,
+    String language = 'en',
+    List<String>? dietaryPreferences,
+  }) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '/v1/ai/food-assistant',
+      data: {
+        'message': message,
+        'language': language,
+        if (dietaryPreferences != null && dietaryPreferences.isNotEmpty)
+          'dietary_preferences': dietaryPreferences,
+      },
+    );
+    return r.data!;
+  }

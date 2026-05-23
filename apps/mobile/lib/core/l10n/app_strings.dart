@@ -239,7 +239,7 @@ class AppStrings {
       'audio_guide_error': 'Could not load audio',
       'audio_guide_retry': 'Retry',
       // Offline Mode (SILK-0097)
-      'offline_banner_text': "Offline mode — cached data",
+      'offline_banner_text': 'Offline mode — cached data',
       'offline_refresh_btn': 'Refresh',
       'offline_status_available': 'Available offline',
       'offline_status_needs_internet': 'Internet required',
@@ -685,6 +685,25 @@ class AppStrings {
       'audio_guide_loading': 'Audio yaratilmoqda...',
       'audio_guide_error': 'Audio yuklanmadi',
       'audio_guide_retry': 'Qayta urinish',
+      // Offline Mode (SILK-0097)
+      'offline_banner_text': "Offline rejim — kesh ma'lumotlar",
+      'offline_refresh_btn': 'Yangilash',
+      'offline_status_available': 'Offlayn mavjud',
+      'offline_status_needs_internet': 'Internet kerak',
+      'offline_download_btn': 'Yuklab olish',
+      'offline_downloading': 'Yuklanmoqda...',
+      'offline_download_error': "Yuklab bo'lmadi. Qayta urinib ko'ring.",
+      'offline_empty': 'Offlayn paketlar mavjud emas.',
+      // Heritage Detail — Kids & Culture tabs (SILK-0098)
+      'heritage_tab_kids': 'Bolalar',
+      'heritage_tab_culture': 'Madaniyat',
+      'heritage_kids_loading': 'Bolalar hikoyasi yaratilmoqda...',
+      'heritage_kids_empty':
+          "Bu joy uchun bolalar hikoyasi tez orada qo'shiladi.",
+      'heritage_culture_loading': 'Madaniy maslahatlar yuklanmoqda...',
+      'heritage_culture_empty':
+          "Bu joy uchun madaniy maslahatlar tez orada qo'shiladi.",
+      'heritage_culture_severity': 'Darajasi',
       // Bottom nav
       'nav_home': 'Bosh sahifa',
       'nav_map': 'Xarita',
@@ -767,7 +786,7 @@ class AppStrings {
       'emergency_title': 'Favqulodda yordam',
       'emergency_warning':
           "Favqulodda vaziyatda quyidagi raqamlarga qo'ng'iroq qiling",
-      'emergency_empty': "Kontaktlar mavjud emas",
+      'emergency_empty': 'Kontaktlar mavjud emas',
       'emergency_call': "Qo'ng'iroq",
       // Weather Guide (SILK-0129)
       'weather_title': 'Ob-havo Gidi',
@@ -1117,6 +1136,24 @@ class AppStrings {
       'audio_guide_loading': 'Генерация аудио...',
       'audio_guide_error': 'Не удалось загрузить аудио',
       'audio_guide_retry': 'Повторить',
+      // Offline Mode (SILK-0097)
+      'offline_banner_text': 'Автономный режим — кешированные данные',
+      'offline_refresh_btn': 'Обновить',
+      'offline_status_available': 'Доступно офлайн',
+      'offline_status_needs_internet': 'Требуется интернет',
+      'offline_download_btn': 'Скачать',
+      'offline_downloading': 'Загрузка...',
+      'offline_download_error': 'Ошибка загрузки. Попробуйте снова.',
+      'offline_empty': 'Офлайн-пакеты недоступны.',
+      // Heritage Detail — Kids & Culture tabs (SILK-0098)
+      'heritage_tab_kids': 'Детям',
+      'heritage_tab_culture': 'Культура',
+      'heritage_kids_loading': 'Генерация детской истории...',
+      'heritage_kids_empty': 'Детская история для этого места появится скоро.',
+      'heritage_culture_loading': 'Загрузка культурных советов...',
+      'heritage_culture_empty':
+          'Культурные советы для этого места появятся скоро.',
+      'heritage_culture_severity': 'Уровень',
       // Bottom nav
       'nav_home': 'Главная',
       'nav_map': 'Карта',
@@ -1185,7 +1222,8 @@ class AppStrings {
       // Tickets — My Tickets (SILK-0126)
       'tickets_title': 'Мои билеты',
       'tickets_empty_title': 'Билетов пока нет',
-      'tickets_empty_sub': 'Исследуйте объекты наследия и приобретайте входные билеты',
+      'tickets_empty_sub':
+          'Исследуйте объекты наследия и приобретайте входные билеты',
       'tickets_browse_heritage': 'Объекты наследия',
       'tickets_ticket_label': 'Билет',
       'tickets_status_active': 'Активный',
@@ -1196,7 +1234,8 @@ class AppStrings {
       'tickets_retry': 'Повторить',
       // Emergency — Emergency Contacts (SILK-0127)
       'emergency_title': 'Экстренная помощь',
-      'emergency_warning': 'Звоните по этим номерам в случае чрезвычайной ситуации',
+      'emergency_warning':
+          'Звоните по этим номерам в случае чрезвычайной ситуации',
       'emergency_empty': 'Контакты недоступны',
       'emergency_call': 'Звоним',
       // Weather Guide (SILK-0129)
@@ -1536,6 +1575,23 @@ class AppStrings {
       'audio_guide_loading': '正在生成音频...',
       'audio_guide_error': '无法加载音频',
       'audio_guide_retry': '重试',
+      // Offline Mode (SILK-0097)
+      'offline_banner_text': '离线模式 — 缓存数据',
+      'offline_refresh_btn': '刷新',
+      'offline_status_available': '可离线使用',
+      'offline_status_needs_internet': '需要网络',
+      'offline_download_btn': '下载',
+      'offline_downloading': '下载中...',
+      'offline_download_error': '下载失败，请重试。',
+      'offline_empty': '暂无可用离线包。',
+      // Heritage Detail — Kids & Culture tabs (SILK-0098)
+      'heritage_tab_kids': '儿童',
+      'heritage_tab_culture': '文化',
+      'heritage_kids_loading': '正在生成儿童故事...',
+      'heritage_kids_empty': '该地点的儿童故事即将推出。',
+      'heritage_culture_loading': '正在加载文化贴士...',
+      'heritage_culture_empty': '该地点的文化贴士即将推出。',
+      'heritage_culture_severity': '级别',
       // Bottom nav
       'nav_home': '首页',
       'nav_map': '地图',
