@@ -49,8 +49,48 @@ android {
         multiDexEnabled true
     }
 
+    // TODO(SILK-0142): Production Release Signing
+    // Current state: release builds are signed with the debug keystore.
+    // This is intentional for development but MUST be changed before publishing
+    // to the Play Store.
+    //
+    // Steps to configure production signing:
+    // 1. Generate a keystore (keep this file OUTSIDE the repo):
+    //      keytool -genkey -v -keystore silklens.keystore -alias silklens \
+    //              -keyalg RSA -keysize 2048 -validity 10000
+    //
+    // 2. Create android/key.properties (already in .gitignore):
+    //      storePassword=<YOUR_STORE_PASSWORD>
+    //      keyPassword=<YOUR_KEY_PASSWORD>
+    //      keyAlias=silklens
+    //      storeFile=../silklens.keystore
+    //
+    // 3. Load key.properties at the top of this file (before android {} block):
+    //      def keystoreProps = new Properties()
+    //      def keystorePropsFile = rootProject.file('key.properties')
+    //      if (keystorePropsFile.exists()) {
+    //          keystorePropsFile.withReader('UTF-8') { r -> keystoreProps.load(r) }
+    //      }
+    //
+    // 4. Add inside android {} block a signingConfigs.release entry:
+    //      signingConfigs {
+    //          release {
+    //              storeFile     keystoreProps['storeFile']   ? file(keystoreProps['storeFile'])   : null
+    //              storePassword keystoreProps['storePassword']
+    //              keyAlias      keystoreProps['keyAlias']
+    //              keyPassword   keystoreProps['keyPassword']
+    //          }
+    //      }
+    //
+    // 5. Change the release buildType below to:
+    //      signingConfig signingConfigs.release
+    //
+    // 6. Set android:usesCleartextTraffic="false" in AndroidManifest.xml
+    //    once the API is served over HTTPS in production.
+
     buildTypes {
         release {
+            // SILK-0142: Replace with signingConfigs.release before Play Store upload.
             signingConfig signingConfigs.debug
         }
     }

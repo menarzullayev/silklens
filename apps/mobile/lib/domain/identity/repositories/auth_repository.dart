@@ -42,6 +42,14 @@ abstract interface class AuthRepository {
   /// Sign in or register via Google OAuth access token.
   Future<Result<AuthSession>> signInWithGoogle(String accessToken);
 
+  /// Sign in via Facebook access token (requires flutter_facebook_auth —
+  /// returns [AuthFailure] with setup instructions until package is added).
+  Future<Result<AuthSession>> signInWithFacebook(String accessToken);
+
+  /// Sign in via Instagram access token (OAuth 2.0 code exchange —
+  /// returns [AuthFailure] with setup instructions until backend route ships).
+  Future<Result<AuthSession>> signInWithInstagram(String accessToken);
+
   /// Verify the 6-digit OTP sent to [email] after registration.
   Future<Result<bool>> verifyEmail({required String email, required String code});
 

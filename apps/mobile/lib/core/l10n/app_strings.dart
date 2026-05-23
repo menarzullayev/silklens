@@ -27,6 +27,12 @@ class AppStrings {
       'auth_or': 'or',
       'auth_google': 'Continue with Google',
       'auth_google_soon': 'Google OAuth — coming soon!',
+      // Auth — Social OAuth (SILK-0172)
+      'auth_facebook': 'Continue with Facebook',
+      'auth_instagram': 'Continue with Instagram',
+      'auth_facebook_soon':
+          'Facebook login requires flutter_facebook_auth setup.',
+      'auth_instagram_soon': 'Instagram login — coming soon!',
       // Auth — Sign Up
       'auth_signup_title': 'Create Account',
       'auth_signup_sub': 'Join the SilkLens community',
@@ -464,6 +470,12 @@ class AppStrings {
       'auth_or': 'yoki',
       'auth_google': 'Google orqali davom etish',
       'auth_google_soon': 'Google OAuth — tez orada!',
+      // Auth — Social OAuth (SILK-0172)
+      'auth_facebook': 'Facebook orqali davom etish',
+      'auth_instagram': 'Instagram orqali davom etish',
+      'auth_facebook_soon':
+          'Facebook login uchun flutter_facebook_auth sozlanishi kerak.',
+      'auth_instagram_soon': 'Instagram login — tez orada!',
       // Auth — Sign Up
       'auth_signup_title': 'Hisob yaratish',
       'auth_signup_sub': "SilkLens hamjamiyatiga qo'shiling",
@@ -918,6 +930,12 @@ class AppStrings {
       'auth_or': 'или',
       'auth_google': 'Продолжить с Google',
       'auth_google_soon': 'Google OAuth — скоро!',
+      // Auth — Social OAuth (SILK-0172)
+      'auth_facebook': 'Войти через Facebook',
+      'auth_instagram': 'Войти через Instagram',
+      'auth_facebook_soon':
+          'Для Facebook login требуется настройка flutter_facebook_auth.',
+      'auth_instagram_soon': 'Instagram login — скоро!',
       // Auth — Sign Up
       'auth_signup_title': 'Создать аккаунт',
       'auth_signup_sub': 'Присоединяйтесь к сообществу SilkLens',
@@ -1366,6 +1384,11 @@ class AppStrings {
       'auth_or': '或',
       'auth_google': '通过 Google 继续',
       'auth_google_soon': 'Google OAuth — 即将推出！',
+      // Auth — Social OAuth (SILK-0172)
+      'auth_facebook': '通过 Facebook 继续',
+      'auth_instagram': '通过 Instagram 继续',
+      'auth_facebook_soon': 'Facebook 登录需要配置 flutter_facebook_auth。',
+      'auth_instagram_soon': 'Instagram 登录 — 即将推出！',
       // Auth — Sign Up
       'auth_signup_title': '创建账号',
       'auth_signup_sub': '加入 SilkLens 社区',

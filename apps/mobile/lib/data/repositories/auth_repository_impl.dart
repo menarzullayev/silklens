@@ -346,6 +346,68 @@ class AuthRepositoryImpl implements AuthRepository {
       return FailureResult(_mapUnknown(e, st));
     }
   }
+
+  // --- SILK-0172: Facebook OAuth --------------------------------------------
+  // The Flutter side must call FacebookAuth.instance.login() to obtain the
+  // access token before calling this method. Add flutter_facebook_auth to
+  // pubspec.yaml when the app is registered in Meta Developer Console.
+
+  @override
+  Future<Result<AuthSession>> signInWithFacebook(String accessToken) async {
+    try {
+      final resp = await _client.facebookSignIn(accessToken);
+      final user = _userFromDto(resp.user);
+      final session = AuthSession(
+        accessToken: resp.tokens.accessToken,
+        refreshToken: resp.tokens.refreshToken,
+        user: user,
+        expiresIn: resp.tokens.expiresIn,
+        tokenType: resp.tokens.tokenType,
+        expiresAt: DateTime.now().add(Duration(seconds: resp.tokens.expiresIn)),
+      );
+      await _persistSession(
+        accessToken: session.accessToken,
+        refreshToken: session.refreshToken,
+        user: user,
+      );
+      return Success(session);
+    } on DioException catch (e) {
+      return FailureResult(_mapDio(e));
+    } catch (e, st) {
+      return FailureResult(_mapUnknown(e, st));
+    }
+  }
+
+  // --- SILK-0172: Instagram OAuth -------------------------------------------
+  // Instagram Basic Display API requires a registered app and server-side
+  // token exchange. Add the Instagram OAuth redirect URI to the backend
+  // /v1/auth/instagram endpoint before wiring the full UI flow.
+
+  @override
+  Future<Result<AuthSession>> signInWithInstagram(String accessToken) async {
+    try {
+      final resp = await _client.instagramSignIn(accessToken);
+      final user = _userFromDto(resp.user);
+      final session = AuthSession(
+        accessToken: resp.tokens.accessToken,
+        refreshToken: resp.tokens.refreshToken,
+        user: user,
+        expiresIn: resp.tokens.expiresIn,
+        tokenType: resp.tokens.tokenType,
+        expiresAt: DateTime.now().add(Duration(seconds: resp.tokens.expiresIn)),
+      );
+      await _persistSession(
+        accessToken: session.accessToken,
+        refreshToken: session.refreshToken,
+        user: user,
+      );
+      return Success(session);
+    } on DioException catch (e) {
+      return FailureResult(_mapDio(e));
+    } catch (e, st) {
+      return FailureResult(_mapUnknown(e, st));
+    }
+  }
 }
 
 // ── Riverpod provider ────────────────────────────────────────────────────────

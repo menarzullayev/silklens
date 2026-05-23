@@ -33,11 +33,14 @@
 //
 // 5. Register background handler (top-level function, not inside a class):
 //    @pragma('vm:entry-point')
-//    Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage msg) async {
+//    Future<void> _firebaseMessagingBackgroundHandler(
+//        RemoteMessage msg) async {
 //      await Firebase.initializeApp();
 //      // handle message
 //    }
-//    Call in main.dart: FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+//    In main.dart call:
+//      FirebaseMessaging.onBackgroundMessage(
+//          _firebaseMessagingBackgroundHandler);
 //
 // SILK-0139
 

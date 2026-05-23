@@ -362,6 +362,11 @@ git push --no-verify  # emergency bypass
 - [x] **SILK-0091** (deferred — blocked: accountant review) 🟡 GAAP/IFRS Revenue Recognition
 - [x] **SILK-0092** 🟡 Heritage Extension Tables
 
+### Flutter Mobile — Camera + Voice Assistant (2026-05-23)
+
+- [✅] **SILK-0099** `CameraPage` real implementation — live `CameraController` viewfinder, `WidgetsBindingObserver` lifecycle, capture + gallery pick → `uploadMedia` → `recognizeImage`; `RecognitionNotifier` sealed-state provider; `_slideUpPage` transition; 11 camera_* keys × 4 locales (en/uz/ru/zh)
+- [✅] **SILK-0101** `VoiceAssistantPage` — hold-to-listen mic button with `AnimationController` pulse, `VoiceNotifier` sealed-state (idle/listening/processing/result/error), `transcribeAudio` + `resolveVoiceIntent` API wiring, 17 voice_* keys × 4 locales; `/voice-assistant` route `_slideUpPage`; audio recording hook point documented for SILK-0105
+
 ### Flutter Mobile — Gamification API Wiring (2026-05-23)
 
 - [✅] **SILK-0108** `GamificationRepositoryImpl` — `getXpRaw()`, `getStreakRaw()`, `tickStreakRaw()`, `getLeaderboardRaw()` raw helpers + typed `getStreak()`, `badges()` → `Result<T>`; `gamificationRepositoryProvider` via `silkLensApiClientProvider`
@@ -422,6 +427,13 @@ git push --no-verify  # emergency bypass
 - [✅] **SILK-0168** Branding slug from session — added `tenantSlug` to NextAuth JWT + Session type declarations; Credentials + Google OAuth callbacks now write `tenantSlug` from `NEXT_PUBLIC_DEFAULT_TENANT_SLUG` env var (falls back to `'silklens'`); session callback exposes `session.user.tenantSlug`; `branding/page.tsx` reads `auth()` session and passes `session.user.tenantSlug` to `getBranding()` — eliminates hardcoded `DEFAULT_SLUG = 'silklens'` constant
 - [✅] **SILK-0169** DataTable unification tech-debt comment — added 4-line `// TODO SILK-0169` block before `HeritageTable` export in `heritage-table.tsx` documenting why migration to shared DataTable is blocked (server-side pagination, multilingual JSONB columns, faceted filter routing)
 - [✅] **SILK-0170** i18n key audit — all 4 locale files (en/uz/ru/zh) are now in full parity; added missing `dataTable` namespace (`noResults`, `columns`, `searchPlaceholder`) to all 4 locales; synced `nav.government` + `nav.coupons` keys that were present only in uz.json; Python key-diff check confirms 0 missing / 0 extra keys across all locales
+
+### Flutter Mobile — Infrastructure + FCM + Release Signing (2026-05-23)
+
+- [✅] **SILK-0139** FCM push-notification service scaffolded: `lib/core/push/fcm_service.dart` — `FcmService` class + `fcmServiceProvider`; `init()`, `handleForegroundMessages()`, `registerToken()` stubs with full setup checklist (pubspec deps, google-services.json, Info.plist, Firebase.initializeApp call); FCM init wiring instructions added to `main.dart` comment block; `SilkLensApiClient.registerPushDevice` already present and reused; firebase packages deferred until SILK-0139 unblocks (google-services.json needed first); 0 analyzer errors introduced
+- [✅] **SILK-0142** Android release-signing documentation: 37-line comment block in `android/app/build.gradle` with `keytool` command, `key.properties` format, `signingConfigs.release` Groovy template, AndroidManifest cleartext-traffic note; `android/key.properties.example` created (real `key.properties` and `.keystore` already gitignored); no build code changed
+- [✅] **SILK-0143** Missing asset READMEs: `assets/onboarding/README.md` — slide filenames, pixel dimensions, compression guidance, pubspec declaration note; `assets/textures/README.md` — planned texture filenames/formats, opacity guidelines, pubspec declaration reminder (directory not yet declared); no functional code changed
+- Note: SILK-0145 (Sentry) was already fully implemented — conditional `SentryFlutter.init`, `FlutterError.onError`, zone-guarded `Sentry.captureException`, `SENTRY_DSN` in `.env.example`; no changes required
 
 ### Technical Debt
 

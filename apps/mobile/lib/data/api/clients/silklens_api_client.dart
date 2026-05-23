@@ -79,6 +79,31 @@ class SilkLensApiClient {
     return LoginResponseDto.fromJson(r.data!);
   }
 
+  // --- Facebook OAuth (SILK-0172) -------------------------------------------
+  // Backend route: POST /v1/auth/facebook — verifies access_token with Graph
+  // API and returns a SilkLens session. Requires flutter_facebook_auth on
+  // the Flutter side to obtain the access_token.
+
+  Future<LoginResponseDto> facebookSignIn(String accessToken) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '/v1/auth/facebook',
+      data: {'access_token': accessToken},
+    );
+    return LoginResponseDto.fromJson(r.data!);
+  }
+
+  // --- Instagram OAuth (SILK-0172) ------------------------------------------
+  // Backend route: POST /v1/auth/instagram — exchanges short-lived Instagram
+  // OAuth 2.0 token for a SilkLens session.
+
+  Future<LoginResponseDto> instagramSignIn(String accessToken) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '/v1/auth/instagram',
+      data: {'access_token': accessToken},
+    );
+    return LoginResponseDto.fromJson(r.data!);
+  }
+
   Future<MeResponseDto> me() async {
     final r = await _dio.get<Map<String, dynamic>>(ApiEndpoints.authMe);
     return MeResponseDto.fromJson(r.data!);
@@ -791,7 +816,6 @@ class SilkLensApiClient {
     );
     return r.data!;
   }
-}
 
   // --- Food Guide ---
 
@@ -811,3 +835,28 @@ class SilkLensApiClient {
     );
     return r.data!;
   }
+
+  // --- Carbon Footprint ---
+
+  Future<Map<String, dynamic>> calculateCarbonFootprint({
+    required List<Map<String, dynamic>> journeyLegs,
+    String language = 'en',
+  }) async {
+    final factors = <String, double>{
+      'flight': 0.255, 'car': 0.171, 'train': 0.041,
+      'bus': 0.089, 'walk': 0.0, 'cycle': 0.0,
+    };
+    double totalCo2 = 0;
+    for (final leg in journeyLegs) {
+      final km = (leg['distance_km'] as num?)?.toDouble() ?? 0;
+      final transport = leg['transport'] as String? ?? 'car';
+      totalCo2 += km * (factors[transport] ?? 0.171);
+    }
+    return {
+      'total_co2_kg': double.parse(totalCo2.toStringAsFixed(2)),
+      'eco_alternatives': totalCo2 > 10
+          ? ['Consider taking the train']
+          : ['Low carbon footprint journey!'],
+    };
+  }
+}

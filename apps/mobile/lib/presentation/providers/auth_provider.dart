@@ -124,6 +124,44 @@ class AuthNotifier extends Notifier<AuthState> {
     );
   }
 
+  /// Sign in with Facebook access token (SILK-0172).
+  /// Caller must obtain [accessToken] via `flutter_facebook_auth` package.
+  /// Add `flutter_facebook_auth: ^6.0.0` to pubspec.yaml and register the
+  /// app in Meta Developer Console before enabling the button flow.
+  Future<bool> loginWithFacebook(String accessToken) async {
+    state = const AuthLoading();
+    final result = await _repo.signInWithFacebook(accessToken);
+    return result.fold(
+      onSuccess: (session) {
+        state = AuthAuthenticated(session);
+        return true;
+      },
+      onFailure: (failure) {
+        state = AuthError(_failureMessage(failure));
+        return false;
+      },
+    );
+  }
+
+  /// Sign in with Instagram access token (SILK-0172).
+  /// Caller must complete the Instagram OAuth 2.0 code-exchange flow and pass
+  /// the resulting access_token. Backend route /v1/auth/instagram must be
+  /// implemented before this produces a real session.
+  Future<bool> loginWithInstagram(String accessToken) async {
+    state = const AuthLoading();
+    final result = await _repo.signInWithInstagram(accessToken);
+    return result.fold(
+      onSuccess: (session) {
+        state = AuthAuthenticated(session);
+        return true;
+      },
+      onFailure: (failure) {
+        state = AuthError(_failureMessage(failure));
+        return false;
+      },
+    );
+  }
+
   Future<bool> verifyEmail({
     required String email,
     required String code,

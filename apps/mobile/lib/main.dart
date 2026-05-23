@@ -6,6 +6,30 @@
 //   3. Initialize local DB stub (offline full persistence in FAZA 6+).
 //   4. Initialize Sentry (Project-Decisions §40 — crash reporting).
 //   5. Wrap the app in ProviderScope.
+//
+// FCM Push Notifications (SILK-0139):
+//   Once firebase_core + firebase_messaging are added to pubspec.yaml and the
+//   google-services.json / GoogleService-Info.plist files are placed, wire FCM
+//   after step 3 above by adding:
+//
+//     import 'package:firebase_core/firebase_core.dart';
+//     import 'package:silklens/core/push/fcm_service.dart';
+//
+//     await Firebase.initializeApp();
+//     await FcmService().init(
+//       onTokenReceived: (token) async {
+//         // Register token with backend — container is available here because
+//         // runAppWithProviders has not been called yet; use a temporary
+//         // ProviderContainer or pass the client directly.
+//         await FcmService.registerToken(
+//           token: token,
+//           apiClient: SilkLensApiClient(Dio()),  // replace with DI
+//         );
+//       },
+//     );
+//     FcmService().handleForegroundMessages();
+//
+//   See lib/core/push/fcm_service.dart for the full setup checklist.
 
 import 'dart:async';
 
