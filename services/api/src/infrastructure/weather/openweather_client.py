@@ -60,7 +60,7 @@ class OpenWeatherMapClient:
         self._api_key = api_key
 
     async def current(self, lat: float, lng: float) -> WeatherData:
-        params = {
+        params: dict[str, str | float] = {
             "lat": lat,
             "lon": lng,
             "appid": self._api_key,
@@ -97,7 +97,7 @@ class OpenWeatherMapClient:
 
     async def forecast(self, lat: float, lng: float, days: int = 3) -> list[WeatherData]:
         """Simplified forecast using 3-hour blocks, returning daily summaries."""
-        params = {
+        params: dict[str, str | float | int] = {
             "lat": lat,
             "lon": lng,
             "appid": self._api_key,

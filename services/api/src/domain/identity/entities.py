@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Self
+from typing import Any, Self
 from uuid import UUID
 
 
@@ -176,4 +176,4 @@ class OAuthProfile:
     email_verified: bool
     display_name: str | None = None  # provider's 'name' / 'display_name'
     avatar_url: str | None = None  # provider's 'picture' / 'avatar'
-    raw: dict = field(default_factory=dict)  # full tokeninfo/userinfo payload for audit
+    raw: dict[str, Any] = field(default_factory=dict)  # full tokeninfo/userinfo payload for audit
