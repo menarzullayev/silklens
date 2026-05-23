@@ -396,6 +396,62 @@ jobs:
         run: flutter analyze
 
   # ---------------------------------------------------------------------------
+  # Mobile: flutter test — unit + widget tests.
+  #
+  # Separated from mobile-lint so lint failures (advisory) don't block the
+  # test gate (which should be hard).  Both jobs share the same Flutter
+  # setup action and cache.
+  # ---------------------------------------------------------------------------
+  mobile-test:
+    name: Mobile — flutter test
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Skip if Flutter project not yet present
+        id: probe
+        run: |
+          if [ ! -f pubspec.yaml ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::apps/mobile/pubspec.yaml not found — skipping mobile-test."
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Flutter (stable)
+        if: steps.probe.outputs.present == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Pub get
+        if: steps.probe.outputs.present == 'true'
+        run: flutter pub get
+
+      - name: flutter test
+        if: steps.probe.outputs.present == 'true'
+        run: flutter test --reporter compact
+
+      - name: Post test summary
+        if: always() && steps.probe.outputs.present == 'true'
+        run: |
+          {
+            echo "### Flutter test results"
+            echo ""
+            echo "Run \`flutter test\` completed — see step log for pass/fail counts."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
   # Admin: pnpm lint + tsc --noEmit. Soft-fail until apps/admin is wired.
   # ---------------------------------------------------------------------------
   admin-lint:
@@ -508,6 +564,7 @@ jobs:
       - api-test
       - api-migrations-roundtrip
       - mobile-lint
+      - mobile-test
       - admin-lint
       - sql-lint
     runs-on: ubuntu-24.04
@@ -525,6 +582,7 @@ jobs:
             [api-test]="${{ needs.api-test.result }}"
             [api-migrations-roundtrip]="${{ needs.api-migrations-roundtrip.result }}"
             [sql-lint]="${{ needs.sql-lint.result }}"
+            [mobile-test]="${{ needs.mobile-test.result }}"
           )
           failed=0
           for job in "${!results[@]}"; do
@@ -536,8 +594,8 @@ jobs:
             esac
             echo "::endgroup::"
           done
-          # Mobile + Admin are advisory until their projects exist; record
+          # mobile-lint and admin-lint are advisory (continue-on-error); record
           # their state but don't fail the build on them.
-          echo "Mobile: ${{ needs.mobile-lint.result }} (advisory)"
-          echo "Admin:  ${{ needs.admin-lint.result }} (advisory)"
+          echo "Mobile lint: ${{ needs.mobile-lint.result }} (advisory)"
+          echo "Admin lint:  ${{ needs.admin-lint.result }} (advisory)"
           exit "$failed"

@@ -1,7 +1,7 @@
 # SilkLens — top-level Makefile.
 # Aggregates per-service tasks so contributors only need one entry point.
 
-.PHONY: help dev down logs ps api-install api-run api-test api-test-random api-test-parallel api-test-cov api-lint api-format api-mypy api-mypy-strict api-bandit api-bandit-all api-migrate api-revision api-shell admin-test admin-knip mobile-analyze clean install-hooks trivy-install api-trivy-image sbom license-check security load-smoke load-read load-auth load-test sql-lint api-mutmut admin-mutmut
+.PHONY: help dev down logs ps api-install api-run api-test api-test-random api-test-parallel api-test-cov api-lint api-format api-mypy api-mypy-strict api-bandit api-bandit-all api-migrate api-revision api-shell admin-test admin-knip mobile-analyze mobile-test clean install-hooks trivy-install api-trivy-image sbom license-check security load-smoke load-read load-auth load-test sql-lint api-mutmut admin-mutmut
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -66,6 +66,9 @@ admin-knip: ## Detect dead code / unused exports / orphan files in admin
 
 mobile-analyze: ## Run Flutter analyzer (--fatal-warnings --fatal-infos for CI)
 	cd apps/mobile && flutter analyze --fatal-warnings --fatal-infos lib/
+
+mobile-test: ## Run Flutter unit + widget tests
+	cd apps/mobile && flutter test --reporter compact
 
 install-hooks: ## Install pre-push + pre-commit git hooks (run once after clone)
 	bash scripts/install-hooks.sh
