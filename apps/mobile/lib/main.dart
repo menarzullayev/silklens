@@ -42,6 +42,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:silklens/app/app.dart';
 import 'package:silklens/core/env/app_environment.dart';
 import 'package:silklens/core/logging/app_logger.dart';
+import 'package:silklens/core/services/fcm_service.dart';
 import 'package:silklens/data/local/isar_database.dart';
 
 Future<void> main() async {
@@ -139,9 +140,8 @@ class _FcmInitWrapperState extends ConsumerState<_FcmInitWrapper> {
     // Errors are caught — a failed FCM init must not crash the app.
     Future.microtask(() async {
       try {
-        await ref
-            .read(fcmServiceProvider)
-            .init();
+        final svc = ref.read(fcmServiceProvider);
+        await svc.init();
       } catch (e) {
         AppLogger.instance.w('FCM init failed', error: e);
       }

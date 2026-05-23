@@ -101,6 +101,13 @@ function resolveApiBase(): string {
 
 // SILK-0156: permissionsForTrustTier is now the canonical export from
 // src/lib/rbac/permissions.ts — imported above and used in jwt callback.
+// TODO(SILK-0156): Replace static permissionsForTrustTier with backend
+// GET /v1/auth/me/permissions when that endpoint is available — keeps the
+// admin UI in lockstep with server-side RBAC instead of a hardcoded mirror.
+
+// TODO(SILK-0155): Google OAuth requires AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET
+// env vars. Backend POST /v1/auth/google is wired. Outstanding: production
+// Google Cloud Console OAuth client setup + authorised redirect URIs per env.
 
 async function callLogin(
   email: string,
