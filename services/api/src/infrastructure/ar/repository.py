@@ -490,6 +490,7 @@ class ArRepository:
             # a raw ISO string fails with `'str' object has no attribute 'toordinal'`.
             # Parse to date here (router validates the input as date type).
             from datetime import date as _date_type
+
             try:
                 parsed = _date_type.fromisoformat(reference_date)
             except (TypeError, ValueError):

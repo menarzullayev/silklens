@@ -123,7 +123,9 @@ def _build_qr_payload(ticket_id: str, visit_date: str | None, qr_secret: str) ->
 async def list_ticket_types(
     session: SessionDep,
     heritage_pub_id: str = Query(
-        ..., min_length=1, max_length=64,
+        ...,
+        min_length=1,
+        max_length=64,
         description="Heritage site public slug (e.g., 'in-registan-square')",
     ),
     language: str = Query("en", min_length=2, max_length=10),

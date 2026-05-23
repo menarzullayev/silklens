@@ -151,9 +151,7 @@ def _has_json_null_escape(body: bytes) -> bool:
 
 
 async def _send_422(send: Send, reason: str) -> None:
-    body = json.dumps(
-        {"detail": [{"type": "value_error", "msg": reason}]}
-    ).encode("utf-8")
+    body = json.dumps({"detail": [{"type": "value_error", "msg": reason}]}).encode("utf-8")
     await send(
         {
             "type": "http.response.start",
