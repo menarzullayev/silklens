@@ -378,6 +378,24 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  // --- SILK-0122: Password Reset --------------------------------------------
+
+  Future<void> forgotPassword(String email) async {
+    await _client.forgotPassword(email);
+  }
+
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    await _client.resetPassword(
+      email: email,
+      code: code,
+      newPassword: newPassword,
+    );
+  }
+
   // --- SILK-0172: Instagram OAuth -------------------------------------------
   // Instagram Basic Display API requires a registered app and server-side
   // token exchange. Add the Instagram OAuth redirect URI to the backend

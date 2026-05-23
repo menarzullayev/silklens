@@ -78,6 +78,13 @@ dependencies:
   google_sign_in: ^6.2.0
   local_auth: ^2.3.0
 
+  # SILK-0139: FCM Push Notifications.
+  # Requires google-services.json (Android) and GoogleService-Info.plist (iOS)
+  # to be placed by the developer — both are in .gitignore.
+  firebase_core: ^3.6.0
+  firebase_messaging: ^15.1.4
+  flutter_local_notifications: ^17.2.3
+
   # Typography — Google Fonts (network-fetched; no font files needed)
   google_fonts: ^6.2.1
 
@@ -117,8 +124,9 @@ flutter:
 
   assets:
     - assets/.env
-    - assets/branding/
-    - assets/onboarding/
+    - assets/branding/        # .gitkeep placeholder — real assets pending design (SILK-0143)
+    - assets/onboarding/      # .gitkeep placeholder — real assets pending design (SILK-0143)
+    - assets/textures/        # .gitkeep placeholder — real assets pending design (SILK-0143)
 
   # Bundled fonts are loaded dynamically once admin panel ships font tokens
   # (see Project-Decisions §21 Design Token architecture). Keep this block ready.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:silklens/core/l10n/app_strings.dart';
 import 'package:silklens/core/l10n/locale_service.dart';
+import 'package:silklens/data/repositories/social_repository_impl.dart';
 import 'package:silklens/presentation/providers/social_provider.dart';
 
 class NotificationsPage extends ConsumerStatefulWidget {
@@ -31,25 +32,25 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   void initState() {
     super.initState();
     Future.microtask(
-      ref.read(notificationsProvider.notifier).refresh,
+      () => ref.read(notificationsProvider.notifier).refresh(),
     );
   }
 
-  List<Map<String, dynamic>> _filtered(
-    List<Map<String, dynamic>> notifications,
+  List<SocialNotificationItem> _filtered(
+    List<SocialNotificationItem> notifications,
   ) {
     if (_activeFilter == 0) return notifications;
     if (_activeFilter == 1) {
-      return notifications.where((n) => n['is_read'] != true).toList();
+      return notifications.where((n) => !n.isRead).toList();
     }
-    final typeMap = {
+    const typeMap = {
       2: ['follow', 'like', 'comment'],
       3: ['badge', 'level', 'streak', 'leaderboard', 'mission'],
     };
     final types = typeMap[_activeFilter] ?? [];
     return notifications.where((n) {
-      final kind = (n['kind'] as String? ?? '').toLowerCase();
-      return types.any((t) => kind.contains(t));
+      final kind = n.category.toLowerCase();
+      return types.any(kind.contains);
     }).toList();
   }
 
@@ -79,8 +80,8 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     };
   }
 
-  String _relativeTime(String? isoString) {
-    if (isoString == null) return '';
+  String _relativeTime(String isoString) {
+    if (isoString.isEmpty) return '';
     try {
       final dt = DateTime.parse(isoString).toLocal();
       final diff = DateTime.now().difference(dt);
@@ -95,10 +96,9 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final notifications = ref.watch(notificationsProvider);
-    final filtered = _filtered(notifications);
-    final unreadCount =
-        notifications.where((n) => n['is_read'] != true).length;
+    final s = ref.watch(notificationsProvider);
+    final filtered = _filtered(s.items);
+    final unreadCount = s.items.where((n) => !n.isRead).length;
 
     return Scaffold(
       backgroundColor: _bg,
@@ -201,51 +201,55 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
             ),
           ),
           const SizedBox(height: 8),
-          // Notification list
+          // Body
           Expanded(
-            child: filtered.isEmpty
-                ? Center(
-                    child: Text(
-                      _s('notif_empty'),
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.4),
-                        fontSize: 15,
-                      ),
+            child: s.isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: _gold,
+                      strokeWidth: 2,
                     ),
                   )
-                : ListView.separated(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (_, i) {
-                      final n = filtered[i];
-                      final id = n['id'] as String? ?? '';
-                      final kind = n['kind'] as String? ?? 'system';
-                      final isRead = n['is_read'] as bool? ?? false;
-                      final title = n['text'] as String? ??
-                          n['title'] as String? ??
-                          n['body'] as String? ??
-                          kind;
-                      final createdAt = n['created_at'] as String? ??
-                          n['timestamp'] as String?;
-
-                      return _NotifCard(
-                        icon: _iconForKind(kind),
-                        iconColor: _colorForKind(kind),
-                        title: title,
-                        time: _relativeTime(createdAt),
-                        isRead: isRead,
-                        onTap: isRead
-                            ? null
-                            : () => ref
-                                .read(notificationsProvider.notifier)
-                                .markRead(id),
-                      );
-                    },
-                  ),
+                : s.error != null
+                    ? _ErrorRetry(
+                        message: s.error!,
+                        onRetry: () =>
+                            ref.read(notificationsProvider.notifier).refresh(),
+                      )
+                    : filtered.isEmpty
+                        ? Center(
+                            child: Text(
+                              _s('notif_empty'),
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.4),
+                                fontSize: 15,
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            itemCount: filtered.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 8),
+                            itemBuilder: (_, i) {
+                              final n = filtered[i];
+                              return _NotifCard(
+                                icon: _iconForKind(n.category),
+                                iconColor: _colorForKind(n.category),
+                                title: n.title.isNotEmpty ? n.title : n.body,
+                                time: _relativeTime(n.createdAt),
+                                isRead: n.isRead,
+                                onTap: n.isRead
+                                    ? null
+                                    : () => ref
+                                        .read(notificationsProvider.notifier)
+                                        .markRead(n.id),
+                              );
+                            },
+                          ),
           ),
         ],
       ),
@@ -254,7 +258,74 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
 }
 
 // ---------------------------------------------------------------------------
-// Notification card — mirrors original visual design
+// Error retry widget
+// ---------------------------------------------------------------------------
+
+class _ErrorRetry extends StatelessWidget {
+  const _ErrorRetry({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.cloud_off_rounded,
+              color: Colors.white.withValues(alpha: 0.35),
+              size: 48,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.55),
+                fontSize: 13,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: onRetry,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFB78628).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFB78628).withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Text(
+                  AppStrings.get(
+                    LocaleService.instance.locale,
+                    'social_feed_retry',
+                  ),
+                  style: const TextStyle(
+                    color: Color(0xFFB78628),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Notification card
 // ---------------------------------------------------------------------------
 
 class _NotifCard extends StatelessWidget {
@@ -294,8 +365,9 @@ class _NotifCard extends StatelessWidget {
               width: 4,
               height: 64,
               decoration: BoxDecoration(
-                color:
-                    isRead ? Colors.transparent : const Color(0xFFB78628),
+                color: isRead
+                    ? Colors.transparent
+                    : const Color(0xFFB78628),
                 borderRadius: const BorderRadius.horizontal(
                   left: Radius.circular(16),
                 ),
@@ -323,9 +395,8 @@ class _NotifCard extends StatelessWidget {
                     Text(
                       title,
                       style: TextStyle(
-                        color: Colors.white.withValues(
-                          alpha: isRead ? 0.65 : 1.0,
-                        ),
+                        color: Colors.white
+                            .withValues(alpha: isRead ? 0.65 : 1.0),
                         fontSize: 13,
                         fontWeight:
                             isRead ? FontWeight.w400 : FontWeight.w600,

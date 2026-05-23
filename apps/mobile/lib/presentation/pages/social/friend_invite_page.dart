@@ -163,7 +163,6 @@ class _FriendInvitePageState extends ConsumerState<FriendInvitePage> {
                               borderRadius: BorderRadius.circular(22),
                               child: QrImageView(
                                 data: link,
-                                version: QrVersions.auto,
                                 size: 212,
                                 backgroundColor: Colors.white,
                               ),

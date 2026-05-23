@@ -156,30 +156,30 @@ class SilkLensApiClient {
     return HeritageDto.fromJson(r.data!);
   }
 
-  // --- Gamification --------------------------------------------------------
+  // --- Gamification (SILK-0108..0112) ----------------------------------------
 
   Future<Map<String, dynamic>> getXpBalance() async {
-    final r = await _dio.get<Map<String, dynamic>>('/v1/me/xp');
+    final r = await _dio.get<Map<String, dynamic>>(ApiEndpoints.meXp);
     return r.data!;
   }
 
   Future<Map<String, dynamic>> getStreak() async {
-    final r = await _dio.get<Map<String, dynamic>>('/v1/me/streak');
+    final r = await _dio.get<Map<String, dynamic>>(ApiEndpoints.meStreak);
     return r.data!;
   }
 
   Future<Map<String, dynamic>> tickStreak() async {
-    final r = await _dio.post<Map<String, dynamic>>('/v1/me/streak/tick');
+    final r = await _dio.post<Map<String, dynamic>>(ApiEndpoints.meStreakTick);
     return r.data!;
   }
 
   Future<List<dynamic>> getBadges() async {
-    final r = await _dio.get<Map<String, dynamic>>('/v1/me/badges');
+    final r = await _dio.get<Map<String, dynamic>>(ApiEndpoints.meBadges);
     return (r.data!['items'] as List?) ?? [];
   }
 
   Future<List<dynamic>> listLeaderboards() async {
-    final r = await _dio.get<Map<String, dynamic>>('/v1/leaderboards');
+    final r = await _dio.get<Map<String, dynamic>>(ApiEndpoints.leaderboards);
     return (r.data!['items'] as List?) ?? [];
   }
 
@@ -189,7 +189,7 @@ class SilkLensApiClient {
     int limit = 50,
   }) async {
     final r = await _dio.get<Map<String, dynamic>>(
-      '/v1/leaderboards/$slug',
+      ApiEndpoints.leaderboardBySlug(slug),
       queryParameters: {'period': period, 'limit': limit},
     );
     return r.data!;
@@ -214,10 +214,11 @@ class SilkLensApiClient {
   Future<Map<String, dynamic>> getFollowing(
     String pubId, {
     int limit = 30,
+    int offset = 0,
   }) async {
     final r = await _dio.get<Map<String, dynamic>>(
       '/v1/social/following/$pubId',
-      queryParameters: {'limit': limit},
+      queryParameters: {'limit': limit, 'offset': offset},
     );
     return r.data!;
   }
@@ -225,10 +226,11 @@ class SilkLensApiClient {
   Future<Map<String, dynamic>> getFollowers(
     String pubId, {
     int limit = 30,
+    int offset = 0,
   }) async {
     final r = await _dio.get<Map<String, dynamic>>(
       '/v1/social/followers/$pubId',
-      queryParameters: {'limit': limit},
+      queryParameters: {'limit': limit, 'offset': offset},
     );
     return r.data!;
   }
@@ -241,10 +243,37 @@ class SilkLensApiClient {
     await _dio.delete<void>('/v1/social/follow/$pubId');
   }
 
-  Future<Map<String, dynamic>> createFriendInvite({String? message}) async {
+  Future<void> blockUser(String pubId, {String? reason}) async {
+    await _dio.post<void>(
+      '/v1/social/block/$pubId',
+      data: reason != null ? {'reason': reason} : null,
+    );
+  }
+
+  Future<void> unblockUser(String pubId) async {
+    await _dio.delete<void>('/v1/social/block/$pubId');
+  }
+
+  Future<Map<String, dynamic>> createFriendInvite({
+    String? targetPubId,
+    String? targetEmail,
+    String? message,
+  }) async {
     final r = await _dio.post<Map<String, dynamic>>(
       '/v1/social/friends/invite',
-      data: {if (message != null) 'message': message},
+      data: {
+        if (targetPubId != null) 'target_pub_id': targetPubId,
+        if (targetEmail != null) 'target_email': targetEmail,
+        if (message != null) 'message': message,
+      },
+    );
+    return r.data!;
+  }
+
+  Future<Map<String, dynamic>> acceptFriendInvitation(String token) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '/v1/social/friends/accept',
+      data: {'token': token},
     );
     return r.data!;
   }
@@ -254,20 +283,33 @@ class SilkLensApiClient {
   Future<Map<String, dynamic>> getNotifications({
     int limit = 30,
     bool unreadOnly = false,
+    String? before,
   }) async {
     final r = await _dio.get<Map<String, dynamic>>(
       '/v1/notifications',
-      queryParameters: {'limit': limit, 'unread_only': unreadOnly},
+      queryParameters: {
+        'limit': limit,
+        'unread_only': unreadOnly,
+        if (before != null) 'before': before,
+      },
     );
     return r.data!;
   }
 
-  Future<void> markNotificationRead(String notificationId) async {
-    await _dio.post<void>('/v1/notifications/$notificationId/read');
+  Future<Map<String, dynamic>> markNotificationRead(
+    String notificationId,
+  ) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '/v1/notifications/$notificationId/read',
+    );
+    return r.data ?? {};
   }
 
-  Future<void> markAllNotificationsRead() async {
-    await _dio.post<void>('/v1/notifications/mark-all-read');
+  Future<Map<String, dynamic>> markAllNotificationsRead() async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '/v1/notifications/mark-all-read',
+    );
+    return r.data ?? {};
   }
 
   // --- Billing ---------------------------------------------------------------
@@ -315,6 +357,31 @@ class SilkLensApiClient {
 
   Future<void> resumeSubscription() async {
     await _dio.post<void>('/v1/billing/subscriptions/resume');
+  }
+
+  /// Creates a new subscription. Returns the full API response envelope which
+  /// contains a `subscription` key. Accepts an optional `Idempotency-Key`
+  /// header to prevent duplicate charges on network retry.
+  Future<Map<String, dynamic>> createSubscription({
+    required String planSlug,
+    required String paymentMethodToken,
+    String? pricingZoneSlug,
+    String? idempotencyKey,
+  }) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '/v1/billing/subscriptions',
+      data: {
+        'plan_slug': planSlug,
+        'payment_method_token': paymentMethodToken,
+        if (pricingZoneSlug != null) 'pricing_zone_slug': pricingZoneSlug,
+      },
+      options: Options(
+        headers: {
+          if (idempotencyKey != null) 'Idempotency-Key': idempotencyKey,
+        },
+      ),
+    );
+    return r.data!;
   }
 
   Future<Map<String, dynamic>?> validateCoupon(
@@ -404,6 +471,28 @@ class SilkLensApiClient {
     final r = await _dio.post<Map<String, dynamic>>(
       ApiEndpoints.deleteAccount,
       data: {if (reason != null) 'reason': reason},
+    );
+    return r.data!;
+  }
+
+  // --- Password Reset (SILK-0122) -------------------------------------------
+
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      ApiEndpoints.authForgotPassword,
+      data: {'email': email},
+    );
+    return r.data!;
+  }
+
+  Future<Map<String, dynamic>> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      ApiEndpoints.authResetPassword,
+      data: {'email': email, 'code': code, 'new_password': newPassword},
     );
     return r.data!;
   }
@@ -960,6 +1049,128 @@ class SilkLensApiClient {
         'language': language,
         'format': format,
       },
+    );
+    return r.data!;
+  }
+
+  // --- Ticket QR (SILK-0126) ------------------------------------------------
+
+  Future<Map<String, dynamic>> getTicketQr(String ticketId) async {
+    final r = await _dio.get<Map<String, dynamic>>('/v1/tickets/$ticketId/qr');
+    return r.data!;
+  }
+
+  // --- Nearest Emergency (SILK-0127) ----------------------------------------
+
+  Future<List<Map<String, dynamic>>> getNearestEmergency({
+    required double lat,
+    required double lng,
+    String kind = 'hospital',
+    String language = 'en',
+    int limit = 3,
+  }) async {
+    final r = await _dio.get<List<dynamic>>(
+      '/v1/emergency/nearest',
+      queryParameters: {
+        'lat': lat,
+        'lng': lng,
+        'kind': kind,
+        'language': language,
+        'limit': limit,
+      },
+    );
+    return (r.data ?? [])
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+  }
+
+  // --- Health Tips (SILK-0129) -----------------------------------------------
+
+  Future<Map<String, dynamic>> getHealthTips({
+    double temperatureC = 25,
+    String activity = 'walking',
+    String language = 'en',
+  }) async {
+    final r = await _dio.get<Map<String, dynamic>>(
+      '/v1/ai/health-tips',
+      queryParameters: {
+        'temperature_c': temperatureC,
+        'activity': activity,
+        'language': language,
+      },
+    );
+    return r.data!;
+  }
+
+  // --- Budget list (SILK-0130) -----------------------------------------------
+
+  Future<List<Map<String, dynamic>>> listBudgets() async {
+    final r = await _dio.get<List<dynamic>>('/v1/me/budget');
+    return (r.data ?? [])
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+  }
+
+  // --- Listings search (SILK-0133) ------------------------------------------
+
+  Future<Map<String, dynamic>> searchListings({
+    required String category,
+    double? lat,
+    double? lng,
+    double radiusKm = 10,
+    String? dietary,
+    String? city,
+    String language = 'en',
+    int limit = 20,
+  }) async {
+    final r = await _dio.get<Map<String, dynamic>>(
+      '/v1/listings',
+      queryParameters: {
+        'category': category,
+        if (lat != null) 'lat': lat,
+        if (lng != null) 'lng': lng,
+        'radius_km': radiusKm,
+        if (dietary != null) 'dietary': dietary,
+        if (city != null) 'city': city,
+        'language': language,
+        'limit': limit,
+      },
+    );
+    return r.data!;
+  }
+
+  // --- Crowd Forecast (SILK-0138) -------------------------------------------
+
+  Future<Map<String, dynamic>> getCrowdForecast(
+    String heritagePubId, {
+    String language = 'en',
+  }) async {
+    final r = await _dio.get<Map<String, dynamic>>(
+      '/v1/heritage/$heritagePubId/crowd-forecast',
+      queryParameters: {'language': language},
+    );
+    return r.data!;
+  }
+
+  // --- Check-in (SILK-0138) -------------------------------------------------
+
+  Future<Map<String, dynamic>> checkIn(String heritagePubId) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '/v1/me/check-in',
+      data: {'heritage_pub_id': heritagePubId},
+    );
+    return r.data!;
+  }
+
+  // --- Review Analysis (SILK-0138) ------------------------------------------
+
+  Future<Map<String, dynamic>> getReviewAnalysis(
+    String heritagePubId, {
+    String language = 'en',
+  }) async {
+    final r = await _dio.get<Map<String, dynamic>>(
+      '/v1/heritage/$heritagePubId/reviews/analysis',
+      queryParameters: {'language': language},
     );
     return r.data!;
   }

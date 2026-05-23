@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:silklens/core/l10n/app_strings.dart';
 import 'package:silklens/core/l10n/locale_service.dart';
+import 'package:silklens/data/repositories/social_repository_impl.dart';
 import 'package:silklens/presentation/providers/auth_provider.dart';
 import 'package:silklens/presentation/providers/social_provider.dart';
 
@@ -36,16 +37,12 @@ class _FollowingListPageState extends ConsumerState<FollowingListPage> {
     super.dispose();
   }
 
-  List<Map<String, dynamic>> _applySearch(
-    List<Map<String, dynamic>> users,
-  ) {
+  List<UserRef> _applySearch(List<UserRef> users) {
     final q = _searchController.text.trim().toLowerCase();
     if (q.isEmpty) return users;
     return users.where((u) {
-      final name =
-          (u['display_name'] as String? ?? '').toLowerCase();
-      final handle =
-          (u['username'] as String? ?? '').toLowerCase();
+      final name = (u.displayName ?? '').toLowerCase();
+      final handle = (u.username ?? '').toLowerCase();
       return name.contains(q) || handle.contains(q);
     }).toList();
   }
@@ -53,25 +50,24 @@ class _FollowingListPageState extends ConsumerState<FollowingListPage> {
   @override
   Widget build(BuildContext context) {
     final pubId = _userPubId;
-    final state = ref.watch(followingListProvider(pubId));
-    final notifier =
-        ref.read(followingListProvider(pubId).notifier);
+    final s = ref.watch(followingListProvider(pubId));
+    final notifier = ref.read(followingListProvider(pubId).notifier);
 
     // Merge following + followers for "All" tab, deduped by pub_id
-    final allUsers = <String, Map<String, dynamic>>{};
-    for (final u in [...state.following, ...state.followers]) {
-      final id = u['pub_id'] as String? ?? '';
-      if (id.isNotEmpty) allUsers[id] = u;
+    final allMap = <String, UserRef>{};
+    for (final u in [...s.following, ...s.followers]) {
+      if (u.pubId.isNotEmpty) allMap[u.pubId] = u;
     }
 
     final rawList = switch (_activeFilter) {
-      1 => state.followers,
-      2 => state.following,
-      _ => allUsers.values.toList(),
+      1 => s.followers,
+      2 => s.following,
+      _ => allMap.values.toList(),
     };
 
-    final displayed =
-        _applySearch(rawList.where((u) => u.isNotEmpty).toList());
+    final displayed = _applySearch(
+      rawList.where((u) => u.pubId.isNotEmpty).toList(),
+    );
 
     return Scaffold(
       backgroundColor: _bg,
@@ -174,66 +170,129 @@ class _FollowingListPageState extends ConsumerState<FollowingListPage> {
             ),
           ),
           const SizedBox(height: 8),
-          // User list / loading / empty
+          // User list / loading / error / empty
           Expanded(
-            child: state.isLoading
+            child: s.isLoading
                 ? const Center(
                     child: CircularProgressIndicator(
                       color: _gold,
                       strokeWidth: 2,
                     ),
                   )
-                : displayed.isEmpty
-                    ? Center(
-                        child: Text(
-                          _s('following_empty'),
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.4),
-                            fontSize: 15,
-                          ),
-                        ),
+                : s.error != null
+                    ? _ErrorRetry(
+                        message: _s('following_error'),
+                        onRetry: () => notifier.reload(pubId),
                       )
-                    : ListView.separated(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        itemCount: displayed.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: 8),
-                        itemBuilder: (_, i) {
-                          final user = displayed[i];
-                          final id =
-                              user['pub_id'] as String? ?? '';
-                          final name =
-                              user['display_name'] as String? ??
-                                  user['username'] as String? ??
-                                  '?';
-                          final handle =
-                              user['username'] as String? ?? id;
-                          final levelNum =
-                              (user['level_number'] as num?)
-                                  ?.toInt() ??
-                                  1;
-                          final levelLabel =
-                              user['level_name'] as String? ??
+                    : displayed.isEmpty
+                        ? Center(
+                            child: Text(
+                              _s('following_empty'),
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.4),
+                                fontSize: 15,
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            itemCount: displayed.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 8),
+                            itemBuilder: (_, i) {
+                              final user = displayed[i];
+                              final levelNum = user.levelNumber ?? 1;
+                              final levelLabel = user.levelName ??
                                   'Level $levelNum';
-                          final isFollowing =
-                              user['is_following'] as bool? ?? false;
-
-                          return _UserRow(
-                            pubId: id,
-                            name: name,
-                            handle: '@$handle',
-                            levelLabel: levelLabel,
-                            isFollowing: isFollowing,
-                            onFollow: () => notifier.follow(id),
-                            onUnfollow: () => notifier.unfollow(id),
-                          );
-                        },
-                      ),
+                              final handle = user.username ?? user.pubId;
+                              final name = user.displayName ??
+                                  user.username ??
+                                  '?';
+                              return _UserRow(
+                                pubId: user.pubId,
+                                name: name,
+                                handle: '@$handle',
+                                levelLabel: levelLabel,
+                                isFollowing: user.isFollowing,
+                                onFollow: () =>
+                                    notifier.follow(user.pubId),
+                                onUnfollow: () =>
+                                    notifier.unfollow(user.pubId),
+                              );
+                            },
+                          ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Error retry
+// ---------------------------------------------------------------------------
+
+class _ErrorRetry extends StatelessWidget {
+  const _ErrorRetry({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.cloud_off_rounded,
+              color: Colors.white.withValues(alpha: 0.35),
+              size: 48,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.55),
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: onRetry,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFB78628).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFB78628).withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Text(
+                  AppStrings.get(
+                    LocaleService.instance.locale,
+                    'social_feed_retry',
+                  ),
+                  style: const TextStyle(
+                    color: Color(0xFFB78628),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -298,8 +357,7 @@ class _UserRowState extends State<_UserRow> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(16),

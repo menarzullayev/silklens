@@ -23,6 +23,30 @@ class BillingRepositoryImpl {
 
   Future<List<dynamic>> getEntitlements() => _client.getEntitlements();
 
+  /// Creates a subscription and returns the `subscription` map from the
+  /// response envelope. Uses a millisecond-epoch idempotency key to guard
+  /// against double-charges on network retry.
+  Future<Map<String, dynamic>> startSubscription({
+    required String planSlug,
+    required String paymentMethodToken,
+    String pricingZoneSlug = 'central_asia',
+  }) async {
+    final key = DateTime.now().millisecondsSinceEpoch.toString();
+    final data = await _client.createSubscription(
+      planSlug: planSlug,
+      paymentMethodToken: paymentMethodToken,
+      pricingZoneSlug: pricingZoneSlug,
+      idempotencyKey: key,
+    );
+    final sub = data['subscription'] as Map<String, dynamic>?;
+    if (sub == null) {
+      throw Exception(
+        'createSubscription: missing subscription in response',
+      );
+    }
+    return sub;
+  }
+
   Future<void> cancelSubscription({bool atPeriodEnd = true}) =>
       _client.cancelSubscription(atPeriodEnd: atPeriodEnd);
 

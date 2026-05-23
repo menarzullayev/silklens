@@ -414,6 +414,9 @@ class AppStrings {
           'Online payment integration (Stripe / Payme / Click) is arriving '
           'in the next release. Your plan selection has been noted.',
       'billing_ok': 'OK',
+      'billing_subscribe_success': 'Subscription activated successfully!',
+      'billing_subscribe_error':
+          'Subscription failed. Please try again.',
       'billing_badge_ssl': 'SSL Secured',
       'billing_badge_3ds': '3D Secure',
       'billing_badge_pci': 'PCI DSS',
@@ -580,6 +583,17 @@ class AppStrings {
       'aiutil_lost_wallet': 'Wallet 💰',
       'aiutil_lost_bag': 'Bag 👜',
       'aiutil_lost_help_btn': 'Find Help',
+      // Review Analysis (SILK-0138)
+      'review_analysis_title': 'AI Review Analysis',
+      'review_analysis_authenticity': 'Authenticity Score',
+      'review_analysis_summary': 'Summary',
+      'review_analysis_pros': 'Top Pros',
+      'review_analysis_cons': 'Top Cons',
+      'review_analysis_worth': 'Worth Visiting',
+      'review_analysis_worth_yes': 'Yes',
+      'review_analysis_worth_no': 'No',
+      'review_analysis_loading': 'Analysing reviews...',
+      'review_analysis_error': 'Could not load analysis',
     },
     'uz': {
       // Auth — Sign In
@@ -999,6 +1013,9 @@ class AppStrings {
           "Onlayn to'lov integratsiyasi (Stripe / Payme / Click) "
           "keyingi versiyada qo'shiladi.",
       'billing_ok': 'OK',
+      'billing_subscribe_success': 'Obuna muvaffaqiyatli faollashtirildi!',
+      'billing_subscribe_error':
+          "Obuna amalga oshmadi. Qayta urinib ko'ring.",
       'billing_badge_ssl': 'SSL Himoyalangan',
       'billing_badge_3ds': '3D Secure',
       'billing_badge_pci': 'PCI DSS',
@@ -1165,6 +1182,17 @@ class AppStrings {
       'aiutil_lost_wallet': 'Hamyon 💰',
       'aiutil_lost_bag': 'Sumka 👜',
       'aiutil_lost_help_btn': 'Yordam topish',
+      // Review Analysis (SILK-0138)
+      'review_analysis_title': 'AI Sharh Tahlili',
+      'review_analysis_authenticity': 'Haqiqiylik Bali',
+      'review_analysis_summary': 'Xulosa',
+      'review_analysis_pros': 'Asosiy Afzalliklar',
+      'review_analysis_cons': 'Asosiy Kamchiliklar',
+      'review_analysis_worth': 'Borishga Arziydi',
+      'review_analysis_worth_yes': 'Ha',
+      'review_analysis_worth_no': "Yo'q",
+      'review_analysis_loading': 'Sharhlar tahlil qilinmoqda...',
+      'review_analysis_error': 'Tahlilni yuklashda xato',
     },
     'ru': {
       // Auth — Sign In
@@ -1580,6 +1608,9 @@ class AppStrings {
           'Интеграция онлайн-платежей (Stripe / Payme / Click) '
           'появится в следующем релизе.',
       'billing_ok': 'OK',
+      'billing_subscribe_success': 'Подписка успешно активирована!',
+      'billing_subscribe_error':
+          'Не удалось оформить подписку. Попробуйте снова.',
       'billing_badge_ssl': 'SSL Защита',
       'billing_badge_3ds': '3D Secure',
       'billing_badge_pci': 'PCI DSS',
@@ -1744,6 +1775,17 @@ class AppStrings {
       'aiutil_lost_wallet': 'Кошелёк 💰',
       'aiutil_lost_bag': 'Сумка 👜',
       'aiutil_lost_help_btn': 'Найти помощь',
+      // Review Analysis (SILK-0138)
+      'review_analysis_title': 'AI Анализ Отзывов',
+      'review_analysis_authenticity': 'Оценка подлинности',
+      'review_analysis_summary': 'Краткое содержание',
+      'review_analysis_pros': 'Главные плюсы',
+      'review_analysis_cons': 'Главные минусы',
+      'review_analysis_worth': 'Стоит посетить',
+      'review_analysis_worth_yes': 'Да',
+      'review_analysis_worth_no': 'Нет',
+      'review_analysis_loading': 'Анализ отзывов...',
+      'review_analysis_error': 'Не удалось загрузить анализ',
     },
     'zh': {
       // Auth — Sign In
@@ -2136,6 +2178,8 @@ class AppStrings {
       'billing_payment_soon_body':
           '在线支付（Stripe / Payme / Click）将在下一版本中推出。',
       'billing_ok': '确定',
+      'billing_subscribe_success': '订阅已成功激活！',
+      'billing_subscribe_error': '订阅失败，请重试。',
       'billing_badge_ssl': 'SSL 安全',
       'billing_badge_3ds': '3D Secure',
       'billing_badge_pci': 'PCI DSS',
@@ -2300,6 +2344,17 @@ class AppStrings {
       'aiutil_lost_wallet': '钱包 💰',
       'aiutil_lost_bag': '包 👜',
       'aiutil_lost_help_btn': '寻求帮助',
+      // Review Analysis (SILK-0138)
+      'review_analysis_title': 'AI 评论分析',
+      'review_analysis_authenticity': '真实性评分',
+      'review_analysis_summary': '摘要',
+      'review_analysis_pros': '主要优点',
+      'review_analysis_cons': '主要缺点',
+      'review_analysis_worth': '值得一游',
+      'review_analysis_worth_yes': '是',
+      'review_analysis_worth_no': '否',
+      'review_analysis_loading': '正在分析评论...',
+      'review_analysis_error': '无法加载分析',
     },
   };
 }

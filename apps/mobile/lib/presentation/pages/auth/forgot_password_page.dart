@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:silklens/core/l10n/app_strings.dart';
 import 'package:silklens/core/l10n/locale_service.dart';
+import 'package:silklens/data/api/clients/api_client_provider.dart';
 
-class ForgotPasswordPage extends StatefulWidget {
+class ForgotPasswordPage extends ConsumerStatefulWidget {
   const ForgotPasswordPage({super.key});
 
   @override
-  State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
+  ConsumerState<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
 }
 
-class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   bool _loading = false;
   bool _sent = false;
+  String? _errorMsg;
 
   @override
   void initState() {
@@ -39,16 +42,34 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     super.dispose();
   }
 
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
+
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    setState(() => _loading = true);
-    // TODO(auth): call AuthRepository.sendPasswordReset()
-    await Future<void>.delayed(const Duration(milliseconds: 1500));
-    if (mounted) setState(() { _loading = false; _sent = true; });
-  }
+    setState(() {
+      _loading = true;
+      _errorMsg = null;
+    });
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+    try {
+      final client = ref.read(silkLensApiClientProvider);
+      await client.forgotPassword(_emailCtrl.text.trim());
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _sent = true;
+      });
+      // Navigate to reset-password page passing the email as a query param.
+      final encoded = Uri.encodeComponent(_emailCtrl.text.trim());
+      await context.push('/auth/reset-password?email=$encoded');
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _errorMsg = _s('auth_forgot_error');
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -182,9 +203,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           color: Colors.white.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: const Color(0xFF4CAF50).withValues(
-                              alpha: 0.6,
-                            ),
+                            color: const Color(0xFF4CAF50).withValues(alpha: 0.6),
                           ),
                         ),
                         child: Row(
@@ -197,8 +216,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                '${_s('auth_forgot_success')}\n'
-                                    '${_emailCtrl.text}',
+                                '${_s('auth_forgot_success')}\n${_emailCtrl.text}',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
@@ -209,37 +227,16 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      // Back to sign in — gold gradient
-                      GestureDetector(
-                        onTap: () => context.go('/auth/sign-in'),
-                        child: Container(
-                          width: double.infinity,
-                          height: 54,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFB78628), Color(0xFFE5C97A)],
-                            ),
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFB78628)
-                                    .withValues(alpha: 0.35),
-                                blurRadius: 16,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              _s('auth_back_signin'),
-                              style: const TextStyle(
-                                color: Color(0xFF1A1200),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
+                      _GoldButton(
+                        label: _s('auth_reset_enter_code'),
+                        onTap: () => context.push(
+                          '/auth/reset-password?email=${Uri.encodeComponent(_emailCtrl.text.trim())}',
                         ),
+                      ),
+                      const SizedBox(height: 16),
+                      _GoldButton(
+                        label: _s('auth_back_signin'),
+                        onTap: () => context.go('/auth/sign-in'),
                       ),
                     ] else ...[
                       Form(
@@ -307,8 +304,20 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           },
                         ),
                       ),
+
+                      if (_errorMsg != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          _errorMsg!,
+                          style: const TextStyle(
+                            color: Color(0xFFFF6B6B),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+
                       const SizedBox(height: 32),
-                      // Send Reset Link — gold gradient
+
                       GestureDetector(
                         onTap: _loading ? null : _submit,
                         child: AnimatedOpacity(
@@ -319,10 +328,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             height: 54,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [
-                                  Color(0xFFB78628),
-                                  Color(0xFFE5C97A),
-                                ],
+                                colors: [Color(0xFFB78628), Color(0xFFE5C97A)],
                               ),
                               borderRadius: BorderRadius.circular(14),
                               boxShadow: [
@@ -359,37 +365,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 20),
-                      GestureDetector(
+                      _GoldButton(
+                        label: _s('auth_back_signin'),
                         onTap: () => context.go('/auth/sign-in'),
-                        child: Container(
-                          width: double.infinity,
-                          height: 54,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFB78628), Color(0xFFE5C97A)],
-                            ),
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFB78628)
-                                    .withValues(alpha: 0.35),
-                                blurRadius: 16,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              _s('auth_back_signin'),
-                              style: const TextStyle(
-                                color: Color(0xFF1A1200),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
                       ),
                     ],
 
@@ -400,6 +380,46 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _GoldButton extends StatelessWidget {
+  const _GoldButton({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        height: 54,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFB78628), Color(0xFFE5C97A)],
+          ),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFB78628).withValues(alpha: 0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF1A1200),
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
       ),
     );
   }

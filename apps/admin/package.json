@@ -64,6 +64,7 @@
     "autoprefixer": "^10.4.20",
     "eslint": "^9.10.0",
     "eslint-config-next": "^14.2.13",
+    "openapi-typescript": "^7.4.0",
     "postcss": "^8.4.45",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.6.6",

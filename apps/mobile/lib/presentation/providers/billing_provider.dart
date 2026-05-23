@@ -197,3 +197,76 @@ final invoicesProvider =
   final items = await repo.getInvoices();
   return items.cast<Map<String, dynamic>>();
 });
+
+// ─── Subscription mutation notifier (SILK-0104..0106) ────────────────────────
+//
+// Used by CheckoutPage to start a subscription and by ManageSubscriptionPage
+// to cancel / resume. State is `AsyncValue<Map<String, dynamic>?>`:
+//   - data(null)    → idle / not started
+//   - loading()     → mutation in flight
+//   - data(map)     → last successful subscription map
+//   - error(e, st)  → last failure
+
+class SubscriptionNotifier
+    extends Notifier<AsyncValue<Map<String, dynamic>?>> {
+  @override
+  AsyncValue<Map<String, dynamic>?> build() => const AsyncValue.data(null);
+
+  /// Calls POST /v1/billing/subscriptions. Invalidates [billingProvider] on
+  /// success so the plans/manage screens reflect the new subscription
+  /// immediately.
+  ///
+  /// For real Stripe integration, obtain a PaymentMethod token first and pass
+  /// it as [paymentMethodToken].
+  // TODO(SILK-0105): integrate flutter_stripe — create PaymentMethod token
+  // before calling this method so [paymentMethodToken] is a real Stripe PM id.
+  Future<Map<String, dynamic>> start({
+    required String planSlug,
+    required String paymentMethodToken,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final sub = await ref.read(billingRepositoryProvider).startSubscription(
+            planSlug: planSlug,
+            paymentMethodToken: paymentMethodToken,
+          );
+      state = AsyncValue.data(sub);
+      // Refresh full billing state so PlansPage / ManageSubscriptionPage
+      // reflect the new subscription without a manual pull-to-refresh.
+      ref.invalidate(billingProvider);
+      return sub;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  Future<void> cancel({bool atPeriodEnd = true}) async {
+    state = const AsyncValue.loading();
+    try {
+      await ref
+          .read(billingRepositoryProvider)
+          .cancelSubscription(atPeriodEnd: atPeriodEnd);
+      state = const AsyncValue.data(null);
+      ref.invalidate(billingProvider);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> resume() async {
+    state = const AsyncValue.loading();
+    try {
+      await ref.read(billingRepositoryProvider).resumeSubscription();
+      state = const AsyncValue.data(null);
+      ref.invalidate(billingProvider);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+final subscriptionNotifierProvider = NotifierProvider<SubscriptionNotifier,
+    AsyncValue<Map<String, dynamic>?>>(
+  SubscriptionNotifier.new,
+);

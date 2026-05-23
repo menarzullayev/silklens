@@ -246,7 +246,7 @@ git push --no-verify  # emergency bypass
 - [✅] **SILK-0109** 🟢 Wire BadgesPage to badgesProvider (real API, Badge name-clash fix)
 - [✅] **SILK-0110** 🟢 Wire LeaderboardPage to leaderboardEntriesProvider (real API, period toggle)
 - [✅] **SILK-0111** 🟢 Wire MissionsPage to gamificationProvider (XP snapshot card)
-- [✅] **SILK-0112** 🟢 GamificationRepositoryImpl + SilkLensApiClient gamification section
+- [✅] **SILK-0112** 🟢 GamificationRepositoryImpl + SilkLensApiClient gamification section + ApiEndpoints gamification constants (meXp, meBadges, meStreak, meStreakTick, leaderboards, leaderboardBySlug)
 - [🔄] **SILK-0017** 🟢 **EPIC-009 Social & Community** — activity feed pagination, notifications
 - [🔄] **SILK-0018** 🟡 **EPIC-010 Billing** — checkout sahifa real Stripe flow
 - [🔄] **SILK-0019** 🟢 **EPIC-011 Settings & Account** — language settings dinamik vocab, GDPR delete flow
@@ -378,10 +378,10 @@ git push --no-verify  # emergency bypass
 
 ### Flutter Mobile — Social Backend Wiring (2026-05-23)
 
-- [✅] **SILK-0113** Wire `ActivityFeedPage` to real `feedProvider` (FutureProvider → `GET /v1/social/feed`); loading skeletons, error card with retry, empty state; verb localisation for visit/review/badge/follow verbs; all 4 locales
-- [✅] **SILK-0114** Wire `NotificationsPage` to real `notificationsProvider` (NotificationsNotifier → `GET /v1/notifications`); mark-single-read (`POST /v1/notifications/{id}/read`), mark-all-read (`POST /v1/notifications/mark-all-read`); unreadCountProvider drives badge; filter chips i18n
-- [✅] **SILK-0115** Wire `FollowingListPage` to real `followingProvider`/`followersProvider` (FutureProvider.family → `GET /v1/social/following/{pub_id}` + followers); follow/unfollow toggle per row via `socialRepositoryProvider`; search filter; all 4 locales
-- [✅] **SILK-0116** Wire `FriendInvitePage` to real invite API (`POST /v1/social/friends/invite`); shows real token, expiry, deep-link `silklens://invite?token=…`; loading/error/retry states; `SilkLensApiClient` + `SocialRepositoryImpl` fully implemented for social + notifications
+- [✅] **SILK-0113** Wire `ActivityFeedPage` to real `feedProvider` (FutureProvider → `GET /v1/social/feed`); loading skeletons, error card with retry, empty state; verb localisation for visit/review/badge/follow verbs; all 4 locales — upgraded: typed `SocialFeedItem` DTO + `toPageMap()` bridge; `SocialFeedPage` cursor wrapper
+- [✅] **SILK-0114** Wire `NotificationsPage` to real `notificationsProvider` (NotificationsNotifier → `GET /v1/notifications`); mark-single-read (`POST /v1/notifications/{id}/read`), mark-all-read (`POST /v1/notifications/mark-all-read`); unreadCountProvider drives badge; filter chips i18n — upgraded: typed `SocialNotificationItem`/`NotificationsState`; loading + error + empty states; before-cursor pagination param
+- [✅] **SILK-0115** Wire `FollowingListPage` to real `followingProvider`/`followersProvider` (`FollowingListNotifier.family` → `GET /v1/social/following/{pub_id}` + followers); follow/unfollow toggle per row; search filter; all 4 locales — upgraded: typed `UserRef` DTO; `Future.wait` parallel fetch; error retry; offset pagination on client
+- [✅] **SILK-0116** Wire `FriendInvitePage` to real invite API (`POST /v1/social/friends/invite`); shows real token, expiry, deep-link `silklens://invite?token=…`; loading/error/retry — upgraded: `SilkLensApiClient` gains `blockUser`, `unblockUser`, `acceptFriendInvitation`, `target_pub_id`/`target_email` params, `before` cursor on notifications, `offset` on following/followers; `SocialRepositoryImpl` fully typed
 
 ### Flutter Mobile — Map + Profile + Review API Wiring (2026-05-23)
 
@@ -415,10 +415,10 @@ git push --no-verify  # emergency bypass
 ### Flutter Mobile — Billing API Wiring (2026-05-23)
 
 - [✅] **SILK-0104** `BillingRepositoryImpl` fully wired: `getPlans`, `getCurrentSubscription`, `getInvoices`, `getEntitlements`, `cancelSubscription(atPeriodEnd)`, `resumeSubscription`, `validateCoupon`; `SilkLensApiClient` extended with `resumeSubscription` + `validateCoupon` (`POST /v1/billing/coupons/validate`); `BillingState` gains `billingCycle`, `couponResult`, `isValidatingCoupon`, `cancelAtPeriodEnd`; `BillingNotifier` gains `setBillingCycle`, `resumeSubscription`, `validateCoupon`, `clearCoupon`.
-- [✅] **SILK-0105** `PlansPage` reads `billingProvider`: plan cards from API, "Current Plan" badge, monthly/yearly toggle via `setBillingCycle`; `CheckoutPage` upgraded to `ConsumerStatefulWidget` with coupon section (text field + Apply button + validity feedback), `validateCoupon` via notifier, `_couponCtrl` disposed, all strings i18n via `AppStrings.get`.
+- [✅] **SILK-0105** `PlansPage` reads `billingProvider`: plan cards from API, "Current Plan" badge, monthly/yearly toggle via `setBillingCycle`; `CheckoutPage` pay button wired to real `POST /v1/billing/subscriptions` via `SubscriptionNotifier.start()` — loading spinner, success/error SnackBar, `mounted` guard, pre-async context capture; coupon section calls `validateCoupon` via notifier; all controllers disposed.
 - [✅] **SILK-0106** `ManageSubscriptionPage` reads real `billingProvider`: resume subscription button shown when `cancelAtPeriodEnd == true`, cancel button shown otherwise; both call notifier methods with error SnackBar on failure.
 - [✅] **SILK-0107** `InvoicesPage` reads `invoicesProvider` (FutureProvider); year filter chips; loading/error/empty/retry states.
-- 82 locale keys across all 4 locales (en/uz/ru/zh) — all billing keys including new `billing_coupon_*` and `billing_resume_*`; `flutter build apk --debug` exit 0.
+- `SilkLensApiClient.createSubscription` added (`POST /v1/billing/subscriptions`, idempotency key header); `BillingRepositoryImpl.startSubscription` added; `SubscriptionNotifier` + `subscriptionNotifierProvider` added to `billing_provider.dart`; 9 billing endpoint constants added to `ApiEndpoints`; 2 new locale keys (`billing_subscribe_success`, `billing_subscribe_error`) × 4 locales (en/uz/ru/zh); `flutter analyze` billing scope: 0 errors, 0 warnings.
 
 ### Flutter Mobile — Feature Screens + Route Wiring (2026-05-23)
 

@@ -1,91 +1,214 @@
+// SILK-0113..0116 — typed Riverpod providers for social features.
+// All state is driven by SocialRepositoryImpl; no Map<String,dynamic> leaks
+// into the presentation layer.
+
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:silklens/data/repositories/social_repository_impl.dart';
 
 // ---------------------------------------------------------------------------
-// Feed — FutureProvider (used by ActivityFeedPage)
+// Activity Feed — FutureProvider with cursor-based pagination state
 // ---------------------------------------------------------------------------
 
+/// Flat list consumed by ActivityFeedPage.
 final feedProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final repo = ref.watch(socialRepositoryProvider);
-  final data = await repo.getFeed();
-  return ((data['items'] as List?) ?? []).cast<Map<String, dynamic>>();
+  final page = await ref.watch(socialRepositoryProvider).getFeed();
+  return page.items.map((i) => i.toPageMap()).toList();
 });
 
 // ---------------------------------------------------------------------------
-// Following list for a given pub_id
+// Notifications — stateful notifier supporting mark-read + filter
 // ---------------------------------------------------------------------------
 
-final followingProvider = FutureProvider.family<
-    List<Map<String, dynamic>>, String>((ref, pubId) async {
-  final repo = ref.watch(socialRepositoryProvider);
-  final data = await repo.getFollowing(pubId);
-  return ((data['items'] as List?) ?? []).cast<Map<String, dynamic>>();
-});
+class NotificationsState {
+  const NotificationsState({
+    this.items = const [],
+    this.isLoading = false,
+    this.error,
+    this.hasMore = false,
+  });
 
-// ---------------------------------------------------------------------------
-// Followers list for a given pub_id
-// ---------------------------------------------------------------------------
+  final List<SocialNotificationItem> items;
+  final bool isLoading;
+  final String? error;
+  final bool hasMore;
 
-final followersProvider = FutureProvider.family<
-    List<Map<String, dynamic>>, String>((ref, pubId) async {
-  final repo = ref.watch(socialRepositoryProvider);
-  final data = await repo.getFollowers(pubId);
-  return ((data['items'] as List?) ?? []).cast<Map<String, dynamic>>();
-});
+  NotificationsState copyWith({
+    List<SocialNotificationItem>? items,
+    bool? isLoading,
+    String? error,
+    bool clearError = false,
+    bool? hasMore,
+  }) =>
+      NotificationsState(
+        items: items ?? this.items,
+        isLoading: isLoading ?? this.isLoading,
+        error: clearError ? null : (error ?? this.error),
+        hasMore: hasMore ?? this.hasMore,
+      );
+}
 
-// ---------------------------------------------------------------------------
-// Notifications — stateful notifier supporting mark-read
-// ---------------------------------------------------------------------------
-
-class NotificationsNotifier
-    extends Notifier<List<Map<String, dynamic>>> {
+class NotificationsNotifier extends Notifier<NotificationsState> {
   @override
-  List<Map<String, dynamic>> build() {
+  NotificationsState build() {
     Future.microtask(refresh);
-    return [];
+    return const NotificationsState(isLoading: true);
   }
 
-  Future<void> refresh() async {
+  Future<void> refresh({bool unreadOnly = false}) async {
+    state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final repo = ref.read(socialRepositoryProvider);
-      final data = await repo.getNotifications();
-      state = ((data['items'] as List?) ?? [])
-          .cast<Map<String, dynamic>>();
-    } catch (_) {
-      // Silently keep previous state on network error.
+      final page = await ref
+          .read(socialRepositoryProvider)
+          .getNotifications(unreadOnly: unreadOnly);
+      state = state.copyWith(
+        items: page.items,
+        isLoading: false,
+        hasMore: page.hasMore,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
     }
   }
 
   Future<void> markRead(String id) async {
     try {
       await ref.read(socialRepositoryProvider).markRead(id);
-      state = state
-          .map((n) => n['id'] == id ? {...n, 'is_read': true} : n)
-          .toList();
-    } catch (_) {}
+      state = state.copyWith(
+        items: state.items
+            .map((n) => n.id == id ? n.copyWith(isRead: true) : n)
+            .toList(),
+      );
+    } catch (_) {
+      // Optimistic update stays; silently ignore network failure.
+    }
   }
 
   Future<void> markAllRead() async {
     try {
       await ref.read(socialRepositoryProvider).markAllRead();
-      state = state.map((n) => {...n, 'is_read': true}).toList();
+      state = state.copyWith(
+        items: state.items.map((n) => n.copyWith(isRead: true)).toList(),
+      );
     } catch (_) {}
   }
 }
 
 final notificationsProvider =
-    NotifierProvider<NotificationsNotifier, List<Map<String, dynamic>>>(
+    NotifierProvider<NotificationsNotifier, NotificationsState>(
   NotificationsNotifier.new,
 );
 
+/// Unread badge count — derived from notificationsProvider.
 final unreadCountProvider = Provider<int>((ref) {
-  final notifs = ref.watch(notificationsProvider);
-  return notifs.where((n) => n['is_read'] != true).length;
+  return ref
+      .watch(notificationsProvider)
+      .items
+      .where((n) => !n.isRead)
+      .length;
 });
 
 // ---------------------------------------------------------------------------
-// Friend Invite — stateful notifier for token + expiry
+// Following / Followers — family notifier with follow/unfollow mutation
+// ---------------------------------------------------------------------------
+
+class FollowingListState {
+  const FollowingListState({
+    this.following = const [],
+    this.followers = const [],
+    this.isLoading = false,
+    this.error,
+  });
+
+  final List<UserRef> following;
+  final List<UserRef> followers;
+  final bool isLoading;
+  final String? error;
+
+  FollowingListState copyWith({
+    List<UserRef>? following,
+    List<UserRef>? followers,
+    bool? isLoading,
+    String? error,
+    bool clearError = false,
+  }) =>
+      FollowingListState(
+        following: following ?? this.following,
+        followers: followers ?? this.followers,
+        isLoading: isLoading ?? this.isLoading,
+        error: clearError ? null : (error ?? this.error),
+      );
+}
+
+class FollowingListNotifier
+    extends FamilyNotifier<FollowingListState, String> {
+  @override
+  FollowingListState build(String userPubId) {
+    Future.microtask(() => _load(userPubId));
+    return const FollowingListState(isLoading: true);
+  }
+
+  Future<void> _load(String userPubId) async {
+    if (userPubId.isEmpty) {
+      state = const FollowingListState();
+      return;
+    }
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final repo = ref.read(socialRepositoryProvider);
+      final results = await Future.wait([
+        repo.getFollowing(userPubId),
+        repo.getFollowers(userPubId),
+      ]);
+      state = state.copyWith(
+        following: results[0],
+        followers: results[1],
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> follow(String pubId) async {
+    try {
+      await ref.read(socialRepositoryProvider).follow(pubId);
+      // Optimistically mark as following in the followers list
+      state = state.copyWith(
+        followers: state.followers
+            .map((u) => u.pubId == pubId ? u.copyWith(isFollowing: true) : u)
+            .toList(),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> unfollow(String pubId) async {
+    try {
+      await ref.read(socialRepositoryProvider).unfollow(pubId);
+      state = state.copyWith(
+        following: state.following.where((u) => u.pubId != pubId).toList(),
+        followers: state.followers
+            .map(
+              (u) => u.pubId == pubId ? u.copyWith(isFollowing: false) : u,
+            )
+            .toList(),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> reload(String userPubId) => _load(userPubId);
+}
+
+final followingListProvider = NotifierProviderFamily<FollowingListNotifier,
+    FollowingListState, String>(
+  FollowingListNotifier.new,
+);
+
+// ---------------------------------------------------------------------------
+// Friend Invite — stateful notifier (token + expiry)
 // ---------------------------------------------------------------------------
 
 class FriendInviteState {
@@ -123,21 +246,19 @@ class FriendInviteNotifier extends Notifier<FriendInviteState> {
     return const FriendInviteState(isLoading: true);
   }
 
-  Future<void> createInvite() async {
+  Future<void> createInvite({String? message}) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final data =
-          await ref.read(socialRepositoryProvider).createInvite();
+      final inv = await ref
+          .read(socialRepositoryProvider)
+          .createInvitation(message: message);
       state = state.copyWith(
-        token: data['token'] as String?,
-        expiresAt: data['expires_at'] as String?,
+        token: inv.token,
+        expiresAt: inv.expiresAt,
         isLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 }
@@ -145,98 +266,4 @@ class FriendInviteNotifier extends Notifier<FriendInviteState> {
 final friendInviteProvider =
     NotifierProvider<FriendInviteNotifier, FriendInviteState>(
   FriendInviteNotifier.new,
-);
-
-// ---------------------------------------------------------------------------
-// Following list with follow/unfollow mutation — stateful notifier
-// ---------------------------------------------------------------------------
-
-class FollowingListState {
-  const FollowingListState({
-    this.following = const [],
-    this.followers = const [],
-    this.isLoading = false,
-    this.error,
-  });
-
-  final List<Map<String, dynamic>> following;
-  final List<Map<String, dynamic>> followers;
-  final bool isLoading;
-  final String? error;
-
-  FollowingListState copyWith({
-    List<Map<String, dynamic>>? following,
-    List<Map<String, dynamic>>? followers,
-    bool? isLoading,
-    String? error,
-    bool clearError = false,
-  }) =>
-      FollowingListState(
-        following: following ?? this.following,
-        followers: followers ?? this.followers,
-        isLoading: isLoading ?? this.isLoading,
-        error: clearError ? null : (error ?? this.error),
-      );
-}
-
-class FollowingListNotifier
-    extends FamilyNotifier<FollowingListState, String> {
-  @override
-  FollowingListState build(String userPubId) {
-    Future.microtask(() => _load(userPubId));
-    return const FollowingListState(isLoading: true);
-  }
-
-  Future<void> _load(String userPubId) async {
-    state = state.copyWith(isLoading: true, clearError: true);
-    try {
-      final repo = ref.read(socialRepositoryProvider);
-      final followingData = await repo.getFollowing(userPubId, limit: 50);
-      final followersData = await repo.getFollowers(userPubId, limit: 50);
-      state = state.copyWith(
-        following: ((followingData['items'] as List?) ?? [])
-            .cast<Map<String, dynamic>>(),
-        followers: ((followersData['items'] as List?) ?? [])
-            .cast<Map<String, dynamic>>(),
-        isLoading: false,
-      );
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-    }
-  }
-
-  Future<void> follow(String pubId) async {
-    try {
-      await ref.read(socialRepositoryProvider).follow(pubId);
-      // Optimistically mark as following in the followers list
-      state = state.copyWith(
-        followers: state.followers.map((u) {
-          if (u['pub_id'] == pubId) return {...u, 'is_following': true};
-          return u;
-        }).toList(),
-      );
-    } catch (_) {}
-  }
-
-  Future<void> unfollow(String pubId) async {
-    try {
-      await ref.read(socialRepositoryProvider).unfollow(pubId);
-      // Remove from following list + update followers list
-      state = state.copyWith(
-        following:
-            state.following.where((u) => u['pub_id'] != pubId).toList(),
-        followers: state.followers.map((u) {
-          if (u['pub_id'] == pubId) return {...u, 'is_following': false};
-          return u;
-        }).toList(),
-      );
-    } catch (_) {}
-  }
-
-  Future<void> reload(String userPubId) => _load(userPubId);
-}
-
-final followingListProvider = NotifierProviderFamily<FollowingListNotifier,
-    FollowingListState, String>(
-  FollowingListNotifier.new,
 );

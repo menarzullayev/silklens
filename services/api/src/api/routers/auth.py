@@ -748,3 +748,138 @@ async def resend_verification(
             detail={"code": "EMAIL_SEND_FAILED", "message": "Email yuborishda xato"},
         ) from None
     return ResendVerificationResponse(sent=True)
+
+
+# --- Password reset endpoints (SILK-0122) ------------------------------------
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ForgotPasswordResponse(BaseModel):
+    sent: bool
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
+    new_password: str = Field(..., min_length=12, max_length=200)
+
+
+class ResetPasswordResponse(BaseModel):
+    reset: bool
+
+
+_RESET_KEY_PREFIX = "otp:password_reset:"
+
+
+def _reset_otp_text(code: str) -> str:
+    return (
+        f"SilkLens parolni tiklash kodi: {code}\n\n"
+        "Kodni ilovaga kiriting. 10 daqiqada amal qiladi.\n"
+    )
+
+
+@router.post(
+    "/forgot-password",
+    response_model=ForgotPasswordResponse,
+    dependencies=[Depends(rate_limit("3/minute", per="ip", scope="auth:forgot"))],
+)
+async def forgot_password(
+    body: ForgotPasswordRequest,
+    db: SessionDep,
+) -> ForgotPasswordResponse:
+    """Send password reset OTP.
+
+    Always returns 200 to prevent email enumeration — the response is identical
+    whether or not the email exists in the database.
+    """
+    from sqlalchemy import text as _text
+
+    row = await db.execute(
+        _text(
+            "SELECT id FROM user_emails WHERE LOWER(email) = LOWER(:email) AND is_primary = true"
+        ),
+        {"email": body.email},
+    )
+    user_row = row.fetchone()
+
+    if user_row is not None:
+        settings = get_settings()
+        code = f"{__import__('secrets').randbelow(1_000_000):06d}"
+        import redis.asyncio as aioredis
+
+        async with aioredis.from_url(settings.redis_url, decode_responses=True) as r:
+            await r.setex(
+                f"{_RESET_KEY_PREFIX}{body.email.lower().strip()}",
+                settings.email_otp_ttl_seconds,
+                code,
+            )
+        import contextlib
+
+        with contextlib.suppress(Exception):
+            await get_email_client().send_email(
+                to=body.email,
+                subject=f"SilkLens parolni tiklash kodi: {code}",
+                html=None,
+                text=_reset_otp_text(code),
+            )
+
+    return ForgotPasswordResponse(sent=True)
+
+
+@router.post(
+    "/reset-password",
+    response_model=ResetPasswordResponse,
+    dependencies=[Depends(rate_limit("5/minute", per="ip", scope="auth:reset"))],
+)
+async def reset_password(
+    body: ResetPasswordRequest,
+    db: SessionDep,
+) -> ResetPasswordResponse:
+    """Verify the password-reset OTP and set a new password."""
+    import redis.asyncio as aioredis
+    from sqlalchemy import text as _text
+
+    settings = get_settings()
+    redis_key = f"{_RESET_KEY_PREFIX}{body.email.lower().strip()}"
+
+    async with aioredis.from_url(settings.redis_url, decode_responses=True) as r:
+        stored = await r.get(redis_key)
+        if stored is None or stored != body.code:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={
+                    "code": "identity.invalid_otp",
+                    "message": "Kod noto'g'ri yoki muddati o'tgan",
+                },
+            )
+        await r.delete(redis_key)
+
+    hasher = Argon2PasswordHasher()
+    password_hash = hasher.hash(body.new_password)
+
+    result = await db.execute(
+        _text("""
+            UPDATE users
+            SET password_hash = :hash, updated_at = now()
+            WHERE id = (
+                SELECT user_id FROM user_emails
+                WHERE LOWER(email) = LOWER(:email) AND is_primary = true
+            )
+            RETURNING id
+        """),
+        {"hash": password_hash, "email": body.email},
+    )
+    if not result.fetchone():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "identity.user_not_found",
+                "message": "Foydalanuvchi topilmadi",
+            },
+        )
+    await db.commit()
+
+    return ResetPasswordResponse(reset=True)

@@ -5,6 +5,7 @@ import 'package:silklens/core/l10n/app_strings.dart';
 import 'package:silklens/data/api/clients/api_client_provider.dart';
 import 'package:silklens/presentation/providers/auth_provider.dart';
 import 'package:silklens/presentation/providers/locale_provider.dart';
+import 'package:silklens/presentation/providers/profile_stats_provider.dart';
 
 class UserProfilePage extends ConsumerStatefulWidget {
   const UserProfilePage({super.key, this.isOwn = false});
@@ -262,18 +263,49 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // Stats — placeholders; real XP/visit data in FAZA 3+
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _StatCol('–', _s('profile_stat_places')),
-                      _StatCol('–', _s('profile_stat_followers')),
-                      _StatCol('–', _s('profile_stat_following')),
-                      _StatCol('–', _s('profile_stat_xp')),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // Action buttons
+                  // Stats — real XP + social counts (SILK-0117)
+                  Builder(builder: (context) {
+                    final stats = ref.watch(profileStatsProvider);
+                    if (stats.isLoading) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFFB78628),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _StatCol(
+                          stats.placesVisited > 0
+                              ? '${stats.placesVisited}'
+                              : '–',
+                          _s('profile_stat_places'),
+                        ),
+                        _StatCol(
+                          '${stats.followersCount}',
+                          _s('profile_stat_followers'),
+                        ),
+                        _StatCol(
+                          '${stats.followingCount}',
+                          _s('profile_stat_following'),
+                        ),
+                        _StatCol(
+                          stats.xp > 0 ? '${stats.xp}' : '–',
+                          _s('profile_stat_xp'),
+                        ),
+                      ],
+                    );
+                  }),
+                  const SizedBox(height: 16), // Action buttons
                   if (!widget.isOwn)
                     Row(
                       children: [

@@ -616,74 +616,100 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   }
 
   Widget _payButton(BuildContext context, Map<String, dynamic>? plan) {
+    final subAsync = ref.watch(subscriptionNotifierProvider);
+    final isLoading = subAsync is AsyncLoading;
+
     return GestureDetector(
-      onTap: () => _showComingSoon(context),
-      child: Container(
+      onTap: isLoading ? null : () => _submit(context, plan),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         height: 54,
         width: double.infinity,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFB78628), Color(0xFFE5C97A)],
-          ),
+          gradient: isLoading
+              ? null
+              : const LinearGradient(
+                  colors: [Color(0xFFB78628), Color(0xFFE5C97A)],
+                ),
+          color: isLoading
+              ? Colors.white.withValues(alpha: 0.12)
+              : null,
           borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: _gold.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: isLoading
+              ? null
+              : [
+                  BoxShadow(
+                    color: _gold.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
         ),
         child: Center(
-          child: Text(
-            _s('billing_pay_btn'),
-            style: const TextStyle(
-              color: Color(0xFF1A1200),
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
+          child: isLoading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: _gold,
+                  ),
+                )
+              : Text(
+                  _s('billing_pay_btn'),
+                  style: const TextStyle(
+                    color: Color(0xFF1A1200),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
         ),
       ),
     );
   }
 
-  void _showComingSoon(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0F2A3D),
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          _s('billing_payment_soon_title'),
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-          ),
+  Future<void> _submit(
+    BuildContext context,
+    Map<String, dynamic>? plan,
+  ) async {
+    final slug = plan?['slug'] as String? ?? '';
+    if (slug.isEmpty || slug == 'free') return;
+
+    // Capture context-dependent objects before the async gap so the linter
+    // is satisfied and we avoid using a potentially stale BuildContext.
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final successMsg = _s('billing_subscribe_success');
+    final errorMsg = _s('billing_subscribe_error');
+
+    // TODO(SILK-0105): integrate flutter_stripe — obtain a real PaymentMethod
+    // token before calling start(). The mock token is accepted by the backend
+    // MockPaymentProvider in non-production environments only.
+    final mockToken =
+        'mock_token_${DateTime.now().millisecondsSinceEpoch}';
+
+    try {
+      await ref.read(subscriptionNotifierProvider.notifier).start(
+            planSlug: slug,
+            paymentMethodToken: mockToken,
+          );
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(successMsg),
+          backgroundColor: const Color(0xFF1B4332),
         ),
-        content: Text(
-          _s('billing_payment_soon_body'),
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.6),
-            fontSize: 13,
-            height: 1.5,
-          ),
+      );
+      navigator.pop();
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(errorMsg),
+          backgroundColor: const Color(0xFFEF5350),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              _s('billing_ok'),
-              style: const TextStyle(
-                color: _gold,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+      );
+    }
   }
 
   Widget _securityBadges() {

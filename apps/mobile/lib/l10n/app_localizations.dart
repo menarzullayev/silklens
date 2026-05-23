@@ -98,12 +98,12 @@ abstract class AppLocalizations {
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
-    Locale('de'),
     Locale('en'),
-    Locale('ko'),
-    Locale('ru'),
     Locale('uz'),
-    Locale('zh')
+    Locale('ru'),
+    Locale('zh'),
+    Locale('de'),
+    Locale('ko')
   ];
 
   /// User-visible product name. Per Project-Decisions §1 the canonical source for this string is the admin panel — this ARB key is the fallback when remote tenant branding is unavailable.
