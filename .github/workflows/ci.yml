@@ -391,6 +391,14 @@ jobs:
         if: steps.probe.outputs.present == 'true'
         run: dart format --output=none --set-exit-if-changed .
 
+      - name: Create stub assets/.env
+        if: steps.probe.outputs.present == 'true'
+        # assets/.env is declared in pubspec.yaml and bundled at runtime, but
+        # it is git-ignored (contains secrets in non-CI environments).  Without
+        # the file, flutter analyze emits a warning-level diagnostic that exits
+        # non-zero.  An empty stub satisfies the asset check in CI.
+        run: touch assets/.env
+
       - name: Flutter analyze
         if: steps.probe.outputs.present == 'true'
         run: flutter analyze
