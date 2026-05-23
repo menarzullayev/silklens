@@ -116,7 +116,38 @@ void runAppWithProviders({
       overrides: <Override>[
         appEnvironmentProvider.overrideWithValue(environment),
       ],
-      child: const SilkLensApp(),
+      child: const _FcmInitWrapper(child: SilkLensApp()),
     ),
   );
+}
+
+/// Thin ConsumerStatefulWidget wrapper that initialises FCM after the first
+/// frame so it never blocks app startup and has access to Riverpod providers.
+class _FcmInitWrapper extends ConsumerStatefulWidget {
+  const _FcmInitWrapper({required this.child});
+  final Widget child;
+
+  @override
+  ConsumerState<_FcmInitWrapper> createState() => _FcmInitWrapperState();
+}
+
+class _FcmInitWrapperState extends ConsumerState<_FcmInitWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    // Run after the first frame so the widget tree is fully mounted.
+    // Errors are caught — a failed FCM init must not crash the app.
+    Future.microtask(() async {
+      try {
+        await ref
+            .read(fcmServiceProvider)
+            .init();
+      } catch (e) {
+        AppLogger.instance.w('FCM init failed', error: e);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

@@ -4,14 +4,13 @@
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:silklens/data/api/clients/api_client_provider.dart';
-import 'package:silklens/data/api/clients/silklens_api_client.dart';
 
 /// FutureProvider.family keyed by [heritagePubId].
-/// Automatically cached per heritage until the widget is disposed.
+/// Cached per heritage pub_id for the lifetime of the provider scope.
 final reviewAnalysisProvider =
     FutureProvider.family<Map<String, dynamic>, String>(
-  (FutureProviderRef<Map<String, dynamic>> ref, String pubId) async {
-    final SilkLensApiClient client = ref.read(silkLensApiClientProvider);
+  (Ref ref, String pubId) async {
+    final client = ref.read(silkLensApiClientProvider);
     return client.getReviewAnalysis(pubId);
   },
 );

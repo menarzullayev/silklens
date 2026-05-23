@@ -2,7 +2,8 @@
 // Registers FCM token with backend on init.
 //
 // Prerequisites (SILK-0139):
-//   - firebase_core, firebase_messaging, flutter_local_notifications in pubspec.
+//   - firebase_core, firebase_messaging, flutter_local_notifications in
+//     pubspec.yaml.
 //   - android/app/google-services.json placed (gitignored) from Firebase Console
 //   - ios/Runner/GoogleService-Info.plist placed (gitignored) from Firebase Console
 //   - Google Services plugin applied in android/app/build.gradle and
@@ -64,11 +65,7 @@ class FcmService {
     final messaging = FirebaseMessaging.instance;
 
     // Request permission (iOS requires explicit prompt; Android 13+ also does).
-    final settings = await messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    final settings = await messaging.requestPermission();
     if (settings.authorizationStatus == AuthorizationStatus.denied) {
       debugPrint('[FCM] Permission denied by user.');
       return null;
@@ -150,6 +147,6 @@ class FcmService {
 /// Consume via `ref.read(fcmServiceProvider)` in initState of the root widget
 /// or in a startup provider. Do not call [FcmService.init] from widget builds.
 final fcmServiceProvider = Provider<FcmService>(
-  (ref) => FcmService(ref),
+  FcmService.new,
   name: 'fcmServiceProvider',
 );
