@@ -489,31 +489,39 @@ class _HeritageDetailPageState extends ConsumerState<HeritageDetailPage>
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-            child: Row(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 _ActionBtn(
                   Icons.volume_up_rounded,
                   AppStrings.get(lang, 'heritage_action_audio'),
                   () {},
                 ),
-                const SizedBox(width: 8),
                 _ActionBtn(
                   Icons.view_in_ar_rounded,
                   AppStrings.get(lang, 'heritage_action_ar'),
                   () {},
                   isGold: true,
                 ),
-                const SizedBox(width: 8),
                 _ActionBtn(
                   Icons.map_rounded,
                   AppStrings.get(lang, 'heritage_action_directions'),
                   () {},
                 ),
-                const SizedBox(width: 8),
                 _ActionBtn(
                   Icons.photo_library_outlined,
                   AppStrings.get(lang, 'heritage_action_photos'),
                   () {},
+                ),
+                // SILK-0100 — AI Photo Guide
+                _ActionBtn(
+                  Icons.camera_enhance_outlined,
+                  AppStrings.get(lang, 'heritage_action_photo_guide'),
+                  () => context.push(
+                    '/photo-guide/${item.pubId}'
+                    '?name=${Uri.encodeComponent(item.localizedName(lang))}',
+                  ),
                 ),
               ],
             ),

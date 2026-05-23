@@ -365,6 +365,7 @@ git push --no-verify  # emergency bypass
 ### Flutter Mobile — Camera + Voice Assistant (2026-05-23)
 
 - [✅] **SILK-0099** `CameraPage` real implementation — live `CameraController` viewfinder, `WidgetsBindingObserver` lifecycle, capture + gallery pick → `uploadMedia` → `recognizeImage`; `RecognitionNotifier` sealed-state provider; `_slideUpPage` transition; 11 camera_* keys × 4 locales (en/uz/ru/zh)
+- [✅] **SILK-0100** `PhotoGuidePage` — AI photography angle suggestions + historical overlays for heritage sites; 3 tabs (Angle/Historical/Compare); `_CompassPainter` with `dart:math` sin/cos; `SilkLensApiClient.getPhotoGuide` (`POST /v1/ai/photo-guide`); `/photo-guide/:pubId` `_slideRightPage` route; `heritage_action_photo_guide` button wired in `HeritageDetailPage` (Row→Wrap); 13 photo_guide_* keys × 4 locales
 - [✅] **SILK-0101** `VoiceAssistantPage` — hold-to-listen mic button with `AnimationController` pulse, `VoiceNotifier` sealed-state (idle/listening/processing/result/error), `transcribeAudio` + `resolveVoiceIntent` API wiring, 17 voice_* keys × 4 locales; `/voice-assistant` route `_slideUpPage`; audio recording hook point documented for SILK-0105
 
 ### Flutter Mobile — Gamification API Wiring (2026-05-23)

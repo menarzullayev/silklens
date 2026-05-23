@@ -28,8 +28,13 @@ import 'package:silklens/presentation/pages/heritage/heritage_list_page.dart';
 import 'package:silklens/presentation/pages/heritage/offline_mode_page.dart';
 import 'package:silklens/presentation/pages/heritage/search_page.dart';
 import 'package:silklens/presentation/pages/heritage/search_results_page.dart';
+import 'package:silklens/presentation/pages/home/mood_travel_page.dart';
+import 'package:silklens/presentation/pages/map/food_guide_page.dart';
 import 'package:silklens/presentation/pages/map/map_page.dart';
+import 'package:silklens/presentation/pages/map/trip_planner_page.dart';
 import 'package:silklens/presentation/pages/map/weather_guide_page.dart';
+import 'package:silklens/presentation/pages/settings/carbon_page.dart';
+import 'package:silklens/presentation/pages/settings/expense_tracker_page.dart';
 import 'package:silklens/presentation/pages/profile/user_profile_page.dart';
 import 'package:silklens/presentation/pages/settings/about_page.dart';
 import 'package:silklens/presentation/pages/settings/delete_account_page.dart';
@@ -432,6 +437,32 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/gamification/missions',
         pageBuilder: (ctx, state) =>
             _slideRightPage(ctx, state, const MissionsPage()),
+      ),
+      // ── New feature pages (SILK-0103, 0130, 0131, 0133, 0134) ─────────────
+      GoRoute(
+        path: '/trips',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const TripPlannerPage()),
+      ),
+      GoRoute(
+        path: '/expenses',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const ExpenseTrackerPage()),
+      ),
+      GoRoute(
+        path: '/mood',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const MoodTravelPage()),
+      ),
+      GoRoute(
+        path: '/food-guide',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const FoodGuidePage()),
+      ),
+      GoRoute(
+        path: '/carbon',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const CarbonPage()),
       ),
     ],
   );

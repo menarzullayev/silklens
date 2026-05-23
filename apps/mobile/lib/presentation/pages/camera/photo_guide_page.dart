@@ -6,7 +6,7 @@
 // Calls go through SilkLensApiClient via silkLensApiClientProvider —
 // never Dio directly from the widget.
 
-import 'dart:math' show sin, cos, pi;
+import 'dart:math' show cos, pi, sin;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,8 +18,8 @@ import 'package:silklens/data/api/clients/api_client_provider.dart';
 
 class PhotoGuidePage extends ConsumerStatefulWidget {
   const PhotoGuidePage({
-    super.key,
     required this.heritagePubId,
+    super.key,
     this.heritageName,
   });
 
@@ -95,7 +95,6 @@ class _PhotoGuidePageState extends ConsumerState<PhotoGuidePage>
       final lang = LocaleService.instance.locale;
       final data = await client.getPhotoGuide(
         heritagePubId: widget.heritagePubId,
-        mode: 'angle',
         language: lang,
       );
       if (!mounted) return;
