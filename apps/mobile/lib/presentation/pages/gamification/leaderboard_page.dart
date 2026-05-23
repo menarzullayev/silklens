@@ -1,71 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/core/l10n/app_strings.dart';
+import 'package:silklens/core/l10n/locale_service.dart';
+import 'package:silklens/domain/gamification/entities/leaderboard_entry.dart';
+import 'package:silklens/presentation/providers/gamification_provider.dart';
 
-class LeaderboardPage extends StatefulWidget {
+class LeaderboardPage extends ConsumerStatefulWidget {
   const LeaderboardPage({super.key});
 
   @override
-  State<LeaderboardPage> createState() => _LeaderboardPageState();
+  ConsumerState<LeaderboardPage> createState() => _LeaderboardPageState();
 }
 
-class _LeaderboardPageState extends State<LeaderboardPage>
-    with SingleTickerProviderStateMixin {
+class _LeaderboardPageState extends ConsumerState<LeaderboardPage> {
   int _periodIndex = 0;
-  static const _periods = ['Hafta', 'Oy', 'Hammasi'];
   static const _gold = Color(0xFFB78628);
   static const _goldLight = Color(0xFFE5C97A);
 
-  static const _entries = [
-    _LBEntry(
-        rank: 1,
-        name: 'Jasur Toshmatov',
-        level: 18,
-        xp: 12480,
-        delta: 320,
-        isMe: false,),
-    _LBEntry(
-        rank: 2,
-        name: 'Malika Yusupova',
-        level: 15,
-        xp: 10230,
-        delta: 210,
-        isMe: false,),
-    _LBEntry(
-        rank: 3,
-        name: 'Bobur Rahimov',
-        level: 14,
-        xp: 9870,
-        delta: 180,
-        isMe: false,),
-    _LBEntry(
-        rank: 4,
-        name: 'Nilufar Karimova',
-        level: 13,
-        xp: 8550,
-        delta: -40,
-        isMe: false,),
-    _LBEntry(rank: 5, name: 'Siz', level: 12, xp: 7320, delta: 95, isMe: true),
-    _LBEntry(
-        rank: 6,
-        name: 'Otabek Saidov',
-        level: 11,
-        xp: 6900,
-        delta: -20,
-        isMe: false,),
-    _LBEntry(
-        rank: 7,
-        name: 'Zulfiya Ergasheva',
-        level: 10,
-        xp: 5430,
-        delta: 130,
-        isMe: false,),
-    _LBEntry(
-        rank: 8,
-        name: 'Doniyor Xolmatov',
-        level: 9,
-        xp: 4210,
-        delta: 60,
-        isMe: false,),
-  ];
+  String _s(String key) =>
+      AppStrings.get(LocaleService.instance.locale, key);
+
+  List<String> get _periods => [
+        _s('lb_period_weekly'),
+        _s('lb_period_monthly'),
+        _s('lb_period_all'),
+      ];
+
+  static const _periodSlugs = ['weekly', 'monthly', 'all_time'];
 
   Color _medalColor(int rank) {
     if (rank == 1) return const Color(0xFFFFD700);
@@ -76,13 +37,18 @@ class _LeaderboardPageState extends State<LeaderboardPage>
 
   @override
   Widget build(BuildContext context) {
+    const slug = 'global';
+    final period = _periodSlugs[_periodIndex];
+    final entriesAsync =
+        ref.watch(leaderboardEntriesProvider((slug, period)));
+
     return Scaffold(
       backgroundColor: const Color(0xFF0D2337),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0D2337),
-        title: const Text(
-          'Reyting',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          _s('lb_page_title'),
+          style: const TextStyle(color: Colors.white),
         ),
         leading: GestureDetector(
           onTap: () => Navigator.pop(context),
@@ -145,16 +111,81 @@ class _LeaderboardPageState extends State<LeaderboardPage>
             ),
           ),
           const SizedBox(height: 16),
-          // List
+          // Content
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _entries.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (_, i) => _LeaderboardRow(
-                entry: _entries[i],
-                medalColor: _medalColor(_entries[i].rank),
+            child: entriesAsync.when(
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: _gold),
               ),
+              error: (e, _) => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.wifi_off_rounded,
+                      color: Colors.white.withValues(alpha: 0.4),
+                      size: 40,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _s('lb_load_error'),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    GestureDetector(
+                      onTap: () => ref.invalidate(
+                        leaderboardEntriesProvider((slug, period)),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [_gold, _goldLight],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          _s('xp_retry'),
+                          style: const TextStyle(
+                            color: Color(0xFF1A1200),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              data: (entries) {
+                if (entries.isEmpty) {
+                  return Center(
+                    child: Text(
+                      _s('lb_empty'),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        fontSize: 14,
+                      ),
+                    ),
+                  );
+                }
+                return ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: entries.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (_, i) => _LeaderboardRow(
+                    entry: entries[i],
+                    medalColor: _medalColor(entries[i].rank),
+                    levelPrefix: _s('lb_level_prefix'),
+                  ),
+                );
+              },
             ),
           ),
           const SizedBox(height: 16),
@@ -164,27 +195,16 @@ class _LeaderboardPageState extends State<LeaderboardPage>
   }
 }
 
-class _LBEntry {
-  const _LBEntry({
-    required this.rank,
-    required this.name,
-    required this.level,
-    required this.xp,
-    required this.delta,
-    required this.isMe,
-  });
-  final int rank;
-  final String name;
-  final int level;
-  final int xp;
-  final int delta;
-  final bool isMe;
-}
-
 class _LeaderboardRow extends StatelessWidget {
-  const _LeaderboardRow({required this.entry, required this.medalColor});
-  final _LBEntry entry;
+  const _LeaderboardRow({
+    required this.entry,
+    required this.medalColor,
+    required this.levelPrefix,
+  });
+
+  final LeaderboardEntry entry;
   final Color medalColor;
+  final String levelPrefix;
 
   static const _gold = Color(0xFFB78628);
 
@@ -194,20 +214,25 @@ class _LeaderboardRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: entry.isMe
+        color: entry.isCurrentUser
             ? _gold.withValues(alpha: 0.12)
             : Colors.white.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: entry.isMe
+          color: entry.isCurrentUser
               ? _gold.withValues(alpha: 0.6)
               : isTop3
                   ? medalColor.withValues(alpha: 0.4)
                   : Colors.white.withValues(alpha: 0.08),
-          width: entry.isMe ? 1.5 : 1,
+          width: entry.isCurrentUser ? 1.5 : 1,
         ),
-        boxShadow: entry.isMe
-            ? [BoxShadow(color: _gold.withValues(alpha: 0.15), blurRadius: 12)]
+        boxShadow: entry.isCurrentUser
+            ? [
+                BoxShadow(
+                  color: _gold.withValues(alpha: 0.15),
+                  blurRadius: 12,
+                ),
+              ]
             : null,
       ),
       child: Row(
@@ -217,7 +242,9 @@ class _LeaderboardRow extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: isTop3 ? medalColor : Colors.white.withValues(alpha: 0.1),
+              color: isTop3
+                  ? medalColor
+                  : Colors.white.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -242,13 +269,15 @@ class _LeaderboardRow extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.12),
               shape: BoxShape.circle,
               border: Border.all(
-                color: entry.isMe ? _gold : Colors.transparent,
+                color: entry.isCurrentUser ? _gold : Colors.transparent,
                 width: 1.5,
               ),
             ),
             child: Center(
               child: Text(
-                entry.name.substring(0, 1),
+                entry.displayName.isNotEmpty
+                    ? entry.displayName.substring(0, 1).toUpperCase()
+                    : '?',
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
@@ -257,38 +286,41 @@ class _LeaderboardRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          // Name + level
+          // Name + level name
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  entry.name,
+                  entry.displayName,
                   style: TextStyle(
-                    color: entry.isMe ? _gold : Colors.white,
+                    color: entry.isCurrentUser ? _gold : Colors.white,
                     fontSize: 13,
-                    fontWeight: entry.isMe ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: entry.isCurrentUser
+                        ? FontWeight.w700
+                        : FontWeight.w500,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
-                Text(
-                  'Daraja ${entry.level}',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.45),
-                    fontSize: 11,
+                if (entry.levelName != null && entry.levelName!.isNotEmpty)
+                  Text(
+                    entry.levelName!,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.45),
+                      fontSize: 11,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
-          // XP
+          // XP + rank delta
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 '${entry.xp} XP',
                 style: TextStyle(
-                  color: entry.isMe ? _gold : Colors.white,
+                  color: entry.isCurrentUser ? _gold : Colors.white,
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),

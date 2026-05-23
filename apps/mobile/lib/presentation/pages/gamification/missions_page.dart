@@ -1,65 +1,78 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/core/l10n/app_strings.dart';
+import 'package:silklens/core/l10n/locale_service.dart';
 
-class MissionsPage extends StatefulWidget {
+class MissionsPage extends ConsumerStatefulWidget {
   const MissionsPage({super.key});
 
   @override
-  State<MissionsPage> createState() => _MissionsPageState();
+  ConsumerState<MissionsPage> createState() => _MissionsPageState();
 }
 
-class _MissionsPageState extends State<MissionsPage> {
+class _MissionsPageState extends ConsumerState<MissionsPage> {
   int _tabIndex = 0;
-  static const _tabs = ['Kunlik', 'Haftalik', 'Maxsus'];
   static const _gold = Color(0xFFB78628);
   static const _goldLight = Color(0xFFE5C97A);
 
-  static const _activeMissions = [
-    _Mission(
-      title: 'Meros joyini tashrif qiling',
-      xp: 50,
-      progress: 1,
-      max: 3,
-      icon: Icons.explore_rounded,
-    ),
-    _Mission(
-      title: 'Rasm yuklash',
-      xp: 30,
-      progress: 2,
-      max: 5,
-      icon: Icons.photo_camera_rounded,
-    ),
-    _Mission(
-      title: 'Sharh yozing',
-      xp: 40,
-      progress: 0,
-      max: 2,
-      icon: Icons.rate_review_rounded,
-    ),
-    _Mission(
-      title: "Do'stingizni taklif qiling",
-      xp: 100,
-      progress: 1,
-      max: 1,
-      icon: Icons.people_rounded,
-    ),
-  ];
+  String _s(String key) =>
+      AppStrings.get(LocaleService.instance.locale, key);
 
-  static const _completedMissions = [
-    _Mission(
-      title: 'Tizimga kiring',
-      xp: 10,
-      progress: 1,
-      max: 1,
-      icon: Icons.login_rounded,
-    ),
-    _Mission(
-      title: "Profilni to'ldiring",
-      xp: 25,
-      progress: 1,
-      max: 1,
-      icon: Icons.person_rounded,
-    ),
-  ];
+  List<String> get _tabs => [
+        _s('mission_tab_daily'),
+        _s('mission_tab_weekly'),
+        _s('mission_tab_special'),
+      ];
+
+  // Hardcoded missions until the missions API endpoint ships.
+  // TODO(SILK-0113): replace with backend missions via missionsProvider.
+  List<_Mission> get _activeMissions => [
+        _Mission(
+          title: _s('mission_visit_heritage'),
+          xp: 50,
+          progress: 1,
+          max: 3,
+          icon: Icons.explore_rounded,
+        ),
+        _Mission(
+          title: _s('mission_upload_photo'),
+          xp: 30,
+          progress: 2,
+          max: 5,
+          icon: Icons.photo_camera_rounded,
+        ),
+        _Mission(
+          title: _s('mission_write_review'),
+          xp: 40,
+          progress: 0,
+          max: 2,
+          icon: Icons.rate_review_rounded,
+        ),
+        _Mission(
+          title: _s('mission_invite_friend'),
+          xp: 100,
+          progress: 1,
+          max: 1,
+          icon: Icons.people_rounded,
+        ),
+      ];
+
+  List<_Mission> get _completedMissions => [
+        _Mission(
+          title: _s('mission_sign_in'),
+          xp: 10,
+          progress: 1,
+          max: 1,
+          icon: Icons.login_rounded,
+        ),
+        _Mission(
+          title: _s('mission_complete_profile'),
+          xp: 25,
+          progress: 1,
+          max: 1,
+          icon: Icons.person_rounded,
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -67,9 +80,9 @@ class _MissionsPageState extends State<MissionsPage> {
       backgroundColor: const Color(0xFF0D2337),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0D2337),
-        title: const Text(
-          'Vazifalar',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          _s('mission_page_title'),
+          style: const TextStyle(color: Colors.white),
         ),
         leading: GestureDetector(
           onTap: () => Navigator.pop(context),
@@ -139,7 +152,7 @@ class _MissionsPageState extends State<MissionsPage> {
               children: [
                 // Active missions
                 Text(
-                  'Faol vazifalar',
+                  _s('mission_active_header'),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.5),
                     fontSize: 12,
@@ -151,13 +164,17 @@ class _MissionsPageState extends State<MissionsPage> {
                 ..._activeMissions.map(
                   (m) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: _MissionCard(mission: m, completed: false),
+                    child: _MissionCard(
+                      mission: m,
+                      completed: false,
+                      continueLabel: _s('mission_continue_btn'),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
                 // Completed missions
                 Text(
-                  'Bajarilgan',
+                  _s('mission_completed_header'),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.5),
                     fontSize: 12,
@@ -169,7 +186,11 @@ class _MissionsPageState extends State<MissionsPage> {
                 ..._completedMissions.map(
                   (m) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: _MissionCard(mission: m, completed: true),
+                    child: _MissionCard(
+                      mission: m,
+                      completed: true,
+                      continueLabel: _s('mission_continue_btn'),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -190,6 +211,7 @@ class _Mission {
     required this.max,
     required this.icon,
   });
+
   final String title;
   final int xp;
   final int progress;
@@ -198,16 +220,23 @@ class _Mission {
 }
 
 class _MissionCard extends StatelessWidget {
-  const _MissionCard({required this.mission, required this.completed});
+  const _MissionCard({
+    required this.mission,
+    required this.completed,
+    required this.continueLabel,
+  });
+
   final _Mission mission;
   final bool completed;
+  final String continueLabel;
 
   static const _gold = Color(0xFFB78628);
   static const _goldLight = Color(0xFFE5C97A);
 
   @override
   Widget build(BuildContext context) {
-    final fraction = mission.max > 0 ? mission.progress / mission.max : 0.0;
+    final fraction =
+        mission.max > 0 ? mission.progress / mission.max : 0.0;
     return Opacity(
       opacity: completed ? 0.55 : 1.0,
       child: Container(
@@ -237,8 +266,9 @@ class _MissionCard extends StatelessWidget {
                   ),
                   child: Icon(
                     completed ? Icons.check_circle_rounded : mission.icon,
-                    color:
-                        completed ? Colors.white.withValues(alpha: 0.4) : _gold,
+                    color: completed
+                        ? Colors.white.withValues(alpha: 0.4)
+                        : _gold,
                     size: 22,
                   ),
                 ),
@@ -280,8 +310,9 @@ class _MissionCard extends StatelessWidget {
                         : const LinearGradient(
                             colors: [_gold, _goldLight],
                           ),
-                    color:
-                        completed ? Colors.white.withValues(alpha: 0.08) : null,
+                    color: completed
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : null,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -336,9 +367,9 @@ class _MissionCard extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.15),
                       ),
                     ),
-                    child: const Text(
-                      'Davom →',
-                      style: TextStyle(
+                    child: Text(
+                      continueLabel,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
