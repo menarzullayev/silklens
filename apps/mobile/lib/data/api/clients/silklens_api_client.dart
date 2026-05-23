@@ -693,6 +693,66 @@ class SilkLensApiClient {
     return r.data!;
   }
 
+  // --- Offline Bundles (SILK-0097) ------------------------------------------
+
+  Future<Map<String, dynamic>> getOfflineBundles({
+    String region = 'uz_all',
+    String? language,
+  }) async {
+    final r = await _dio.get<Map<String, dynamic>>(
+      '/v1/offline/bundles',
+      queryParameters: {
+        'region': region,
+        if (language != null) 'language': language,
+      },
+    );
+    return r.data!;
+  }
+
+  Future<Map<String, dynamic>> getOfflineBundleManifest({
+    required String bundleId,
+  }) async {
+    final r = await _dio.get<Map<String, dynamic>>(
+      '/v1/offline/bundles/$bundleId/manifest',
+    );
+    return r.data!;
+  }
+
+  // --- Kids Story (SILK-0098) -----------------------------------------------
+
+  Future<String?> getKidsStory({
+    required String pubId,
+    String language = 'uz',
+  }) async {
+    try {
+      final r = await _dio.get<Map<String, dynamic>>(
+        '/v1/heritage/$pubId/kids-story',
+        queryParameters: {'language': language},
+      );
+      return r.data?['story'] as String?;
+    } on DioException {
+      return null;
+    }
+  }
+
+  // --- Heritage Cultural Tips (SILK-0098) -----------------------------------
+  // Per-heritage-object tips (distinct from the global /v1/cultural-tips).
+
+  Future<List<dynamic>> getHeritageCulturalTips({
+    required String pubId,
+    String language = 'uz',
+  }) async {
+    try {
+      final r = await _dio.get<Map<String, dynamic>>(
+        '/v1/heritage/$pubId/cultural-tips',
+        queryParameters: {'language': language},
+      );
+      return (r.data?['items'] as List?) ?? [];
+    } on DioException {
+      return [];
+    }
+  }
+
   // --- Expense Tracker (SILK-0130) ------------------------------------------
 
   Future<Map<String, dynamic>> createBudget({

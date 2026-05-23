@@ -424,6 +424,8 @@ class ManageSubscriptionPage extends ConsumerWidget {
     BillingState billing,
     String locale,
   ) {
+    final pendingCancel = billing.cancelAtPeriodEnd;
+
     return Column(
       children: [
         GestureDetector(
@@ -468,47 +470,99 @@ class ManageSubscriptionPage extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 10),
-        GestureDetector(
-          onTap: billing.hasActiveSubscription
-              ? () => _showCancelDialog(context, ref, locale)
-              : null,
-          child: Container(
-            height: 52,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEF5350).withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: const Color(0xFFEF5350).withValues(
-                  alpha: billing.hasActiveSubscription ? 0.35 : 0.15,
+        // Show resume button when pending cancellation, cancel button otherwise.
+        if (pendingCancel)
+          GestureDetector(
+            onTap: billing.isCancelling
+                ? null
+                : () async {
+                    final ok = await ref
+                        .read(billingProvider.notifier)
+                        .resumeSubscription();
+                    if (!ok && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(_s(locale, 'billing_resume_error')),
+                          backgroundColor: const Color(0xFFEF5350),
+                        ),
+                      );
+                    }
+                  },
+            child: Container(
+              height: 52,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1B4332),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: const Color(0xFF4CAF50).withValues(alpha: 0.5),
                 ),
               ),
-            ),
-            child: billing.isCancelling
-                ? const Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Color(0xFFEF5350),
-                      ),
-                    ),
-                  )
-                : Center(
-                    child: Text(
-                      _s(locale, 'billing_cancel_btn'),
-                      style: TextStyle(
-                        color: const Color(0xFFEF5350).withValues(
-                          alpha: billing.hasActiveSubscription ? 0.85 : 0.4,
+              child: billing.isCancelling
+                  ? const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Color(0xFF4CAF50),
                         ),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                        _s(locale, 'billing_resume_btn'),
+                        style: const TextStyle(
+                          color: Color(0xFF4CAF50),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
+            ),
+          )
+        else
+          GestureDetector(
+            onTap: billing.hasActiveSubscription
+                ? () => _showCancelDialog(context, ref, locale)
+                : null,
+            child: Container(
+              height: 52,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF5350).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: const Color(0xFFEF5350).withValues(
+                    alpha: billing.hasActiveSubscription ? 0.35 : 0.15,
                   ),
+                ),
+              ),
+              child: billing.isCancelling
+                  ? const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Color(0xFFEF5350),
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                        _s(locale, 'billing_cancel_btn'),
+                        style: TextStyle(
+                          color: const Color(0xFFEF5350).withValues(
+                            alpha: billing.hasActiveSubscription ? 0.85 : 0.4,
+                          ),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+            ),
           ),
-        ),
       ],
     );
   }

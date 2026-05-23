@@ -392,11 +392,11 @@ git push --no-verify  # emergency bypass
 
 ### Flutter Mobile — Billing API Wiring (2026-05-23)
 
-- [✅] **SILK-0104** `BillingRepositoryImpl` implemented (was stub): wraps `SilkLensApiClient` billing methods `getBillingPlans`, `getCurrentSubscription`, `getInvoices`, `getEntitlements`, `cancelSubscription`; `billingRepositoryProvider` exposed via Riverpod.
-- [✅] **SILK-0105** `PlansPage` + `CheckoutPage` converted to `ConsumerStatefulWidget`/`ConsumerStatefulWidget` reading `billingProvider`: loading/error/retry states; plan cards rendered from `state.plans`; "Current Plan" badge from `state.currentPlanSlug`; `CheckoutPage` receives `planSlug` from router query param `?plan=`; pay button shows "coming soon" dialog (Phase 2 Stripe/Payme); router updated to pass `planSlug`.
-- [✅] **SILK-0106** `ManageSubscriptionPage` converted to `ConsumerWidget` reading `billingProvider`: hero card shows real plan name, next-payment date, price from subscription; usage grid maps entitlement slugs `ai_recognition_daily` / `tts_monthly` / `ar_sessions_monthly` / `storage_mb` to stat cells with live used/limit; cancel button calls `billingNotifier.cancelSubscription()` via dialog; `isCancelling` spinner; error SnackBar.
-- [✅] **SILK-0107** `InvoicesPage` converted to `ConsumerStatefulWidget` reading `invoicesProvider` (`FutureProvider`); loading/error/retry/empty states; year filter chips derived from invoice `created_at` dates; invoice rows show `amount_due`, `currency`, `status`; `ref.invalidate(invoicesProvider)` refresh button.
-- 68 locale keys added across all 4 locales (en/uz/ru/zh) covering billing_plans_title … billing_badge_pci; `SilkLensApiClient` extended with `getBillingPlans`, `getCurrentSubscription`, `getInvoices`, `getEntitlements`, `cancelSubscription`.
+- [✅] **SILK-0104** `BillingRepositoryImpl` fully wired: `getPlans`, `getCurrentSubscription`, `getInvoices`, `getEntitlements`, `cancelSubscription(atPeriodEnd)`, `resumeSubscription`, `validateCoupon`; `SilkLensApiClient` extended with `resumeSubscription` + `validateCoupon` (`POST /v1/billing/coupons/validate`); `BillingState` gains `billingCycle`, `couponResult`, `isValidatingCoupon`, `cancelAtPeriodEnd`; `BillingNotifier` gains `setBillingCycle`, `resumeSubscription`, `validateCoupon`, `clearCoupon`.
+- [✅] **SILK-0105** `PlansPage` reads `billingProvider`: plan cards from API, "Current Plan" badge, monthly/yearly toggle via `setBillingCycle`; `CheckoutPage` upgraded to `ConsumerStatefulWidget` with coupon section (text field + Apply button + validity feedback), `validateCoupon` via notifier, `_couponCtrl` disposed, all strings i18n via `AppStrings.get`.
+- [✅] **SILK-0106** `ManageSubscriptionPage` reads real `billingProvider`: resume subscription button shown when `cancelAtPeriodEnd == true`, cancel button shown otherwise; both call notifier methods with error SnackBar on failure.
+- [✅] **SILK-0107** `InvoicesPage` reads `invoicesProvider` (FutureProvider); year filter chips; loading/error/empty/retry states.
+- 82 locale keys across all 4 locales (en/uz/ru/zh) — all billing keys including new `billing_coupon_*` and `billing_resume_*`; `flutter build apk --debug` exit 0.
 
 ### Technical Debt
 
