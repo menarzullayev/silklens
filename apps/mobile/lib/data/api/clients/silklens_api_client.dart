@@ -817,7 +817,7 @@ class SilkLensApiClient {
     return r.data!;
   }
 
-  // --- Food Guide ---
+  // --- Food Assistant (SILK-0133) -------------------------------------------
 
   Future<Map<String, dynamic>> getFoodRecommendations({
     required String message,
@@ -836,27 +836,19 @@ class SilkLensApiClient {
     return r.data!;
   }
 
-  // --- Carbon Footprint ---
+  // --- Carbon Footprint (SILK-0134) -----------------------------------------
 
   Future<Map<String, dynamic>> calculateCarbonFootprint({
     required List<Map<String, dynamic>> journeyLegs,
     String language = 'en',
   }) async {
-    final factors = <String, double>{
-      'flight': 0.255, 'car': 0.171, 'train': 0.041,
-      'bus': 0.089, 'walk': 0.0, 'cycle': 0.0,
-    };
-    double totalCo2 = 0;
-    for (final leg in journeyLegs) {
-      final km = (leg['distance_km'] as num?)?.toDouble() ?? 0;
-      final transport = leg['transport'] as String? ?? 'car';
-      totalCo2 += km * (factors[transport] ?? 0.171);
-    }
-    return {
-      'total_co2_kg': double.parse(totalCo2.toStringAsFixed(2)),
-      'eco_alternatives': totalCo2 > 10
-          ? ['Consider taking the train']
-          : ['Low carbon footprint journey!'],
-    };
+    final r = await _dio.post<Map<String, dynamic>>(
+      '/v1/me/carbon-footprint',
+      data: {
+        'journey_legs': journeyLegs,
+        'language': language,
+      },
+    );
+    return r.data!;
   }
 }

@@ -333,6 +333,39 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                         label: _s('auth_google'),
                         onTap: _loading ? null : _googleSignIn,
                       ),
+                      const SizedBox(height: 12),
+
+                      // Facebook — SILK-0172 (stub: shows coming-soon toast
+                      // until flutter_facebook_auth is added to pubspec.yaml)
+                      _SocialLoginButton(
+                        label: _s('auth_facebook'),
+                        icon: Icons.facebook,
+                        iconColor: const Color(0xFF1877F2),
+                        onTap: _loading
+                            ? null
+                            : () => ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(_s('auth_facebook_soon')),
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Instagram — SILK-0172 (stub: shows coming-soon toast)
+                      _SocialLoginButton(
+                        label: _s('auth_instagram'),
+                        icon: Icons.camera_alt_outlined,
+                        iconColor: const Color(0xFFE1306C),
+                        onTap: _loading
+                            ? null
+                            : () => ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(_s('auth_instagram_soon')),
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                ),
+                      ),
                       const SizedBox(height: 16),
 
                       // Sign In button — gold gradient
