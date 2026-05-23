@@ -148,7 +148,7 @@ def _header_value(scope: Scope, name: bytes) -> bytes | None:
     needle = name.lower()
     for raw_name, raw_value in headers:
         if raw_name.lower() == needle:
-            return raw_value
+            return bytes(raw_value)
     return None
 
 
