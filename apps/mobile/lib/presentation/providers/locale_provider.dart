@@ -17,7 +17,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:silklens/core/env/app_environment.dart';
 import 'package:silklens/core/logging/app_logger.dart';
 
-const Set<String> kSupportedLanguageCodes = <String>{'en', 'uz', 'ru', 'zh'};
+const Set<String> kSupportedLanguageCodes = <String>{
+  'en',
+  'uz',
+  'ru',
+  'zh',
+  'de',
+  'ko',
+};
 const String _prefsKey = 'sl.locale.language_code';
 
 class LocaleController extends Notifier<Locale> {

@@ -531,4 +531,31 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get billingInvoicesEmpty => 'Нет счетов';
+
+  @override
+  String get emailVerifyTitle => 'Подтвердите email';
+
+  @override
+  String get emailVerifyCodeSentTo => 'Код из 6 цифр отправлен на';
+
+  @override
+  String get emailVerifyConfirm => 'Подтвердить';
+
+  @override
+  String get emailVerifyInvalidCode => 'Код неверный или истёк.';
+
+  @override
+  String get emailVerifyResendError =>
+      'Не удалось отправить email. Попробуйте снова.';
+
+  @override
+  String get emailVerifyResending => 'Отправка...';
+
+  @override
+  String emailVerifyResendCountdown(int seconds) {
+    return 'Повторить через $secondsс';
+  }
+
+  @override
+  String get emailVerifyResendNow => 'Отправить код повторно';
 }

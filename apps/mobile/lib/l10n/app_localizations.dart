@@ -5,7 +5,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'app_localizations_de.dart';
 import 'app_localizations_en.dart';
+import 'app_localizations_ko.dart';
 import 'app_localizations_ru.dart';
 import 'app_localizations_uz.dart';
 import 'app_localizations_zh.dart';
@@ -96,7 +98,9 @@ abstract class AppLocalizations {
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
+    Locale('de'),
     Locale('en'),
+    Locale('ko'),
     Locale('ru'),
     Locale('uz'),
     Locale('zh')
@@ -1121,6 +1125,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No invoices'**
   String get billingInvoicesEmpty;
+
+  /// No description provided for @emailVerifyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your email'**
+  String get emailVerifyTitle;
+
+  /// No description provided for @emailVerifyCodeSentTo.
+  ///
+  /// In en, this message translates to:
+  /// **'A 6-digit code was sent to'**
+  String get emailVerifyCodeSentTo;
+
+  /// No description provided for @emailVerifyConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get emailVerifyConfirm;
+
+  /// No description provided for @emailVerifyInvalidCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Code is incorrect or expired.'**
+  String get emailVerifyInvalidCode;
+
+  /// No description provided for @emailVerifyResendError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send email. Please try again.'**
+  String get emailVerifyResendError;
+
+  /// No description provided for @emailVerifyResending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending...'**
+  String get emailVerifyResending;
+
+  /// No description provided for @emailVerifyResendCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds}s'**
+  String emailVerifyResendCountdown(int seconds);
+
+  /// No description provided for @emailVerifyResendNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend code'**
+  String get emailVerifyResendNow;
 }
 
 class _AppLocalizationsDelegate
@@ -1133,8 +1185,14 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['en', 'ru', 'uz', 'zh'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>[
+        'de',
+        'en',
+        'ko',
+        'ru',
+        'uz',
+        'zh'
+      ].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -1143,8 +1201,12 @@ class _AppLocalizationsDelegate
 AppLocalizations lookupAppLocalizations(Locale locale) {
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'de':
+      return AppLocalizationsDe();
     case 'en':
       return AppLocalizationsEn();
+    case 'ko':
+      return AppLocalizationsKo();
     case 'ru':
       return AppLocalizationsRu();
     case 'uz':

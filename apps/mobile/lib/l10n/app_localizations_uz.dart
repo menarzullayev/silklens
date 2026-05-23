@@ -535,4 +535,31 @@ class AppLocalizationsUz extends AppLocalizations {
 
   @override
   String get billingInvoicesEmpty => 'Hisob-fakturalar yo\'q';
+
+  @override
+  String get emailVerifyTitle => 'Emailni tasdiqlang';
+
+  @override
+  String get emailVerifyCodeSentTo => 'ga 6 raqamli kod yuborildi';
+
+  @override
+  String get emailVerifyConfirm => 'Tasdiqlash';
+
+  @override
+  String get emailVerifyInvalidCode => 'Kod noto\'g\'ri yoki muddati o\'tgan.';
+
+  @override
+  String get emailVerifyResendError =>
+      'Email yuborishda xato. Qayta urinib ko\'ring.';
+
+  @override
+  String get emailVerifyResending => 'Yuborilmoqda...';
+
+  @override
+  String emailVerifyResendCountdown(int seconds) {
+    return 'Qayta yuborish (${seconds}s)';
+  }
+
+  @override
+  String get emailVerifyResendNow => 'Kodni qayta yuborish';
 }

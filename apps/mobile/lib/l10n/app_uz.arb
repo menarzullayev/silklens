@@ -185,5 +185,14 @@
   "billingCancel": "Bekor qilish",
   "billingResume": "Davom ettirish",
   "billingInvoicesTitle": "Hisob-faktura",
-  "billingInvoicesEmpty": "Hisob-fakturalar yo'q"
+  "billingInvoicesEmpty": "Hisob-fakturalar yo'q",
+
+  "emailVerifyTitle": "Emailni tasdiqlang",
+  "emailVerifyCodeSentTo": "ga 6 raqamli kod yuborildi",
+  "emailVerifyConfirm": "Tasdiqlash",
+  "emailVerifyInvalidCode": "Kod noto'g'ri yoki muddati o'tgan.",
+  "emailVerifyResendError": "Email yuborishda xato. Qayta urinib ko'ring.",
+  "emailVerifyResending": "Yuborilmoqda...",
+  "emailVerifyResendCountdown": "Qayta yuborish ({seconds}s)",
+  "emailVerifyResendNow": "Kodni qayta yuborish"
 }

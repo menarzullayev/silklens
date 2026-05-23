@@ -189,5 +189,19 @@
   "billingCancel": "Cancel",
   "billingResume": "Resume",
   "billingInvoicesTitle": "Invoices",
-  "billingInvoicesEmpty": "No invoices"
+  "billingInvoicesEmpty": "No invoices",
+
+  "emailVerifyTitle": "Verify your email",
+  "emailVerifyCodeSentTo": "A 6-digit code was sent to",
+  "emailVerifyConfirm": "Confirm",
+  "emailVerifyInvalidCode": "Code is incorrect or expired.",
+  "emailVerifyResendError": "Failed to send email. Please try again.",
+  "emailVerifyResending": "Sending...",
+  "emailVerifyResendCountdown": "Resend in {seconds}s",
+  "@emailVerifyResendCountdown": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "emailVerifyResendNow": "Resend code"
 }

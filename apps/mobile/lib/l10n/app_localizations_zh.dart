@@ -517,4 +517,30 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get billingInvoicesEmpty => '暂无账单';
+
+  @override
+  String get emailVerifyTitle => '验证您的邮箱';
+
+  @override
+  String get emailVerifyCodeSentTo => '6位验证码已发送至';
+
+  @override
+  String get emailVerifyConfirm => '确认';
+
+  @override
+  String get emailVerifyInvalidCode => '验证码错误或已过期。';
+
+  @override
+  String get emailVerifyResendError => '发送失败，请重试。';
+
+  @override
+  String get emailVerifyResending => '发送中...';
+
+  @override
+  String emailVerifyResendCountdown(int seconds) {
+    return '$seconds秒后重新发送';
+  }
+
+  @override
+  String get emailVerifyResendNow => '重新发送验证码';
 }

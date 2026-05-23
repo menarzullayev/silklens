@@ -50,6 +50,22 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage>
       selectLabel: '选择语言',
       confirmLabel: '继续',
     ),
+    _Lang(
+      code: 'de',
+      flag: '🇩🇪',
+      name: 'Deutsch',
+      nativeName: 'Deutsch',
+      selectLabel: 'Sprache auswählen',
+      confirmLabel: 'Weiter',
+    ),
+    _Lang(
+      code: 'ko',
+      flag: '🇰🇷',
+      name: '한국어',
+      nativeName: '한국어',
+      selectLabel: '언어 선택',
+      confirmLabel: '계속',
+    ),
   ];
 
   late String _selected;

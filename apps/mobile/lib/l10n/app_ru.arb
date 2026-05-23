@@ -185,5 +185,14 @@
   "billingCancel": "Отменить",
   "billingResume": "Возобновить",
   "billingInvoicesTitle": "Счета",
-  "billingInvoicesEmpty": "Нет счетов"
+  "billingInvoicesEmpty": "Нет счетов",
+
+  "emailVerifyTitle": "Подтвердите email",
+  "emailVerifyCodeSentTo": "Код из 6 цифр отправлен на",
+  "emailVerifyConfirm": "Подтвердить",
+  "emailVerifyInvalidCode": "Код неверный или истёк.",
+  "emailVerifyResendError": "Не удалось отправить email. Попробуйте снова.",
+  "emailVerifyResending": "Отправка...",
+  "emailVerifyResendCountdown": "Повторить через {seconds}с",
+  "emailVerifyResendNow": "Отправить код повторно"
 }

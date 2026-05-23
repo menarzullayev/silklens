@@ -357,6 +357,30 @@ git push --no-verify  # emergency bypass
 - [x] **SILK-0091** (deferred — blocked: accountant review) 🟡 GAAP/IFRS Revenue Recognition
 - [x] **SILK-0092** 🟡 Heritage Extension Tables
 
+### Flutter Mobile — Social Backend Wiring (2026-05-23)
+
+- [✅] **SILK-0113** Wire `ActivityFeedPage` to real `feedProvider` (FutureProvider → `GET /v1/social/feed`); loading skeletons, error card with retry, empty state; verb localisation for visit/review/badge/follow verbs; all 4 locales
+- [✅] **SILK-0114** Wire `NotificationsPage` to real `notificationsProvider` (NotificationsNotifier → `GET /v1/notifications`); mark-single-read (`POST /v1/notifications/{id}/read`), mark-all-read (`POST /v1/notifications/mark-all-read`); unreadCountProvider drives badge; filter chips i18n
+- [✅] **SILK-0115** Wire `FollowingListPage` to real `followingProvider`/`followersProvider` (FutureProvider.family → `GET /v1/social/following/{pub_id}` + followers); follow/unfollow toggle per row via `socialRepositoryProvider`; search filter; all 4 locales
+- [✅] **SILK-0116** Wire `FriendInvitePage` to real invite API (`POST /v1/social/friends/invite`); shows real token, expiry, deep-link `silklens://invite?token=…`; loading/error/retry states; `SilkLensApiClient` + `SocialRepositoryImpl` fully implemented for social + notifications
+
+### Flutter Mobile — Map + Profile + Review API Wiring (2026-05-23)
+
+- [✅] **SILK-0102** `MapPage` converted to `ConsumerStatefulWidget`; hardcoded 4 markers replaced with dynamic `heritageListProvider` markers filtered by `hasGeolocation`; bottom sheet shows localised name + country + kind slug + gold "View details" button routing to `/home/heritage/{pubId}`; loading indicator in search bar; `activeLocaleProvider` drives i18n; 3 new map keys × 4 locales
+- [✅] **SILK-0117** `UserProfilePage` converted to `ConsumerStatefulWidget`; reads `currentUserProvider` → shows real `displayName` (fallback to `profile_default_name` i18n key) and avatar initial; edit-name dialog calls `SilkLensApiClient.updateProfile(displayName:)`; follow/unfollow toggle preserved; stat columns use i18n labels; 14 new profile keys × 4 locales
+- [✅] **SILK-0118** `ReviewComposerSheet` converted to `ConsumerStatefulWidget`; receives `heritagePubId` as required param; submit calls `SilkLensApiClient.createReview(...)` with `body_md`, `language_tag`, optional `ratings`; loading spinner during submit; success/error SnackBar via i18n; `mounted` guard on all async paths; 12 new review keys × 4 locales; `SilkLensApiClient` extended with `createReview`, `getHeritageReviews`, `updateProfile`
+
+### Flutter Mobile — Heritage API Wiring (2026-05-23)
+
+- [✅] **SILK-0093** `HeritageListPage` wired to real `heritageListProvider` — `HeritageListNotifier` upgraded with `isLoadingMore` flag, `setKindFilter()`, `setSearch()`, `setCountryFilter()`; pull-to-refresh, infinite scroll, shimmer skeleton, error/empty states; all 4 locales (47 new keys: heritage, nav, search)
+- [✅] **SILK-0094** `HeritageDetailPage` converted from `StatefulWidget` to `ConsumerStatefulWidget`; wired to `heritageDetailProvider(pubId)` FutureProvider.family; loading/error/retry states; tab content (About/Facts/Reviews) driven by `Heritage` entity fields; i18n tabs + action labels; save bookmark via `heritageSavedProvider`
+- [✅] **SILK-0095** `SearchPage` converted from `StatefulWidget` to `ConsumerStatefulWidget`; search text + country filter + kind filter all write back to `heritageListProvider.notifier` (setSearch/setCountryFilter/setKindFilter); hardcoded strings replaced with AppStrings keys; country-code mapping (UZ/KZ/TJ/TM)
+
+### Flutter Mobile — i18n Expansion + Hardcoded String Fixes (2026-05-23)
+
+- [✅] **SILK-0140** Add German (de) and Korean (ko) locale ARB files; register in `kSupportedLanguageCodes`, `AppLocalizations.supportedLocales`, and `LanguageSelectionPage`; `flutter gen-l10n` regenerated all 6 locale Dart files; 8 emailVerify keys × 6 locales
+- [✅] **SILK-0141** Fix hardcoded Uzbek strings in `EmailVerifyPage`; replace with `AppLocalizations.of(context)` calls using new `emailVerify*` keys (title, codeSentTo, confirm, invalidCode, resendError, resending, resendCountdown, resendNow); all 6 locales covered
+
 ### Technical Debt
 
 - [ ] **TD-001** finetuning/errors.py FastAPI import fix

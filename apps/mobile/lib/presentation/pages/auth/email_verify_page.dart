@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/l10n/app_localizations.dart';
 import 'package:silklens/presentation/providers/auth_provider.dart';
 
 class EmailVerifyPage extends ConsumerStatefulWidget {
@@ -70,6 +71,7 @@ class _EmailVerifyPageState extends ConsumerState<EmailVerifyPage> {
       _errorMsg = null;
     });
 
+    final l10n = AppLocalizations.of(context);
     final ok = await ref.read(authNotifierProvider.notifier).verifyEmail(
           email: widget.email,
           code: _code,
@@ -81,7 +83,7 @@ class _EmailVerifyPageState extends ConsumerState<EmailVerifyPage> {
     if (ok) {
       context.go('/home');
     } else {
-      setState(() => _errorMsg = "Kod noto'g'ri yoki muddati o'tgan");
+      setState(() => _errorMsg = l10n.emailVerifyInvalidCode);
       for (final c in _ctrls) {
         c.clear();
       }
@@ -95,6 +97,7 @@ class _EmailVerifyPageState extends ConsumerState<EmailVerifyPage> {
       _errorMsg = null;
     });
 
+    final l10n = AppLocalizations.of(context);
     final ok = await ref.read(authNotifierProvider.notifier).resendVerification(
           email: widget.email,
         );
@@ -106,7 +109,7 @@ class _EmailVerifyPageState extends ConsumerState<EmailVerifyPage> {
         _countdown = 59;
         _startCountdown();
       } else {
-        _errorMsg = "Email yuborishda xato. Qayta urinib ko'ring.";
+        _errorMsg = l10n.emailVerifyResendError;
       }
     });
   }
@@ -114,6 +117,7 @@ class _EmailVerifyPageState extends ConsumerState<EmailVerifyPage> {
   @override
   Widget build(BuildContext context) {
     final screenH = MediaQuery.sizeOf(context).height;
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFF0D2337),
       body: Stack(
@@ -194,9 +198,9 @@ class _EmailVerifyPageState extends ConsumerState<EmailVerifyPage> {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        const Text(
-                          'Emailni tasdiqlang',
-                          style: TextStyle(
+                        Text(
+                          l10n.emailVerifyTitle,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 26,
                             fontWeight: FontWeight.w800,
@@ -212,7 +216,7 @@ class _EmailVerifyPageState extends ConsumerState<EmailVerifyPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'ga 6 raqamli kod yuborildi',
+                          l10n.emailVerifyCodeSentTo,
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 14,
@@ -291,9 +295,9 @@ class _EmailVerifyPageState extends ConsumerState<EmailVerifyPage> {
                                     ),
                                   ),
                                 )
-                              : const Text(
-                                  'Tasdiqlash',
-                                  style: TextStyle(
+                              : Text(
+                                  l10n.emailVerifyConfirm,
+                                  style: const TextStyle(
                                     color: Color(0xFF1A1200),
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
@@ -309,10 +313,10 @@ class _EmailVerifyPageState extends ConsumerState<EmailVerifyPage> {
                       onTap: _countdown == 0 && !_resending ? _resend : null,
                       child: Text(
                         _resending
-                            ? 'Yuborilmoqda...'
+                            ? l10n.emailVerifyResending
                             : _countdown > 0
-                                ? 'Qayta yuborish (${_countdown}s)'
-                                : 'Kodni qayta yuborish',
+                                ? l10n.emailVerifyResendCountdown(_countdown)
+                                : l10n.emailVerifyResendNow,
                         style: TextStyle(
                           color: (_countdown > 0 || _resending)
                               ? Colors.white.withValues(alpha: 0.35)

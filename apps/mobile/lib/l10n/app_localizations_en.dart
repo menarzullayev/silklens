@@ -532,4 +532,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get billingInvoicesEmpty => 'No invoices';
+
+  @override
+  String get emailVerifyTitle => 'Verify your email';
+
+  @override
+  String get emailVerifyCodeSentTo => 'A 6-digit code was sent to';
+
+  @override
+  String get emailVerifyConfirm => 'Confirm';
+
+  @override
+  String get emailVerifyInvalidCode => 'Code is incorrect or expired.';
+
+  @override
+  String get emailVerifyResendError =>
+      'Failed to send email. Please try again.';
+
+  @override
+  String get emailVerifyResending => 'Sending...';
+
+  @override
+  String emailVerifyResendCountdown(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get emailVerifyResendNow => 'Resend code';
 }

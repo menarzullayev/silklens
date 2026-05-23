@@ -185,5 +185,14 @@
   "billingCancel": "取消",
   "billingResume": "恢复",
   "billingInvoicesTitle": "账单",
-  "billingInvoicesEmpty": "暂无账单"
+  "billingInvoicesEmpty": "暂无账单",
+
+  "emailVerifyTitle": "验证您的邮箱",
+  "emailVerifyCodeSentTo": "6位验证码已发送至",
+  "emailVerifyConfirm": "确认",
+  "emailVerifyInvalidCode": "验证码错误或已过期。",
+  "emailVerifyResendError": "发送失败，请重试。",
+  "emailVerifyResending": "发送中...",
+  "emailVerifyResendCountdown": "{seconds}秒后重新发送",
+  "emailVerifyResendNow": "重新发送验证码"
 }
