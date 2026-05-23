@@ -31,6 +31,7 @@ def _fake_settings(**overrides: Any) -> Any:
         "email_provider": "resend",
         "email_from": "SilkLens <test@example.com>",
         "resend_api_key": SecretStr(""),
+        "brevo_api_key": SecretStr(""),
         "brevo_smtp_host": "smtp-relay.brevo.com",
         "brevo_smtp_port": 587,
         "brevo_smtp_login": "",
@@ -254,12 +255,28 @@ def test_factory_resend_provider_returns_resend_client(monkeypatch: pytest.Monke
     assert isinstance(client, email_client.ResendEmailClient)
 
 
-def test_factory_brevo_provider_returns_brevo_client(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_factory_brevo_api_key_returns_brevo_api_client(monkeypatch: pytest.MonkeyPatch) -> None:
+    """API key (xkeysib-…) takes priority over SMTP credentials."""
     monkeypatch.setattr(
         email_client,
         "get_settings",
         lambda: _fake_settings(
             email_provider="brevo",
+            brevo_api_key=SecretStr("xkeysib-test-key"),
+        ),
+    )
+    client = email_client.get_email_client()
+    assert isinstance(client, email_client.BrevoApiEmailClient)
+
+
+def test_factory_brevo_smtp_fallback_returns_brevo_smtp_client(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When no API key set, falls back to SMTP relay client."""
+    monkeypatch.setattr(
+        email_client,
+        "get_settings",
+        lambda: _fake_settings(
+            email_provider="brevo",
+            brevo_api_key=SecretStr(""),
             brevo_smtp_login="user@smtp-brevo.com",
             brevo_smtp_password=SecretStr("pass"),
         ),

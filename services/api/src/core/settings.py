@@ -166,8 +166,12 @@ class Settings(BaseSettings):
     # Leave empty → fall back to StubEmailClient.
     resend_api_key: SecretStr = SecretStr("")
 
-    # --- Brevo SMTP relay (smtp-relay.brevo.com:587, free: 300/day, 9 000/mo) ---
-    # Credentials from: app.brevo.com → Settings → SMTP & API → SMTP tab.
+    # --- Brevo HTTP API (preferred, no IP whitelist needed) ---
+    # Dashboard → Settings → API Keys → Create → copy "xkeysib-…" key.
+    brevo_api_key: SecretStr = SecretStr("")
+
+    # --- Brevo SMTP relay (fallback — requires IP whitelist in Brevo dashboard) ---
+    # Dashboard → Settings → SMTP & API → SMTP tab.
     brevo_smtp_host: str = "smtp-relay.brevo.com"
     brevo_smtp_port: int = 587
     brevo_smtp_login: str = ""
