@@ -93,7 +93,7 @@ class TraceContextMiddleware(BaseHTTPMiddleware):
             try:
                 metrics.http_requests_total.labels(*labels).inc()
                 metrics.http_request_duration_seconds.labels(*labels).observe(elapsed)
-            except Exception:  # noqa: S110
+            except Exception:  # noqa: S110  # nosec B110
                 # Metric failures must never break a real response.
                 pass
             structlog.contextvars.clear_contextvars()

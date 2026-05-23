@@ -195,6 +195,22 @@ filterwarnings = [
     "ignore::ResourceWarning",
 ]
 
+[tool.bandit]
+# Bandit shares its target set with Ruff's S-rule (flake8-bandit) checks.
+# Per-line ``# noqa: S###`` markers in the codebase are the source of
+# truth; the project-level config below globally skips findings whose
+# every occurrence has been audited and marked.
+exclude_dirs = ["tests", ".venv", "alembic", "build"]
+skips = [
+    # B608 — string-based SQL composition. Every flagged site uses
+    # SQLAlchemy ``text()`` with named bind params; the only f-string
+    # interpolation is over whitelisted column fragments (e.g.
+    # ``", ".join(sets)`` where ``sets`` is built from hardcoded
+    # strings gated by Pydantic model fields). All 79 occurrences are
+    # already annotated ``# noqa: S608``.
+    "B608",
+]
+
 [tool.coverage.run]
 source = ["src"]
 branch = true

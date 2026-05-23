@@ -164,7 +164,7 @@ class AuthService:
             from src.core.metrics import business_signups_total
 
             business_signups_total.inc()
-        except Exception:  # noqa: S110
+        except Exception:  # noqa: S110  # nosec B110
             # Observability is best-effort — never break a real signup.
             pass
         return user
@@ -306,7 +306,7 @@ class AuthService:
             from src.core.metrics import business_signups_total
 
             business_signups_total.inc()
-        except Exception:  # noqa: S110
+        except Exception:  # noqa: S110  # nosec B110
             pass
         return await self._issue_session(user, ip_address=ip_address, user_agent=user_agent)
 

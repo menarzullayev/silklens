@@ -213,7 +213,8 @@ class SqlFinetuningRepository:
             },
         )
         r = row.first()
-        assert r is not None, "INSERT RETURNING must return a row"
+        if r is None:  # INSERT RETURNING must yield one row
+            raise RuntimeError("INSERT RETURNING produced no row")
         # Bump example_count on the dataset
         await self._db.execute(
             text(
@@ -260,7 +261,8 @@ class SqlFinetuningRepository:
             {"example_id": example_id, "approved_by": approved_by, "now": now},
         )
         r = row.first()
-        assert r is not None, "UPDATE RETURNING must return a row"
+        if r is None:  # UPDATE RETURNING must yield one row
+            raise RuntimeError("UPDATE RETURNING produced no row")
         return _row_to_example(dict(r._mapping))
 
     # ------------------------------------------------------------------
@@ -300,7 +302,8 @@ class SqlFinetuningRepository:
             },
         )
         r = row.first()
-        assert r is not None, "INSERT RETURNING must return a row"
+        if r is None:  # INSERT RETURNING must yield one row
+            raise RuntimeError("INSERT RETURNING produced no row")
         return _row_to_job(dict(r._mapping))
 
     async def get_job(self, job_id: UUID) -> FinetuningJob | None:

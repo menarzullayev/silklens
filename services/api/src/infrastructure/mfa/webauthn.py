@@ -68,7 +68,7 @@ class WebAuthnAdapterImpl:
                     ],
                 )
                 return _options_to_dict(opts)
-            except Exception:  # noqa: S110 — fall back to stub when lib path raises
+            except Exception:  # noqa: S110  # nosec B110 — fall back to stub when lib path raises
                 pass
         # Fallback shape mirrors PublicKeyCredentialCreationOptionsJSON.
         challenge = secrets.token_bytes(32)
@@ -158,7 +158,7 @@ class WebAuthnAdapterImpl:
                     ],
                 )
                 return _options_to_dict(opts)
-            except Exception:  # noqa: S110 — fall back to stub when lib path raises
+            except Exception:  # noqa: S110  # nosec B110 — fall back to stub when lib path raises
                 pass
         challenge = secrets.token_bytes(32)
         return {
@@ -227,7 +227,7 @@ def _options_to_dict(opts: object) -> dict[str, object]:
         )
         parsed: dict[str, object] = json.loads(options_to_json(typed_opts))
         return parsed
-    except Exception:  # noqa: S110 — fall back to dataclass dump
+    except Exception:  # noqa: S110  # nosec B110 — fall back to dataclass dump
         pass
     if hasattr(opts, "__dataclass_fields__"):
         from dataclasses import asdict

@@ -261,7 +261,7 @@ async def get_heritage(pub_id: str, db: SessionDep) -> HeritageOut:
 
         country = (getattr(entity, "country_code", None) or "unknown").lower()
         business_heritage_views_total.labels(country=country).inc()
-    except Exception:  # noqa: S110
+    except Exception:  # noqa: S110  # nosec B110
         # Observability — never break the actual response on a metric miss.
         pass
     return _to_out(entity)

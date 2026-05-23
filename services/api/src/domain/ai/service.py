@@ -199,7 +199,7 @@ class AiService:
                 ai_tokens_used_total.labels(
                     provider=provider, model=model_name, direction="out"
                 ).inc(output_tokens)
-        except Exception:  # noqa: S110
+        except Exception:  # noqa: S110  # nosec B110
             # Observability is best-effort — never break a real inference call.
             pass
 

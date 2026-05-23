@@ -307,7 +307,7 @@ async def kids_quiz(
         },
     ]
 
-    question = random.choice(quiz_bank)  # noqa: S311
+    question = random.choice(quiz_bank)  # noqa: S311  # nosec B311
     return KidsQuizResponse(
         language=lang,
         question=question["question"].get(lang) or question["question"]["en"],

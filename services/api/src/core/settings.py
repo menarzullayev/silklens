@@ -103,7 +103,11 @@ class Settings(BaseSettings):
     paypal_environment: Literal["sandbox", "live"] = "sandbox"
 
     # --- API ---
-    api_host: str = "0.0.0.0"
+    # Bound to ``0.0.0.0`` because the API runs inside a container with
+    # ``EXPOSE 8000``; the Docker network and the upstream proxy (Nginx /
+    # Traefik) are the actual access boundary. Override via
+    # ``SILKLENS_API_HOST=127.0.0.1`` for local-only development runs.
+    api_host: str = "0.0.0.0"  # nosec B104 — container deployment, proxy-fronted
     api_port: int = 8000
     api_cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
 

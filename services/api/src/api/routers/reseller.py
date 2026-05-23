@@ -303,7 +303,11 @@ async def admin_approve_application(
         )
     except ResellerError as exc:
         _raise_reseller_error(exc)
-    assert application.tenant_id_assigned is not None
+    # Invariant: ``approve_application`` always sets the assigned tenant on
+    # success. Defensive check (vs. bare ``assert``) so the guarantee
+    # survives ``python -O``.
+    if application.tenant_id_assigned is None:
+        raise RuntimeError("reseller approve: tenant_id_assigned must be set")
     return ApproveResponse(
         application=_admin_out(application),
         child_tenant_id=application.tenant_id_assigned,

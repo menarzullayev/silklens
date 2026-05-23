@@ -237,7 +237,8 @@ async def purchase_ticket(
     )
     await session.commit()
     _ticket_row = ticket_row.mappings().fetchone()
-    assert _ticket_row is not None  # INSERT … RETURNING always yields one row
+    if _ticket_row is None:  # ``INSERT … RETURNING`` always yields one row
+        raise RuntimeError("ticket INSERT RETURNING produced no row")
     ticket = dict(_ticket_row)
 
     qr_payload = _build_qr_payload(str(ticket["id"]), body.visit_date, qr_secret)
@@ -415,7 +416,8 @@ async def scan_ticket(
     )
     await session.commit()
     _scan_row = scanned_row.mappings().fetchone()
-    assert _scan_row is not None  # UPDATE … RETURNING always yields one row
+    if _scan_row is None:  # ``UPDATE … RETURNING`` always yields one row
+        raise RuntimeError("ticket scan UPDATE RETURNING produced no row")
     scanned_at = str(_scan_row["scanned_at"])
 
     return ScanResponse(ticket_id=str(ticket_id), status="used", scanned_at=scanned_at)

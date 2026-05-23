@@ -84,7 +84,7 @@ class FcmHttpV1Client:
     """
 
     _FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging"
-    _TOKEN_URL = "https://oauth2.googleapis.com/token"
+    _TOKEN_URL = "https://oauth2.googleapis.com/token"  # nosec B105 — Google OAuth endpoint URL, not a credential
     _FCM_URL_TPL = "https://fcm.googleapis.com/v1/projects/{project_id}/messages:send"
 
     def __init__(self, credentials_json: str, project_id: str) -> None:

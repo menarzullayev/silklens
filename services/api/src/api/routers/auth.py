@@ -226,7 +226,7 @@ async def register(
             html=None,
             text=_otp_text(code),
         )
-    except Exception:  # noqa: S110
+    except Exception:  # noqa: S110  # nosec B110
         # Email failure must never break login — OTP can be resent.
         pass
 

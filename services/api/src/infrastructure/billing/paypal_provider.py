@@ -139,7 +139,10 @@ class PayPalPaymentProvider:
         )
         return {
             "id": intent_id,
-            "client_secret": "",
+            # PayPal flow uses ``payment_url`` (redirect) instead of a
+            # Stripe-style client_secret; left empty to keep the response
+            # shape stable across providers.
+            "client_secret": "",  # nosec B105 — empty placeholder, not a credential
             "payment_url": approve_url,
             "amount": str(amount),
             "currency": currency.upper(),

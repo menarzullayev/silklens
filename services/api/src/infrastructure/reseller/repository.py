@@ -306,7 +306,11 @@ class SqlResellerRepository:
                 last_exc = exc
                 await self._session.rollback()
         else:
-            assert last_exc is not None
+            # The ``for`` loop only exhausts the retry budget when every
+            # attempt raised ``IntegrityError`` -- so ``last_exc`` is
+            # guaranteed to be set. Defensive check to satisfy ``-O``.
+            if last_exc is None:
+                raise RuntimeError("reseller create: retry budget exhausted without exception")
             raise last_exc
 
         # Branding stub so the white-label admin UI has a row to PUT into.

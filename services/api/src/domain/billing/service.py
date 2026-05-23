@@ -211,7 +211,7 @@ class BillingService:
             from src.core.metrics import business_revenue_usd_total
 
             business_revenue_usd_total.inc(float(price.amount))
-        except Exception:  # noqa: S110
+        except Exception:  # noqa: S110  # nosec B110
             # Observability is best-effort — never break a real payment.
             pass
 

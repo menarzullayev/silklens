@@ -89,7 +89,7 @@ class FriendInviteOut(BaseModel):
     @classmethod
     def masked(cls, *, id: UUID, status: str, expires_at: datetime) -> FriendInviteOut:
         """Builder used for subsequent reads; the token field is redacted."""
-        return cls(id=id, token="***", status=status, expires_at=expires_at)  # noqa: S106 — explicit mask sentinel, not a credential
+        return cls(id=id, token="***", status=status, expires_at=expires_at)  # noqa: S106  # nosec B106 — explicit mask sentinel, not a credential
 
 
 class FriendAcceptRequest(BaseModel):

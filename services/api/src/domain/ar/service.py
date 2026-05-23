@@ -33,7 +33,7 @@ _CODE_CHARS = string.ascii_uppercase + string.digits
 
 def _generate_session_code() -> str:
     """6-character random alphanumeric session code (group AR sessions)."""
-    return "".join(random.choices(_CODE_CHARS, k=6))  # noqa: S311 — not crypto
+    return "".join(random.choices(_CODE_CHARS, k=6))  # noqa: S311  # nosec B311 — not crypto
 
 
 class ArService:
