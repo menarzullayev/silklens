@@ -67,9 +67,8 @@ async def list_heritage_stories(
     pub_id: str,
     session: SessionDep,
     language: str = Query("en", min_length=2, max_length=10),
-    kind: Literal[
-        "local_legend", "myth", "oral_tradition", "hidden_fact", "historical_story"
-    ] | None = Query(None, description="Filter by story type"),
+    kind: Literal["local_legend", "myth", "oral_tradition", "hidden_fact", "historical_story"]
+    | None = Query(None, description="Filter by story type"),
 ) -> list[StoryOut]:
     """Return local legends and hidden stories for a heritage site.
 
