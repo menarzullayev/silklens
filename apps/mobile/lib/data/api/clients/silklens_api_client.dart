@@ -685,6 +685,24 @@ class SilkLensApiClient {
     return r.data!;
   }
 
+  // --- Photo Guide (SILK-0100) -----------------------------------------------
+
+  Future<Map<String, dynamic>> getPhotoGuide({
+    required String heritagePubId,
+    String mode = 'angle',
+    String language = 'en',
+  }) async {
+    final r = await _dio.post<Map<String, dynamic>>(
+      '/v1/ai/photo-guide',
+      data: {
+        'heritage_pub_id': heritagePubId,
+        'mode': mode,
+        'language': language,
+      },
+    );
+    return r.data!;
+  }
+
   // --- ASR / Voice Assistant (SILK-0101) ------------------------------------
 
   Future<Map<String, dynamic>> transcribeAudio({

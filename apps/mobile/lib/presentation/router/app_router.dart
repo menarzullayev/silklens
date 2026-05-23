@@ -15,6 +15,7 @@ import 'package:silklens/presentation/pages/billing/manage_subscription_page.dar
 import 'package:silklens/presentation/pages/billing/plans_page.dart';
 import 'package:silklens/presentation/pages/billing/tickets_page.dart';
 import 'package:silklens/presentation/pages/camera/camera_page.dart';
+import 'package:silklens/presentation/pages/camera/photo_guide_page.dart';
 import 'package:silklens/presentation/pages/camera/voice_assistant_page.dart';
 import 'package:silklens/presentation/pages/gamification/badges_page.dart';
 import 'package:silklens/presentation/pages/gamification/leaderboard_page.dart';
@@ -310,6 +311,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/voice-assistant',
         pageBuilder: (ctx, state) =>
             _slideUpPage(ctx, state, const VoiceAssistantPage()),
+      ),
+      // SILK-0100 — AI Photo Guide (angle suggestions + historical overlays)
+      GoRoute(
+        path: '/photo-guide/:pubId',
+        pageBuilder: (ctx, state) => _slideRightPage(
+          ctx,
+          state,
+          PhotoGuidePage(
+            heritagePubId: state.pathParameters['pubId']!,
+            heritageName: state.uri.queryParameters['name'],
+          ),
+        ),
       ),
       GoRoute(
         path: '/search',

@@ -505,3 +505,58 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// _SocialLoginButton — reusable glass-style OAuth provider button (SILK-0172)
+// ---------------------------------------------------------------------------
+
+class _SocialLoginButton extends StatelessWidget {
+  const _SocialLoginButton({
+    required this.label,
+    required this.icon,
+    required this.iconColor,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color iconColor;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedOpacity(
+        opacity: onTap == null ? 0.5 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        child: Container(
+          width: double.infinity,
+          height: 50,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: iconColor, size: 22),
+              const SizedBox(width: 10),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
