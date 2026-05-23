@@ -63,8 +63,7 @@ class RecentSearchesNotifier extends AsyncNotifier<List<String>> {
   }
 }
 
-final AsyncNotifierProvider<RecentSearchesNotifier, List<String>>
-    recentSearchesProvider =
+final AsyncNotifierProvider<RecentSearchesNotifier, List<String>> recentSearchesProvider =
     AsyncNotifierProvider<RecentSearchesNotifier, List<String>>(
   RecentSearchesNotifier.new,
   name: 'recentSearchesProvider',

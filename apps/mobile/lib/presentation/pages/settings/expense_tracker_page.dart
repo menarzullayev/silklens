@@ -9,22 +9,24 @@ import 'package:silklens/data/api/clients/api_client_provider.dart';
 class ExpenseTrackerPage extends HookConsumerWidget {
   const ExpenseTrackerPage({super.key});
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    useEffect(() {
-      SystemChrome.setSystemUIOverlayStyle(
-        const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-          systemNavigationBarColor: Color(0xFF0D2337),
-          systemNavigationBarIconBrightness: Brightness.light,
-        ),
-      );
-      return null;
-    }, const []);
+    useEffect(
+      () {
+        SystemChrome.setSystemUIOverlayStyle(
+          const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light,
+            systemNavigationBarColor: Color(0xFF0D2337),
+            systemNavigationBarIconBrightness: Brightness.light,
+          ),
+        );
+        return null;
+      },
+      const [],
+    );
 
     final summary = useState<Map<String, dynamic>?>(null);
     final isLoading = useState(true);
@@ -42,10 +44,13 @@ class ExpenseTrackerPage extends HookConsumerWidget {
       isLoading.value = false;
     }
 
-    useEffect(() {
-      Future(reload);
-      return null;
-    }, const []);
+    useEffect(
+      () {
+        Future(reload);
+        return null;
+      },
+      const [],
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D2337),
@@ -81,8 +86,7 @@ class ExpenseTrackerPage extends HookConsumerWidget {
           : hasError.value || summary.value == null
               ? _NoBudgetView(
                   s: _s,
-                  onCreateBudget: () =>
-                      _showCreateBudgetSheet(context, ref, reload),
+                  onCreateBudget: () => _showCreateBudgetSheet(context, ref, reload),
                 )
               : _SummaryView(summary: summary.value!, s: _s),
     );
@@ -94,7 +98,7 @@ class ExpenseTrackerPage extends HookConsumerWidget {
     Future<void> Function() onDone,
   ) {
     final amountCtrl = TextEditingController();
-    String category = 'food';
+    const category = 'food';
 
     showModalBottomSheet<void>(
       context: context,
@@ -125,13 +129,12 @@ class ExpenseTrackerPage extends HookConsumerWidget {
             const SizedBox(height: 16),
             TextField(
               controller: amountCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: _s('expense_amount_label'),
                 labelStyle: const TextStyle(color: Colors.white60),
-                prefixText: '\$ ',
+                prefixText: r'$ ',
                 prefixStyle: const TextStyle(color: Colors.white60),
                 enabledBorder: const UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.white24),
@@ -214,15 +217,14 @@ class ExpenseTrackerPage extends HookConsumerWidget {
             const SizedBox(height: 16),
             TextField(
               controller: amountCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: _s('expense_amount_label'),
                 labelStyle: const TextStyle(color: Colors.white60),
                 hintText: '500',
                 hintStyle: const TextStyle(color: Colors.white38),
-                prefixText: '\$ ',
+                prefixText: r'$ ',
                 prefixStyle: const TextStyle(color: Colors.white60),
                 enabledBorder: const UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.white24),
@@ -331,10 +333,8 @@ class _SummaryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final total =
-        (summary['total_spent_usd'] as num?)?.toDouble() ?? 0.0;
-    final remaining =
-        (summary['remaining_usd'] as num?)?.toDouble();
+    final total = (summary['total_spent_usd'] as num?)?.toDouble() ?? 0.0;
+    final remaining = (summary['remaining_usd'] as num?)?.toDouble();
     final byCategory = (summary['by_category'] as List?) ?? [];
 
     return ListView(
@@ -394,8 +394,7 @@ class _SummaryView extends StatelessWidget {
           ...byCategory.map((cat) {
             final c = cat as Map<String, dynamic>;
             final catName = c['category'] as String? ?? '';
-            final catTotal =
-                (c['total_usd'] as num?)?.toDouble() ?? 0.0;
+            final catTotal = (c['total_usd'] as num?)?.toDouble() ?? 0.0;
             return Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(

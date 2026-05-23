@@ -56,8 +56,7 @@ class RecognitionNotifier extends Notifier<RecognitionState> {
         filename: filename,
         mimeType: mimeType,
       );
-      final assetId =
-          (uploadResult['asset'] as Map<String, dynamic>?)?['id'] as String?;
+      final assetId = (uploadResult['asset'] as Map<String, dynamic>?)?['id'] as String?;
 
       if (assetId == null) {
         state = const RecognitionError('Upload failed: no asset id returned');
@@ -69,8 +68,7 @@ class RecognitionNotifier extends Notifier<RecognitionState> {
         language: language,
       );
 
-      final rawCandidates =
-          (raw['candidates'] as List<dynamic>?) ?? <dynamic>[];
+      final rawCandidates = (raw['candidates'] as List<dynamic>?) ?? <dynamic>[];
       final candidates = rawCandidates.map((dynamic e) {
         final entry = e as Map<String, dynamic>;
         return RecognitionCandidate(
@@ -95,8 +93,7 @@ class RecognitionNotifier extends Notifier<RecognitionState> {
   void reset() => state = const RecognitionIdle();
 }
 
-final recognitionProvider =
-    NotifierProvider<RecognitionNotifier, RecognitionState>(
+final recognitionProvider = NotifierProvider<RecognitionNotifier, RecognitionState>(
   RecognitionNotifier.new,
 );
 

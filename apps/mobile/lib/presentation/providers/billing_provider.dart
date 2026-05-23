@@ -29,20 +29,18 @@ class BillingState {
   final bool isCancelling;
   final bool isValidatingCoupon;
   final String? error;
+
   /// 'monthly' or 'yearly'
   final String billingCycle;
   final Map<String, dynamic>? couponResult;
 
   bool get hasActiveSubscription =>
       currentSubscription != null &&
-      (currentSubscription!['status'] == 'active' ||
-          currentSubscription!['status'] == 'trialing');
+      (currentSubscription!['status'] == 'active' || currentSubscription!['status'] == 'trialing');
 
-  bool get cancelAtPeriodEnd =>
-      currentSubscription?['cancel_at_period_end'] as bool? ?? false;
+  bool get cancelAtPeriodEnd => currentSubscription?['cancel_at_period_end'] as bool? ?? false;
 
-  String get currentPlanSlug =>
-      currentSubscription?['plan_slug'] as String? ?? 'free';
+  String get currentPlanSlug => currentSubscription?['plan_slug'] as String? ?? 'free';
 
   BillingState copyWith({
     List<Map<String, dynamic>>? plans,
@@ -60,9 +58,8 @@ class BillingState {
   }) =>
       BillingState(
         plans: plans ?? this.plans,
-        currentSubscription: clearSubscription
-            ? null
-            : (currentSubscription ?? this.currentSubscription),
+        currentSubscription:
+            clearSubscription ? null : (currentSubscription ?? this.currentSubscription),
         entitlements: entitlements ?? this.entitlements,
         isLoading: isLoading ?? this.isLoading,
         isCancelling: isCancelling ?? this.isCancelling,
@@ -97,8 +94,7 @@ class BillingNotifier extends Notifier<BillingState> {
       final ents = results[2]! as List<dynamic>;
 
       state = state.copyWith(
-        plans: ((plansData['items'] as List?) ?? [])
-            .cast<Map<String, dynamic>>(),
+        plans: ((plansData['items'] as List?) ?? []).cast<Map<String, dynamic>>(),
         currentSubscription: sub,
         clearSubscription: sub == null,
         entitlements: ents.cast<Map<String, dynamic>>(),
@@ -110,7 +106,7 @@ class BillingNotifier extends Notifier<BillingState> {
   }
 
   void setBillingCycle(String cycle) {
-    assert(cycle == 'monthly' || cycle == 'yearly');
+    assert(cycle == 'monthly' || cycle == 'yearly', 'cycle must be monthly|yearly, got: $cycle');
     state = state.copyWith(billingCycle: cycle);
   }
 
@@ -118,9 +114,7 @@ class BillingNotifier extends Notifier<BillingState> {
   Future<bool> cancelSubscription() async {
     state = state.copyWith(isCancelling: true, clearError: true);
     try {
-      await ref
-          .read(billingRepositoryProvider)
-          .cancelSubscription(atPeriodEnd: true);
+      await ref.read(billingRepositoryProvider).cancelSubscription();
       // Optimistically reflect cancellation flag.
       final updated = state.currentSubscription != null
           ? Map<String, dynamic>.from(state.currentSubscription!)
@@ -161,9 +155,7 @@ class BillingNotifier extends Notifier<BillingState> {
   Future<bool> validateCoupon(String code, double orderValueUsd) async {
     state = state.copyWith(isValidatingCoupon: true, clearError: true);
     try {
-      final result = await ref
-          .read(billingRepositoryProvider)
-          .validateCoupon(code, orderValueUsd);
+      final result = await ref.read(billingRepositoryProvider).validateCoupon(code, orderValueUsd);
       state = state.copyWith(
         isValidatingCoupon: false,
         couponResult: result,
@@ -191,8 +183,7 @@ final billingProvider = NotifierProvider<BillingNotifier, BillingState>(
 
 /// Separate FutureProvider so the invoices list can be independently
 /// refreshed without rebuilding the full billing state.
-final invoicesProvider =
-    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+final invoicesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final repo = ref.watch(billingRepositoryProvider);
   final items = await repo.getInvoices();
   return items.cast<Map<String, dynamic>>();
@@ -207,8 +198,7 @@ final invoicesProvider =
 //   - data(map)     → last successful subscription map
 //   - error(e, st)  → last failure
 
-class SubscriptionNotifier
-    extends Notifier<AsyncValue<Map<String, dynamic>?>> {
+class SubscriptionNotifier extends Notifier<AsyncValue<Map<String, dynamic>?>> {
   @override
   AsyncValue<Map<String, dynamic>?> build() => const AsyncValue.data(null);
 
@@ -244,9 +234,7 @@ class SubscriptionNotifier
   Future<void> cancel({bool atPeriodEnd = true}) async {
     state = const AsyncValue.loading();
     try {
-      await ref
-          .read(billingRepositoryProvider)
-          .cancelSubscription(atPeriodEnd: atPeriodEnd);
+      await ref.read(billingRepositoryProvider).cancelSubscription(atPeriodEnd: atPeriodEnd);
       state = const AsyncValue.data(null);
       ref.invalidate(billingProvider);
     } catch (e, st) {
@@ -266,7 +254,7 @@ class SubscriptionNotifier
   }
 }
 
-final subscriptionNotifierProvider = NotifierProvider<SubscriptionNotifier,
-    AsyncValue<Map<String, dynamic>?>>(
+final subscriptionNotifierProvider =
+    NotifierProvider<SubscriptionNotifier, AsyncValue<Map<String, dynamic>?>>(
   SubscriptionNotifier.new,
 );

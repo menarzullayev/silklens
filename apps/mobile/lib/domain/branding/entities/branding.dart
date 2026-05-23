@@ -41,7 +41,6 @@ class Branding {
     appName: {'en': 'SilkLens', 'uz': 'SilkLens', 'ru': 'SilkLens', 'zh': 'SilkLens'},
   );
 
-
   String get primaryColorHex => primaryColor;
   String get accentColorHex => accentColor ?? primaryColor;
   String localizedAppName(String languageCode) {

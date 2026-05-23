@@ -85,11 +85,9 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage>
     );
 
     // Pre-select based on device system locale
-    final systemCode =
-        PlatformDispatcher.instance.locale.languageCode.toLowerCase();
-    _selected = _languages.any((l) => l.code == systemCode)
-        ? systemCode
-        : 'uz'; // fallback to Uzbek
+    final systemCode = PlatformDispatcher.instance.locale.languageCode.toLowerCase();
+    _selected =
+        _languages.any((l) => l.code == systemCode) ? systemCode : 'uz'; // fallback to Uzbek
 
     _controller = AnimationController(
       vsync: this,
@@ -273,8 +271,7 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage>
                                 _LangTile(
                                   lang: l,
                                   selected: isSelected,
-                                  onTap: () =>
-                                      setState(() => _selected = l.code),
+                                  onTap: () => setState(() => _selected = l.code),
                                 ),
                                 if (!isLast) const SizedBox(height: 4),
                               ],
@@ -297,8 +294,7 @@ class _LanguageSelectionPageState extends State<LanguageSelectionPage>
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFB78628)
-                                    .withValues(alpha: 0.35),
+                                color: const Color(0xFFB78628).withValues(alpha: 0.35),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -388,8 +384,7 @@ class _LangTile extends StatelessWidget {
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
-                      fontWeight:
-                          selected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                   Text(

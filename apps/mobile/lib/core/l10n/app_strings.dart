@@ -30,8 +30,7 @@ class AppStrings {
       // Auth — Social OAuth (SILK-0172)
       'auth_facebook': 'Continue with Facebook',
       'auth_instagram': 'Continue with Instagram',
-      'auth_facebook_soon':
-          'Facebook login requires flutter_facebook_auth setup.',
+      'auth_facebook_soon': 'Facebook login requires flutter_facebook_auth setup.',
       'auth_instagram_soon': 'Instagram login — coming soon!',
       // Auth — Sign Up
       'auth_signup_title': 'Create Account',
@@ -40,8 +39,7 @@ class AppStrings {
       'auth_signup_btn': 'Create Account',
       'auth_have_account': 'Already have an account? ',
       'auth_signin_link': 'Sign In',
-      'auth_tos_text':
-          'I agree to the Terms of Service and Privacy Policy',
+      'auth_tos_text': 'I agree to the Terms of Service and Privacy Policy',
       'pwd_weak': 'Weak',
       'pwd_medium': 'Medium',
       'pwd_strong': 'Strong',
@@ -87,18 +85,15 @@ class AppStrings {
       'onb_have_account': 'Sign In',
       // Page 1
       'onb_p1_title': 'Touch a Thousand Years',
-      'onb_p1_sub':
-          "Journey through the Silk Road's greatest landmarks"
+      'onb_p1_sub': "Journey through the Silk Road's greatest landmarks"
           ' — curated, mapped, and richly told.',
       // Page 2
       'onb_p2_title': 'Point. Discover. Learn.',
-      'onb_p2_sub':
-          'Aim your camera at any monument and SilkLens'
+      'onb_p2_sub': 'Aim your camera at any monument and SilkLens'
           ' reveals its story in seconds.',
       // Page 3
       'onb_p3_title': 'Walk Together',
-      'onb_p3_sub':
-          'Share discoveries, earn badges, and connect'
+      'onb_p3_sub': 'Share discoveries, earn badges, and connect'
           ' with heritage enthusiasts worldwide.',
       // Social — Activity Feed
       'social_title': 'Community',
@@ -312,19 +307,16 @@ class AppStrings {
       'privacy_consent_saved': 'Preference saved',
       'privacy_consent_error': 'Could not save preference',
       'privacy_export_title': 'Export Requested',
-      'privacy_export_body':
-          'Your data export is being prepared.'
+      'privacy_export_body': 'Your data export is being prepared.'
           ' You will receive an email when it is ready.',
       'privacy_export_id': 'Request ID',
       'privacy_export_error': 'Could not request data export',
       'privacy_export_btn_close': 'Close',
       // Settings — Delete Account (SILK-0121)
       'delete_account_api_error': 'Could not schedule deletion. Try again.',
-      'delete_account_scheduled':
-          'Account deletion scheduled. You have 30 days to cancel.',
+      'delete_account_scheduled': 'Account deletion scheduled. You have 30 days to cancel.',
       // Auth — Forgot Password placeholder (SILK-0122)
-      'auth_forgot_placeholder_note':
-          'If the email is registered, a reset link will be sent.',
+      'auth_forgot_placeholder_note': 'If the email is registered, a reset link will be sent.',
       // Tickets — My Tickets (SILK-0126)
       'tickets_title': 'My Tickets',
       'tickets_empty_title': 'No tickets yet',
@@ -379,8 +371,7 @@ class AppStrings {
       'billing_upgrade_btn': 'Upgrade to Heritage Pro',
       'billing_cancel_btn': 'Cancel subscription',
       'billing_cancel_title': 'Cancel subscription',
-      'billing_cancel_body':
-          'Are you sure? You can still use the service '
+      'billing_cancel_body': 'Are you sure? You can still use the service '
           'until the end of the current period.',
       'billing_cancel_go_back': 'Go back',
       'billing_cancel_confirm': 'Cancel',
@@ -412,11 +403,10 @@ class AppStrings {
       'billing_payment_soon_title': 'Payment processing coming soon',
       'billing_payment_soon_body':
           'Online payment integration (Stripe / Payme / Click) is arriving '
-          'in the next release. Your plan selection has been noted.',
+              'in the next release. Your plan selection has been noted.',
       'billing_ok': 'OK',
       'billing_subscribe_success': 'Subscription activated successfully!',
-      'billing_subscribe_error':
-          'Subscription failed. Please try again.',
+      'billing_subscribe_error': 'Subscription failed. Please try again.',
       'billing_badge_ssl': 'SSL Secured',
       'billing_badge_3ds': '3D Secure',
       'billing_badge_pci': 'PCI DSS',
@@ -612,8 +602,7 @@ class AppStrings {
       // Auth — Social OAuth (SILK-0172)
       'auth_facebook': 'Facebook orqali davom etish',
       'auth_instagram': 'Instagram orqali davom etish',
-      'auth_facebook_soon':
-          'Facebook login uchun flutter_facebook_auth sozlanishi kerak.',
+      'auth_facebook_soon': 'Facebook login uchun flutter_facebook_auth sozlanishi kerak.',
       'auth_instagram_soon': 'Instagram login — tez orada!',
       // Auth — Sign Up
       'auth_signup_title': 'Hisob yaratish',
@@ -622,17 +611,14 @@ class AppStrings {
       'auth_signup_btn': 'Hisob yaratish',
       'auth_have_account': 'Hisobingiz bormi? ',
       'auth_signin_link': 'Kirish',
-      'auth_tos_text':
-          'Foydalanish shartlari va Maxfiylik siyosatiga roziman',
+      'auth_tos_text': 'Foydalanish shartlari va Maxfiylik siyosatiga roziman',
       'pwd_weak': 'Zaif',
       'pwd_medium': "O'rta",
       'pwd_strong': 'Kuchli',
       // Auth — Forgot Password
       'auth_forgot_title': 'Parolni tiklash',
-      'auth_forgot_sub':
-          'Tiklash havolasini olish uchun emailingizni kiriting',
-      'auth_forgot_sent_sub':
-          'Tiklash havolasi uchun emailingizni tekshiring',
+      'auth_forgot_sub': 'Tiklash havolasini olish uchun emailingizni kiriting',
+      'auth_forgot_sent_sub': 'Tiklash havolasi uchun emailingizni tekshiring',
       'auth_forgot_email': 'Elektron pochta',
       'auth_forgot_btn': 'Tiklash havolasini yuborish',
       'auth_forgot_back': 'Kirishga qaytish',
@@ -670,18 +656,15 @@ class AppStrings {
       'onb_have_account': 'Hisobim bor',
       // Page 1
       'onb_p1_title': 'Ming Yilni His Eting',
-      'onb_p1_sub':
-          "Ipak yo'li buylab eng buyuk yodgorliklarni kashf eting"
+      'onb_p1_sub': "Ipak yo'li buylab eng buyuk yodgorliklarni kashf eting"
           " — tanlangan, xaritada belgilangan va boy ma'lumotli.",
       // Page 2
       'onb_p2_title': "Ko'rsating. Kashf eting.",
-      'onb_p2_sub':
-          "Kamerangizni istalgan obidaga yo'naltiring —"
+      'onb_p2_sub': "Kamerangizni istalgan obidaga yo'naltiring —"
           ' SilkLens uning tarixini soniyalar ichida ochib beradi.',
       // Page 3
       'onb_p3_title': 'Birga Yuring',
-      'onb_p3_sub':
-          'Kashfiyotlarni ulashing, nishonlar qozonib,'
+      'onb_p3_sub': 'Kashfiyotlarni ulashing, nishonlar qozonib,'
           " madaniy meros sevarlari bilan bog'laning.",
       // Social — Activity Feed
       'social_title': 'Jamiyat',
@@ -781,8 +764,7 @@ class AppStrings {
       'missions_tab_weekly': 'Haftalik',
       'missions_tab_special': 'Maxsus',
       'missions_coming_soon_title': 'Kunlik topshiriqlar tez orada',
-      'missions_coming_soon_sub':
-          "Vazifalarni bajarib XP to'pla va reytingda o'sib bor."
+      'missions_coming_soon_sub': "Vazifalarni bajarib XP to'pla va reytingda o'sib bor."
           ' Birinchi topshiriq uchun tez orada qaytib keling!',
       // Heritage — List
       'heritage_search_hint': 'Meros joylarini qidirish...',
@@ -849,11 +831,9 @@ class AppStrings {
       'heritage_tab_kids': 'Bolalar',
       'heritage_tab_culture': 'Madaniyat',
       'heritage_kids_loading': 'Bolalar hikoyasi yaratilmoqda...',
-      'heritage_kids_empty':
-          "Bu joy uchun bolalar hikoyasi tez orada qo'shiladi.",
+      'heritage_kids_empty': "Bu joy uchun bolalar hikoyasi tez orada qo'shiladi.",
       'heritage_culture_loading': 'Madaniy maslahatlar yuklanmoqda...',
-      'heritage_culture_empty':
-          "Bu joy uchun madaniy maslahatlar tez orada qo'shiladi.",
+      'heritage_culture_empty': "Bu joy uchun madaniy maslahatlar tez orada qo'shiladi.",
       'heritage_culture_severity': 'Darajasi',
       // Bottom nav
       'nav_home': 'Bosh sahifa',
@@ -906,8 +886,7 @@ class AppStrings {
       'privacy_consent_saved': 'Sozlama saqlandi',
       'privacy_consent_error': 'Sozlamani saqlashda xato',
       'privacy_export_title': "So'rov yuborildi",
-      'privacy_export_body':
-          "Ma'lumotlaringiz tayyorlanmoqda."
+      'privacy_export_body': "Ma'lumotlaringiz tayyorlanmoqda."
           " Tayyor bo'lgach emailga xabar yuboriladi.",
       'privacy_export_id': "So'rov ID",
       'privacy_export_error': "Ma'lumotlarni eksport qilishda xato",
@@ -915,8 +894,7 @@ class AppStrings {
       // Settings — Delete Account (SILK-0121)
       'delete_account_api_error':
           "O'chirishni rejalashtirish mumkin bo'lmadi. Qayta urinib ko'ring.",
-      'delete_account_scheduled':
-          "Hisob o'chirish rejalashtirildi."
+      'delete_account_scheduled': "Hisob o'chirish rejalashtirildi."
           ' 30 kun ichida bekor qilishingiz mumkin.',
       // Auth — Forgot Password placeholder (SILK-0122)
       'auth_forgot_placeholder_note':
@@ -935,8 +913,7 @@ class AppStrings {
       'tickets_retry': 'Qayta urinish',
       // Emergency — Emergency Contacts (SILK-0127)
       'emergency_title': 'Favqulodda yordam',
-      'emergency_warning':
-          "Favqulodda vaziyatda quyidagi raqamlarga qo'ng'iroq qiling",
+      'emergency_warning': "Favqulodda vaziyatda quyidagi raqamlarga qo'ng'iroq qiling",
       'emergency_empty': 'Kontaktlar mavjud emas',
       'emergency_call': "Qo'ng'iroq",
       // Weather Guide (SILK-0129)
@@ -958,8 +935,7 @@ class AppStrings {
       'billing_recommended': 'TAVSIYA',
       'billing_current_plan': 'Joriy reja',
       'billing_trial_cta': '14 kun bepul sinov',
-      'billing_load_error':
-          "To'lov ma'lumotlarini yuklab bo'lmadi. Qayta urinib ko'ring.",
+      'billing_load_error': "To'lov ma'lumotlarini yuklab bo'lmadi. Qayta urinib ko'ring.",
       'billing_retry': 'Qayta urinish',
       'billing_no_plans': 'Rejalar mavjud emas.',
       'billing_usage_title': 'Foydalanish statistikasi',
@@ -977,13 +953,11 @@ class AppStrings {
       'billing_upgrade_btn': 'Heritage Pro ga yuksalish',
       'billing_cancel_btn': 'Obunani bekor qilish',
       'billing_cancel_title': 'Obunani bekor qilish',
-      'billing_cancel_body':
-          'Haqiqatan ham bekor qilmoqchimisiz? '
+      'billing_cancel_body': 'Haqiqatan ham bekor qilmoqchimisiz? '
           'Joriy davr tugaguniga qadar foydalanishingiz mumkin.',
       'billing_cancel_go_back': 'Qaytish',
       'billing_cancel_confirm': 'Bekor qilish',
-      'billing_cancel_error':
-          "Bekor qilishda xato. Qayta urinib ko'ring.",
+      'billing_cancel_error': "Bekor qilishda xato. Qayta urinib ko'ring.",
       'billing_stat_ai': 'AI Tanish',
       'billing_stat_audio': 'Audio',
       'billing_stat_ar': 'AR',
@@ -1009,13 +983,11 @@ class AppStrings {
       'billing_card_holder_hint': 'ISM FAMILIYA',
       'billing_pay_btn': "To'lash",
       'billing_payment_soon_title': "To'lov tez orada",
-      'billing_payment_soon_body':
-          "Onlayn to'lov integratsiyasi (Stripe / Payme / Click) "
+      'billing_payment_soon_body': "Onlayn to'lov integratsiyasi (Stripe / Payme / Click) "
           "keyingi versiyada qo'shiladi.",
       'billing_ok': 'OK',
       'billing_subscribe_success': 'Obuna muvaffaqiyatli faollashtirildi!',
-      'billing_subscribe_error':
-          "Obuna amalga oshmadi. Qayta urinib ko'ring.",
+      'billing_subscribe_error': "Obuna amalga oshmadi. Qayta urinib ko'ring.",
       'billing_badge_ssl': 'SSL Himoyalangan',
       'billing_badge_3ds': '3D Secure',
       'billing_badge_pci': 'PCI DSS',
@@ -1034,14 +1006,14 @@ class AppStrings {
       'trip_days': 'Davomiyligi',
       'trip_days_unit': 'kun',
       'trip_budget': 'Byudjet',
-      'trip_generate_btn': "AI bilan reja tuzish",
+      'trip_generate_btn': 'AI bilan reja tuzish',
       'trip_generating': 'AI reja tuzmoqda…',
-      'trip_error': 'Reja tuzib bo\'lmadi. Qayta urining.',
+      'trip_error': "Reja tuzib bo'lmadi. Qayta urining.",
       'trip_plan_label': 'SAYOHAT REJASI',
       'trip_day': 'Kun',
       'trip_my_trips': 'Mening sayohatlarim',
       'trip_plan_title': 'Sayohat rejasi',
-      'trip_error_generate': 'Reja yaratib bo\'lmadi',
+      'trip_error_generate': "Reja yaratib bo'lmadi",
       // Mood Travel (SILK-0131)
       'mood_title': 'Kayfiyat Sayohati',
       'mood_question': 'Hozir qanday his qilyapsiz?',
@@ -1053,28 +1025,28 @@ class AppStrings {
       'mood_recommended': 'SIZGA TAVSIYA ETILADI',
       // Expense Tracker (SILK-0130)
       'expense_title': 'Xarajat Kuzatuvchi',
-      'expense_add_title': 'Xarajat qo\'shish',
-      'expense_add_btn': 'Qo\'shish',
+      'expense_add_title': "Xarajat qo'shish",
+      'expense_add_btn': "Qo'shish",
       'expense_amount_label': 'Miqdor (USD)',
       'expense_budget_create_title': 'Sayohat byudjetini belgilash',
       'expense_budget_create_btn': 'Byudjet belgilash',
       'expense_no_budget': 'Byudjet belgilanmagan',
       'expense_total_spent': 'Jami sarflandi',
       'expense_remaining': 'Qoldi',
-      'expense_by_category': 'KATEGORIYA BO\'YICHA',
+      'expense_by_category': "KATEGORIYA BO'YICHA",
       // Food Guide (SILK-0133)
       'food_title': 'Ovqat Gidi',
       'food_search_hint': 'Masalan: Halol ovqat qayerda?',
       'food_default_query': 'Yaxshi restoran tavsiya et',
-      'food_must_try': 'ALBATTA TATIB KO\'RING',
+      'food_must_try': "ALBATTA TATIB KO'RING",
       'food_nearby_restaurants': 'YAQIN RESTORANLAR',
       'food_dietary_tips': 'OVQATLANISH MASLAHATLARI',
       // Carbon Footprint (SILK-0134)
       'carbon_title': 'Karbon Izi',
-      'carbon_add_leg': 'Yo\'l qo\'shish',
+      'carbon_add_leg': "Yo'l qo'shish",
       'carbon_distance_hint': 'Masofa',
-      'carbon_add_btn': 'Qo\'shish',
-      'carbon_legs_label': 'SIZNING YO\'LINGIZ',
+      'carbon_add_btn': "Qo'shish",
+      'carbon_legs_label': "SIZNING YO'LINGIZ",
       'carbon_calculate_btn': 'Hisoblash',
       'carbon_transport_car': 'Avto',
       'carbon_transport_bus': 'Avtobus',
@@ -1173,7 +1145,7 @@ class AppStrings {
       'aiutil_scam_service_hint': 'Xizmat tavsifi',
       'aiutil_scam_price_hint': "So'ralgan narx (USD)",
       'aiutil_scam_check_btn': 'Tekshirish',
-      'aiutil_scam_verdict_safe': '✅ Xavfsiz ko\'rinadi',
+      'aiutil_scam_verdict_safe': "✅ Xavfsiz ko'rinadi",
       'aiutil_scam_verdict_suspicious': '⚠️ Shubhali',
       'aiutil_scam_verdict_scam': '🚨 Firibgarlik xavfi!',
       'aiutil_lost_select_label': "Yo'qolgan narsani tanlang:",
@@ -1211,8 +1183,7 @@ class AppStrings {
       // Auth — Social OAuth (SILK-0172)
       'auth_facebook': 'Войти через Facebook',
       'auth_instagram': 'Войти через Instagram',
-      'auth_facebook_soon':
-          'Для Facebook login требуется настройка flutter_facebook_auth.',
+      'auth_facebook_soon': 'Для Facebook login требуется настройка flutter_facebook_auth.',
       'auth_instagram_soon': 'Instagram login — скоро!',
       // Auth — Sign Up
       'auth_signup_title': 'Создать аккаунт',
@@ -1221,16 +1192,14 @@ class AppStrings {
       'auth_signup_btn': 'Создать аккаунт',
       'auth_have_account': 'Уже есть аккаунт? ',
       'auth_signin_link': 'Войти',
-      'auth_tos_text':
-          'Я согласен с Условиями использования и Политикой конфиденциальности',
+      'auth_tos_text': 'Я согласен с Условиями использования и Политикой конфиденциальности',
       'pwd_weak': 'Слабый',
       'pwd_medium': 'Средний',
       'pwd_strong': 'Надёжный',
       // Auth — Forgot Password
       'auth_forgot_title': 'Сброс пароля',
       'auth_forgot_sub': 'Введите email для получения ссылки для сброса',
-      'auth_forgot_sent_sub':
-          'Проверьте email — туда отправлена ссылка для сброса',
+      'auth_forgot_sent_sub': 'Проверьте email — туда отправлена ссылка для сброса',
       'auth_forgot_email': 'Электронная почта',
       'auth_forgot_btn': 'Отправить ссылку для сброса',
       'auth_forgot_back': 'Вернуться к входу',
@@ -1266,18 +1235,15 @@ class AppStrings {
       'onb_have_account': 'Войти',
       // Page 1
       'onb_p1_title': 'Прикоснитесь к тысячелетиям',
-      'onb_p1_sub':
-          'Исследуйте величайшие памятники Шёлкового пути'
+      'onb_p1_sub': 'Исследуйте величайшие памятники Шёлкового пути'
           ' — с геопривязкой и подробным описанием.',
       // Page 2
       'onb_p2_title': 'Укажи. Открой. Узнай.',
-      'onb_p2_sub':
-          'Наведите камеру на любой памятник —'
+      'onb_p2_sub': 'Наведите камеру на любой памятник —'
           ' SilkLens раскроет его историю за секунды.',
       // Page 3
       'onb_p3_title': 'Идите вместе',
-      'onb_p3_sub':
-          'Делитесь открытиями, зарабатывайте значки'
+      'onb_p3_sub': 'Делитесь открытиями, зарабатывайте значки'
           ' и общайтесь с любителями наследия.',
       // Social — Activity Feed
       'social_title': 'Сообщество',
@@ -1377,8 +1343,7 @@ class AppStrings {
       'missions_tab_weekly': 'Еженедельные',
       'missions_tab_special': 'Особые',
       'missions_coming_soon_title': 'Ежедневные задания скоро появятся',
-      'missions_coming_soon_sub':
-          'Выполняйте задания, зарабатывайте XP и поднимайтесь в рейтинге.'
+      'missions_coming_soon_sub': 'Выполняйте задания, зарабатывайте XP и поднимайтесь в рейтинге.'
           ' Загляните снова за первым заданием!',
       // Heritage — List
       'heritage_search_hint': 'Поиск объектов наследия...',
@@ -1447,8 +1412,7 @@ class AppStrings {
       'heritage_kids_loading': 'Генерация детской истории...',
       'heritage_kids_empty': 'Детская история для этого места появится скоро.',
       'heritage_culture_loading': 'Загрузка культурных советов...',
-      'heritage_culture_empty':
-          'Культурные советы для этого места появятся скоро.',
+      'heritage_culture_empty': 'Культурные советы для этого места появятся скоро.',
       'heritage_culture_severity': 'Уровень',
       // Bottom nav
       'nav_home': 'Главная',
@@ -1501,25 +1465,21 @@ class AppStrings {
       'privacy_consent_saved': 'Настройка сохранена',
       'privacy_consent_error': 'Не удалось сохранить настройку',
       'privacy_export_title': 'Запрос принят',
-      'privacy_export_body':
-          'Экспорт данных подготавливается.'
+      'privacy_export_body': 'Экспорт данных подготавливается.'
           ' Письмо придёт на email, когда будет готово.',
       'privacy_export_id': 'ID запроса',
       'privacy_export_error': 'Не удалось запросить экспорт данных',
       'privacy_export_btn_close': 'Закрыть',
       // Settings — Delete Account (SILK-0121)
-      'delete_account_api_error':
-          'Не удалось запланировать удаление. Попробуйте снова.',
-      'delete_account_scheduled':
-          'Удаление аккаунта запланировано. У вас есть 30 дней для отмены.',
+      'delete_account_api_error': 'Не удалось запланировать удаление. Попробуйте снова.',
+      'delete_account_scheduled': 'Удаление аккаунта запланировано. У вас есть 30 дней для отмены.',
       // Auth — Forgot Password placeholder (SILK-0122)
       'auth_forgot_placeholder_note':
           'Если email зарегистрирован, ссылка для сброса будет отправлена.',
       // Tickets — My Tickets (SILK-0126)
       'tickets_title': 'Мои билеты',
       'tickets_empty_title': 'Билетов пока нет',
-      'tickets_empty_sub':
-          'Исследуйте объекты наследия и приобретайте входные билеты',
+      'tickets_empty_sub': 'Исследуйте объекты наследия и приобретайте входные билеты',
       'tickets_browse_heritage': 'Объекты наследия',
       'tickets_ticket_label': 'Билет',
       'tickets_status_active': 'Активный',
@@ -1530,8 +1490,7 @@ class AppStrings {
       'tickets_retry': 'Повторить',
       // Emergency — Emergency Contacts (SILK-0127)
       'emergency_title': 'Экстренная помощь',
-      'emergency_warning':
-          'Звоните по этим номерам в случае чрезвычайной ситуации',
+      'emergency_warning': 'Звоните по этим номерам в случае чрезвычайной ситуации',
       'emergency_empty': 'Контакты недоступны',
       'emergency_call': 'Звоним',
       // Weather Guide (SILK-0129)
@@ -1553,8 +1512,7 @@ class AppStrings {
       'billing_recommended': 'РЕКОМЕНДУЕМ',
       'billing_current_plan': 'Текущий план',
       'billing_trial_cta': '14 дней бесплатно',
-      'billing_load_error':
-          'Не удалось загрузить данные. Попробуйте снова.',
+      'billing_load_error': 'Не удалось загрузить данные. Попробуйте снова.',
       'billing_retry': 'Повторить',
       'billing_no_plans': 'Нет доступных планов.',
       'billing_usage_title': 'Статистика использования',
@@ -1572,8 +1530,7 @@ class AppStrings {
       'billing_upgrade_btn': 'Перейти на Heritage Pro',
       'billing_cancel_btn': 'Отменить подписку',
       'billing_cancel_title': 'Отменить подписку',
-      'billing_cancel_body':
-          'Вы уверены? Вы можете пользоваться сервисом '
+      'billing_cancel_body': 'Вы уверены? Вы можете пользоваться сервисом '
           'до конца текущего периода.',
       'billing_cancel_go_back': 'Назад',
       'billing_cancel_confirm': 'Отменить',
@@ -1596,21 +1553,18 @@ class AppStrings {
       'billing_method_payme_sub': 'Кошелёк Payme',
       'billing_method_click_sub': 'Оплата Click',
       'billing_method_paypal_sub': 'PayPal международный',
-      'billing_external_redirect':
-          'Вы будете перенаправлены на внешнюю страницу',
+      'billing_external_redirect': 'Вы будете перенаправлены на внешнюю страницу',
       'billing_card_number': 'Номер карты',
       'billing_card_expiry': 'Срок действия',
       'billing_card_holder': 'Имя владельца',
       'billing_card_holder_hint': 'ИМЯ ФАМИЛИЯ',
       'billing_pay_btn': 'Оплатить',
       'billing_payment_soon_title': 'Оплата скоро будет доступна',
-      'billing_payment_soon_body':
-          'Интеграция онлайн-платежей (Stripe / Payme / Click) '
+      'billing_payment_soon_body': 'Интеграция онлайн-платежей (Stripe / Payme / Click) '
           'появится в следующем релизе.',
       'billing_ok': 'OK',
       'billing_subscribe_success': 'Подписка успешно активирована!',
-      'billing_subscribe_error':
-          'Не удалось оформить подписку. Попробуйте снова.',
+      'billing_subscribe_error': 'Не удалось оформить подписку. Попробуйте снова.',
       'billing_badge_ssl': 'SSL Защита',
       'billing_badge_3ds': '3D Secure',
       'billing_badge_pci': 'PCI DSS',
@@ -1961,8 +1915,7 @@ class AppStrings {
       'missions_tab_weekly': '每周',
       'missions_tab_special': '特殊',
       'missions_coming_soon_title': '每日挑战即将推出',
-      'missions_coming_soon_sub':
-          '完成任务赚取XP，攀登排行榜。请稍后回来查看您的第一个挑战！',
+      'missions_coming_soon_sub': '完成任务赚取XP，攀登排行榜。请稍后回来查看您的第一个挑战！',
       // Heritage — List
       'heritage_search_hint': '搜索文化遗产地点...',
       'heritage_cat_all': '全部',
@@ -2175,8 +2128,7 @@ class AppStrings {
       'billing_card_holder_hint': '姓名',
       'billing_pay_btn': '立即付款',
       'billing_payment_soon_title': '支付功能即将上线',
-      'billing_payment_soon_body':
-          '在线支付（Stripe / Payme / Click）将在下一版本中推出。',
+      'billing_payment_soon_body': '在线支付（Stripe / Payme / Click）将在下一版本中推出。',
       'billing_ok': '确定',
       'billing_subscribe_success': '订阅已成功激活！',
       'billing_subscribe_error': '订阅失败，请重试。',

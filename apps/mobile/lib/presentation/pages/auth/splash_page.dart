@@ -15,8 +15,7 @@ class SplashPage extends ConsumerStatefulWidget {
   ConsumerState<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends ConsumerState<SplashPage>
-    with SingleTickerProviderStateMixin {
+class _SplashPageState extends ConsumerState<SplashPage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
@@ -190,8 +189,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFFB78628)
-                                        .withValues(alpha: 0.2),
+                                    color: const Color(0xFFB78628).withValues(alpha: 0.2),
                                     blurRadius: 24,
                                   ),
                                 ],

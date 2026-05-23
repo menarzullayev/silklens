@@ -12,11 +12,9 @@ class BillingRepositoryImpl {
   const BillingRepositoryImpl(this._client);
   final SilkLensApiClient _client;
 
-  Future<Map<String, dynamic>> getPlans() =>
-      _client.getBillingPlans(pricingZone: 'central_asia');
+  Future<Map<String, dynamic>> getPlans() => _client.getBillingPlans(pricingZone: 'central_asia');
 
-  Future<Map<String, dynamic>?> getCurrentSubscription() =>
-      _client.getCurrentSubscription();
+  Future<Map<String, dynamic>?> getCurrentSubscription() => _client.getCurrentSubscription();
 
   Future<List<dynamic>> getInvoices({int limit = 20, int offset = 0}) =>
       _client.getInvoices(limit: limit, offset: offset);

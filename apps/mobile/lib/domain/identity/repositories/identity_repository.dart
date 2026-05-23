@@ -8,8 +8,7 @@ import 'package:silklens/domain/identity/entities/auth_session.dart';
 import 'package:silklens/domain/identity/repositories/auth_repository.dart' show AuthRepository;
 import 'package:silklens/domain/identity/repositories/identity_repository.dart' show AuthRepository;
 
-export 'package:silklens/domain/identity/repositories/auth_repository.dart'
-    show AuthRepository;
+export 'package:silklens/domain/identity/repositories/auth_repository.dart' show AuthRepository;
 
 /// Legacy protocol — same shape as [AuthRepository] but with the older
 /// method names. Use [AuthRepository] in new code.

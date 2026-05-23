@@ -40,9 +40,7 @@ class _PrivacyGDPRPageState extends ConsumerState<PrivacyGDPRPage> {
       final client = ref.read(silkLensApiClientProvider);
       final result = await client.requestDataExport();
       if (!mounted) return;
-      final requestId = result['request_id'] as String? ??
-          result['id'] as String? ??
-          '';
+      final requestId = result['request_id'] as String? ?? result['id'] as String? ?? '';
       _showExportDialog(requestId);
     } catch (_) {
       if (!mounted) return;
@@ -65,8 +63,11 @@ class _PrivacyGDPRPageState extends ConsumerState<PrivacyGDPRPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Row(
           children: [
-            const Icon(Icons.check_circle_outline,
-                color: Color(0xFFB78628), size: 22),
+            const Icon(
+              Icons.check_circle_outline,
+              color: Color(0xFFB78628),
+              size: 22,
+            ),
             const SizedBox(width: 8),
             Text(
               _s('privacy_export_title'),
@@ -195,7 +196,7 @@ class _PrivacyGDPRPageState extends ConsumerState<PrivacyGDPRPage> {
               label: "Ma'lumotlarni yuklab olish",
               isGold: true,
               loading: _exportLoading,
-              onTap: _exportLoading ? null : () => _requestDataExport(),
+              onTap: _exportLoading ? null : _requestDataExport,
             ),
             _ActionRow(
               icon: Icons.edit_outlined,
@@ -339,9 +340,7 @@ class _ActionRow extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isGold
-                  ? const Color(0xFFB78628)
-                  : Colors.white.withValues(alpha: 0.7),
+              color: isGold ? const Color(0xFFB78628) : Colors.white.withValues(alpha: 0.7),
               size: 20,
             ),
             const SizedBox(width: 12),

@@ -60,11 +60,8 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage>
       ),
     );
 
-    final systemCode =
-        PlatformDispatcher.instance.locale.languageCode.toLowerCase();
-    _selected = _languages.any((l) => l.code == systemCode)
-        ? systemCode
-        : 'uz';
+    final systemCode = PlatformDispatcher.instance.locale.languageCode.toLowerCase();
+    _selected = _languages.any((l) => l.code == systemCode) ? systemCode : 'uz';
 
     _controller = AnimationController(
       vsync: this,
@@ -230,8 +227,7 @@ class _LangTile extends StatelessWidget {
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
-                      fontWeight:
-                          selected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                   Text(

@@ -19,8 +19,7 @@ class _InvoicesPageState extends ConsumerState<InvoicesPage> {
 
   String _yearFilter = 'all';
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   List<Map<String, dynamic>> _applyFilter(
     List<Map<String, dynamic>> invoices,
@@ -189,9 +188,7 @@ class _InvoicesPageState extends ConsumerState<InvoicesPage> {
 
   Widget _invoiceRow(Map<String, dynamic> inv) {
     final date = inv['created_at'] as String? ?? '';
-    final planName = inv['plan_display_name'] as String? ??
-        inv['plan_slug'] as String? ??
-        '—';
+    final planName = inv['plan_display_name'] as String? ?? inv['plan_slug'] as String? ?? '—';
     final amount = inv['amount_due'] as num? ?? 0;
     final currency = inv['currency'] as String? ?? '';
     final status = inv['status'] as String? ?? 'unknown';
@@ -228,9 +225,7 @@ class _InvoicesPageState extends ConsumerState<InvoicesPage> {
           ),
           const Spacer(),
           Text(
-            amount == 0
-                ? _s('billing_free')
-                : '$amount $currency',
+            amount == 0 ? _s('billing_free') : '$amount $currency',
             style: const TextStyle(
               color: _gold,
               fontSize: 14,
@@ -303,8 +298,18 @@ class _InvoicesPageState extends ConsumerState<InvoicesPage> {
     if (parts.length < 3) return iso;
     const months = [
       '',
-      'Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn',
-      'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek',
+      'Yan',
+      'Fev',
+      'Mar',
+      'Apr',
+      'May',
+      'Iyn',
+      'Iyl',
+      'Avg',
+      'Sen',
+      'Okt',
+      'Noy',
+      'Dek',
     ];
     final m = int.tryParse(parts[1]) ?? 0;
     return '${parts[2]} ${m > 0 && m < 13 ? months[m] : parts[1]} ${parts[0]}';

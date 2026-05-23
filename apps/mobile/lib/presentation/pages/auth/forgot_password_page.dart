@@ -141,7 +141,6 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                       padding: EdgeInsets.zero,
                     ),
                     const SizedBox(height: 32),
-
                     Center(
                       child: Column(
                         children: [
@@ -157,8 +156,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFB78628)
-                                      .withValues(alpha: 0.5),
+                                  color: const Color(0xFFB78628).withValues(alpha: 0.5),
                                   blurRadius: 20,
                                   spreadRadius: 2,
                                 ),
@@ -181,9 +179,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            _sent
-                                ? _s('auth_forgot_sent_sub')
-                                : _s('auth_forgot_sub'),
+                            _sent ? _s('auth_forgot_sent_sub') : _s('auth_forgot_sub'),
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.6),
@@ -193,9 +189,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 48),
-
                     if (_sent) ...[
                       Container(
                         padding: const EdgeInsets.all(20),
@@ -304,7 +298,6 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                           },
                         ),
                       ),
-
                       if (_errorMsg != null) ...[
                         const SizedBox(height: 12),
                         Text(
@@ -315,9 +308,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                           ),
                         ),
                       ],
-
                       const SizedBox(height: 32),
-
                       GestureDetector(
                         onTap: _loading ? null : _submit,
                         child: AnimatedOpacity(
@@ -333,8 +324,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                               borderRadius: BorderRadius.circular(14),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFB78628)
-                                      .withValues(alpha: 0.35),
+                                  color: const Color(0xFFB78628).withValues(alpha: 0.35),
                                   blurRadius: 16,
                                   offset: const Offset(0, 4),
                                 ),
@@ -347,8 +337,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                                       height: 22,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
+                                        valueColor: AlwaysStoppedAnimation<Color>(
                                           Color(0xFF1A1200),
                                         ),
                                       ),
@@ -365,14 +354,12 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 20),
                       _GoldButton(
                         label: _s('auth_back_signin'),
                         onTap: () => context.go('/auth/sign-in'),
                       ),
                     ],
-
                     const SizedBox(height: 40),
                   ],
                 ),

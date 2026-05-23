@@ -7,7 +7,8 @@ abstract interface class ChatRepository {
   /// Posts a user turn to /v1/ai/chat and returns the assistant turn.
   Future<Result<ChatMessage>> send({
     required String prompt,
-    required String language, String? conversationId,
+    required String language,
+    String? conversationId,
     String? heritagePubIdContext,
   });
 

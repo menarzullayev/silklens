@@ -11,17 +11,15 @@ class Badge {
   });
 
   factory Badge.fromJson(Map<String, dynamic> j) => Badge(
-    slug: j['slug'] as String,
-    name: j['name'] as String,
-    description: j['description'] as String,
-    iconUrl: j['icon_url'] as String?,
-    earnedAt: j['earned_at'] != null
-        ? DateTime.parse(j['earned_at'] as String)
-        : null,
-    category: j['category'] as String? ?? '',
-    stepsRemaining: j['steps_remaining'] as int?,
-    accentHex: j['accent_hex'] as String?,
-  );
+        slug: j['slug'] as String,
+        name: j['name'] as String,
+        description: j['description'] as String,
+        iconUrl: j['icon_url'] as String?,
+        earnedAt: j['earned_at'] != null ? DateTime.parse(j['earned_at'] as String) : null,
+        category: j['category'] as String? ?? '',
+        stepsRemaining: j['steps_remaining'] as int?,
+        accentHex: j['accent_hex'] as String?,
+      );
 
   final String slug;
   final String name;

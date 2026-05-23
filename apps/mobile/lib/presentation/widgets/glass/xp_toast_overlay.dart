@@ -26,7 +26,8 @@ class XpToastOverlay {
 class _XpToast extends StatefulWidget {
   const _XpToast({
     required this.xp,
-    required this.onDismiss, this.reason,
+    required this.onDismiss,
+    this.reason,
   });
   final int xp;
   final String? reason;
@@ -36,8 +37,7 @@ class _XpToast extends StatefulWidget {
   State<_XpToast> createState() => _XpToastState();
 }
 
-class _XpToastState extends State<_XpToast>
-    with SingleTickerProviderStateMixin {
+class _XpToastState extends State<_XpToast> with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<Offset> _slide;
   late Animation<double> _fade;

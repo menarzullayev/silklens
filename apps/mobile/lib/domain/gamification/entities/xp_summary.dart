@@ -9,13 +9,13 @@ class XpSummary {
   });
 
   factory XpSummary.fromJson(Map<String, dynamic> j) => XpSummary(
-    currentXp: j['current_xp'] as int,
-    lifetimeXp: j['lifetime_xp'] as int,
-    levelName: j['level_name'] as String,
-    levelNumber: j['level_number'] as int,
-    xpToNextLevel: j['xp_to_next_level'] as int,
-    todayXp: j['today_xp'] as int? ?? 0,
-  );
+        currentXp: j['current_xp'] as int,
+        lifetimeXp: j['lifetime_xp'] as int,
+        levelName: j['level_name'] as String,
+        levelNumber: j['level_number'] as int,
+        xpToNextLevel: j['xp_to_next_level'] as int,
+        todayXp: j['today_xp'] as int? ?? 0,
+      );
 
   final int currentXp;
   final int lifetimeXp;

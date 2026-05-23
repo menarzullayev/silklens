@@ -20,18 +20,18 @@ class Review {
   });
 
   factory Review.fromJson(Map<String, dynamic> j) => Review(
-    id: j['id'] as String,
-    placeId: j['place_id'] as String,
-    authorId: j['author_id'] as String,
-    authorName: j['author_name'] as String,
-    rating: (j['rating'] as num).toDouble(),
-    createdAt: DateTime.parse(j['created_at'] as String),
-    text: j['text'] as String?,
-    photoUrls: (j['photo_urls'] as List?)?.cast<String>() ?? [],
-    authorAvatarUrl: j['author_avatar_url'] as String?,
-    isVerified: j['is_verified'] as bool? ?? false,
-    helpfulCount: j['helpful_count'] as int? ?? 0,
-  );
+        id: j['id'] as String,
+        placeId: j['place_id'] as String,
+        authorId: j['author_id'] as String,
+        authorName: j['author_name'] as String,
+        rating: (j['rating'] as num).toDouble(),
+        createdAt: DateTime.parse(j['created_at'] as String),
+        text: j['text'] as String?,
+        photoUrls: (j['photo_urls'] as List?)?.cast<String>() ?? [],
+        authorAvatarUrl: j['author_avatar_url'] as String?,
+        isVerified: j['is_verified'] as bool? ?? false,
+        helpfulCount: j['helpful_count'] as int? ?? 0,
+      );
 
   final String id;
   final String placeId;

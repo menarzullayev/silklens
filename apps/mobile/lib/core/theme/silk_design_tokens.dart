@@ -124,8 +124,7 @@ class SilkGlassTokens extends ThemeExtension<SilkGlassTokens> {
       glassBg: Color.lerp(glassBg, other.glassBg, t)!,
       glassBgStrong: Color.lerp(glassBgStrong, other.glassBgStrong, t)!,
       glassBorder: Color.lerp(glassBorder, other.glassBorder, t)!,
-      glassBorderStrong:
-          Color.lerp(glassBorderStrong, other.glassBorderStrong, t)!,
+      glassBorderStrong: Color.lerp(glassBorderStrong, other.glassBorderStrong, t)!,
       glassBlur: lerpDouble(glassBlur, other.glassBlur, t)!,
       glassBlurStrong: lerpDouble(glassBlurStrong, other.glassBlurStrong, t)!,
       navBg: Color.lerp(navBg, other.navBg, t)!,

@@ -96,9 +96,7 @@ class _HeritageDetailPageState extends ConsumerState<HeritageDetailPage>
     );
     if (!mounted) return;
     setState(() {
-      _culturalTips = tips
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
+      _culturalTips = tips.map((e) => Map<String, dynamic>.from(e as Map)).toList();
       _cultureLoading = false;
       _cultureLoaded = true;
     });
@@ -136,8 +134,7 @@ class _HeritageDetailPageState extends ConsumerState<HeritageDetailPage>
               ),
               const SizedBox(height: 16),
               GestureDetector(
-                onTap: () =>
-                    ref.invalidate(heritageDetailProvider(widget.pubId)),
+                onTap: () => ref.invalidate(heritageDetailProvider(widget.pubId)),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
@@ -212,9 +209,7 @@ class _HeritageDetailPageState extends ConsumerState<HeritageDetailPage>
           ),
           actions: [
             GestureDetector(
-              onTap: () => ref
-                  .read(heritageSavedProvider(widget.pubId).notifier)
-                  .toggle(),
+              onTap: () => ref.read(heritageSavedProvider(widget.pubId).notifier).toggle(),
               child: Container(
                 margin: const EdgeInsets.all(8),
                 padding: const EdgeInsets.all(8),
@@ -226,9 +221,7 @@ class _HeritageDetailPageState extends ConsumerState<HeritageDetailPage>
                   ),
                 ),
                 child: Icon(
-                  isSaved
-                      ? Icons.bookmark_rounded
-                      : Icons.bookmark_outline_rounded,
+                  isSaved ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
                   color: isSaved ? _gold : Colors.white,
                   size: 20,
                 ),
@@ -379,8 +372,7 @@ class _HeritageDetailPageState extends ConsumerState<HeritageDetailPage>
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    if (period.isNotEmpty)
-                      _InfoChip(period, Icons.history_edu_rounded),
+                    if (period.isNotEmpty) _InfoChip(period, Icons.history_edu_rounded),
                     _InfoChip(item.kindSlug, Icons.account_balance_rounded),
                     if (item.isUnescoListed)
                       _InfoChip(
@@ -465,20 +457,16 @@ class _HeritageDetailPageState extends ConsumerState<HeritageDetailPage>
                   _KidsTabContent(
                     isLoading: _kidsLoading,
                     story: _kidsStory,
-                    loadingLabel:
-                        AppStrings.get(lang, 'heritage_kids_loading'),
+                    loadingLabel: AppStrings.get(lang, 'heritage_kids_loading'),
                     emptyLabel: AppStrings.get(lang, 'heritage_kids_empty'),
                   )
                 else if (_activeTab == _tabCulture)
                   _CultureTabContent(
                     isLoading: _cultureLoading,
                     tips: _culturalTips,
-                    loadingLabel:
-                        AppStrings.get(lang, 'heritage_culture_loading'),
-                    emptyLabel:
-                        AppStrings.get(lang, 'heritage_culture_empty'),
-                    severityLabel:
-                        AppStrings.get(lang, 'heritage_culture_severity'),
+                    loadingLabel: AppStrings.get(lang, 'heritage_culture_loading'),
+                    emptyLabel: AppStrings.get(lang, 'heritage_culture_empty'),
+                    severityLabel: AppStrings.get(lang, 'heritage_culture_severity'),
                   ),
               ],
             ),
@@ -708,10 +696,7 @@ class _CulturalTipCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final body = tip['body'] as String? ??
-        tip['text'] as String? ??
-        tip['tip'] as String? ??
-        '';
+    final body = tip['body'] as String? ?? tip['text'] as String? ?? tip['tip'] as String? ?? '';
     final severity = (tip['severity'] as String? ?? 'low').toLowerCase();
     final badgeColor = _severityColors[severity] ?? const Color(0xFF43A047);
 
@@ -850,9 +835,7 @@ class _ActionBtn extends StatelessWidget {
         child: Container(
           height: 54,
           decoration: BoxDecoration(
-            color: isGold
-                ? const Color(0xFFB78628)
-                : Colors.white.withValues(alpha: 0.08),
+            color: isGold ? const Color(0xFFB78628) : Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(14),
             border: isGold
                 ? null

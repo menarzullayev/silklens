@@ -6,6 +6,6 @@ abstract final class AppRoutes {
   static const home = '/home';
   static const map = '/map';
   static const camera = '/camera';
-  
+
   static String heritageDetail(String pubId) => '/home/heritage/$pubId';
 }

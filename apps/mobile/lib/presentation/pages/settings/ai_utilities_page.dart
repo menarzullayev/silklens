@@ -74,7 +74,6 @@ class _AIUtilitiesPageState extends ConsumerState<AIUtilitiesPage>
       final data = await client.checkFairPrice(
         item: _itemCtrl.text.trim(),
         market: _marketCtrl.text.trim(),
-        currency: 'USD',
         language: LocaleService.instance.locale,
       );
       if (!mounted) return;
@@ -122,8 +121,6 @@ class _AIUtilitiesPageState extends ConsumerState<AIUtilitiesPage>
       final client = ref.read(silkLensApiClientProvider);
       final data = await client.getLostFoundHelp(
         itemType: _lostItemType,
-        lat: 39.65,
-        lng: 66.97,
         language: LocaleService.instance.locale,
       );
       if (!mounted) return;
@@ -159,7 +156,6 @@ class _AIUtilitiesPageState extends ConsumerState<AIUtilitiesPage>
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
             color: Color(0xFFB78628),
-            width: 1,
           ),
         ),
       ),
@@ -360,8 +356,7 @@ class _AIUtilitiesPageState extends ConsumerState<AIUtilitiesPage>
               selectedColor: const Color(0xFFB78628).withValues(alpha: 0.3),
               checkmarkColor: const Color(0xFFB78628),
               labelStyle: TextStyle(
-                color:
-                    isSelected ? const Color(0xFFB78628) : Colors.white70,
+                color: isSelected ? const Color(0xFFB78628) : Colors.white70,
               ),
               backgroundColor: Colors.white.withValues(alpha: 0.08),
               side: BorderSide(
@@ -416,9 +411,7 @@ class _AIUtilitiesPageState extends ConsumerState<AIUtilitiesPage>
             );
           }),
           const SizedBox(height: 8),
-          ...((_lostResult!['nearest_help'] as List?) ?? [])
-              .take(3)
-              .map((h) {
+          ...((_lostResult!['nearest_help'] as List?) ?? []).take(3).map((h) {
             final m = h as Map<String, dynamic>;
             return ListTile(
               contentPadding: EdgeInsets.zero,

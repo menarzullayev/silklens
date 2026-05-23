@@ -67,9 +67,7 @@ class HybridLogicalClock {
   static String _generateNodeId() {
     final rng = Random.secure();
     final bytes = List<int>.generate(6, (_) => rng.nextInt(256));
-    return bytes
-        .map((int b) => b.toRadixString(16).padLeft(2, '0'))
-        .join();
+    return bytes.map((int b) => b.toRadixString(16).padLeft(2, '0')).join();
   }
 
   @override

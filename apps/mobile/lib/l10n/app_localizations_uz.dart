@@ -18,8 +18,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get onboardingTitle => 'Kamera orqali madaniy merosni kashf eting';
 
   @override
-  String get onboardingSubtitle =>
-      'Istalgan obidaga moslang — uning hikoyasi darhol ochiladi.';
+  String get onboardingSubtitle => 'Istalgan obidaga moslang — uning hikoyasi darhol ochiladi.';
 
   @override
   String get onboardingCta => 'Kashf etishni boshlash';
@@ -73,15 +72,13 @@ class AppLocalizationsUz extends AppLocalizations {
   String get cameraPlaceholderTitle => 'Kamera';
 
   @override
-  String get cameraPlaceholderBody =>
-      'Vision pipeline FAZA 2 — Hafta 3’da chiqadi.';
+  String get cameraPlaceholderBody => 'Vision pipeline FAZA 2 — Hafta 3’da chiqadi.';
 
   @override
   String get mapPlaceholderTitle => 'Xarita';
 
   @override
-  String get mapPlaceholderBody =>
-      'Mapbox / OSM integratsiyasi FAZA 2 — Hafta 3’da chiqadi.';
+  String get mapPlaceholderBody => 'Mapbox / OSM integratsiyasi FAZA 2 — Hafta 3’da chiqadi.';
 
   @override
   String get profileTitle => 'Profil';
@@ -118,8 +115,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get authSignInTitle => 'Xush kelibsiz';
 
   @override
-  String get authSignInSubtitle =>
-      'Kashfiyotni davom ettirish uchun tizimga kiring.';
+  String get authSignInSubtitle => 'Kashfiyotni davom ettirish uchun tizimga kiring.';
 
   @override
   String get authSignInCta => 'Kirish';
@@ -128,8 +124,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get authSignUpTitle => 'Hisob yarating';
 
   @override
-  String get authSignUpSubtitle =>
-      'Obidalarni saqlang, sharhlar yozing, nishonlarga ega bo‘ling.';
+  String get authSignUpSubtitle => 'Obidalarni saqlang, sharhlar yozing, nishonlarga ega bo‘ling.';
 
   @override
   String get authSignUpCta => 'Hisob yaratish';
@@ -172,8 +167,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get authErrorInvalidEmail => 'To‘g‘ri email kiriting.';
 
   @override
-  String get authErrorPasswordTooShort =>
-      'Parol kamida 12 belgidan iborat bo‘lishi kerak.';
+  String get authErrorPasswordTooShort => 'Parol kamida 12 belgidan iborat bo‘lishi kerak.';
 
   @override
   String get authErrorPasswordWeak =>
@@ -189,12 +183,10 @@ class AppLocalizationsUz extends AppLocalizations {
   String get authErrorInvalidCredentials => 'Email yoki parol noto‘g‘ri.';
 
   @override
-  String get authErrorRateLimited =>
-      'Juda ko‘p urinish. Birozdan keyin qayta urinib ko‘ring.';
+  String get authErrorRateLimited => 'Juda ko‘p urinish. Birozdan keyin qayta urinib ko‘ring.';
 
   @override
-  String get authErrorEmailTaken =>
-      'Bunday email allaqachon ro‘yxatdan o‘tgan.';
+  String get authErrorEmailTaken => 'Bunday email allaqachon ro‘yxatdan o‘tgan.';
 
   @override
   String get authErrorNetwork => 'Tarmoq xatosi. Ulanishni tekshiring.';
@@ -274,8 +266,7 @@ class AppLocalizationsUz extends AppLocalizations {
       'Hali hech narsa saqlanmagan. Obida sahifasida “Saqlash”ni bosing.';
 
   @override
-  String get heritageLoadMoreError =>
-      'Yuklab bo‘lmadi — qayta urinish uchun bosing.';
+  String get heritageLoadMoreError => 'Yuklab bo‘lmadi — qayta urinish uchun bosing.';
 
   @override
   String get commonRetry => 'Qayta urinish';
@@ -503,8 +494,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get billingCheckoutTitle => 'To\'lov';
 
   @override
-  String get billingCheckoutSubtitle =>
-      'Obuna bo\'lish uchun to\'lov vositangizni kiriting';
+  String get billingCheckoutSubtitle => 'Obuna bo\'lish uchun to\'lov vositangizni kiriting';
 
   @override
   String get billingCheckoutToken => 'To\'lov tokeni';
@@ -549,8 +539,7 @@ class AppLocalizationsUz extends AppLocalizations {
   String get emailVerifyInvalidCode => 'Kod noto\'g\'ri yoki muddati o\'tgan.';
 
   @override
-  String get emailVerifyResendError =>
-      'Email yuborishda xato. Qayta urinib ko\'ring.';
+  String get emailVerifyResendError => 'Email yuborishda xato. Qayta urinib ko\'ring.';
 
   @override
   String get emailVerifyResending => 'Yuborilmoqda...';

@@ -26,8 +26,7 @@ class Heritage {
         kindSlug: j['kind_slug'] as String,
         name: (j['name'] as Map?)?.cast<String, String>() ?? {},
         summaryMd: (j['summary_md'] as Map?)?.cast<String, String>() ?? {},
-        descriptionMd:
-            (j['description_md'] as Map?)?.cast<String, String>() ?? {},
+        descriptionMd: (j['description_md'] as Map?)?.cast<String, String>() ?? {},
         tags: (j['tags'] as List?)?.cast<String>() ?? [],
         status: j['status'] as String? ?? 'published',
         countryCode: j['country_code'] as String?,
@@ -66,7 +65,6 @@ class Heritage {
   String localizedSummary(String lang) =>
       summaryMd[lang] ?? summaryMd['en'] ?? summaryMd.values.firstOrNull ?? '';
 
-
   String localizedDescription(String lang) =>
       descriptionMd[lang] ?? descriptionMd['en'] ?? descriptionMd.values.firstOrNull ?? '';
   String? get heroMediaUrl => null; // resolved by media service in FAZA 2+
@@ -76,21 +74,31 @@ class Heritage {
     if (periodEndYear == null) return periodStartYear.toString();
     return r'$periodStartYear – $periodEndYear';
   }
+
   bool get isUnescoListed => false; // from heritage_facts in FAZA 2+
   int? get unescoInscriptionYear => null;
-  String get description =>
-      descriptionMd['en'] ?? descriptionMd.values.firstOrNull ?? '';
+  String get description => descriptionMd['en'] ?? descriptionMd.values.firstOrNull ?? '';
   Heritage copyWith({bool? isSaved}) => Heritage(
-        id: id, pubId: pubId, kindSlug: kindSlug,
-        name: name, summaryMd: summaryMd, descriptionMd: descriptionMd,
-        tags: tags, status: status, countryCode: countryCode,
-        adminPath: adminPath, latitude: latitude, longitude: longitude,
-        periodStartYear: periodStartYear, periodEndYear: periodEndYear,
-        heroMediaId: heroMediaId, confidenceScore: confidenceScore,
-        revision: revision, isSaved: isSaved ?? this.isSaved,
+        id: id,
+        pubId: pubId,
+        kindSlug: kindSlug,
+        name: name,
+        summaryMd: summaryMd,
+        descriptionMd: descriptionMd,
+        tags: tags,
+        status: status,
+        countryCode: countryCode,
+        adminPath: adminPath,
+        latitude: latitude,
+        longitude: longitude,
+        periodStartYear: periodStartYear,
+        periodEndYear: periodEndYear,
+        heroMediaId: heroMediaId,
+        confidenceScore: confidenceScore,
+        revision: revision,
+        isSaved: isSaved ?? this.isSaved,
       );
 }
-
 
 class HeritageFilters {
   const HeritageFilters({
@@ -109,9 +117,14 @@ class HeritageFilters {
   final int offset;
 
   HeritageFilters copyWith({
-    String? kindSlug, String? countryCode, String? status,
-    String? search, int? limit, int? offset,
-  }) => HeritageFilters(
+    String? kindSlug,
+    String? countryCode,
+    String? status,
+    String? search,
+    int? limit,
+    int? offset,
+  }) =>
+      HeritageFilters(
         kindSlug: kindSlug ?? this.kindSlug,
         countryCode: countryCode ?? this.countryCode,
         status: status ?? this.status,

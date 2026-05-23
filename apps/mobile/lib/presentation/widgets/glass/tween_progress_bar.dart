@@ -20,8 +20,7 @@ class TweenProgressBar extends StatefulWidget {
   State<TweenProgressBar> createState() => _TweenProgressBarState();
 }
 
-class _TweenProgressBarState extends State<TweenProgressBar>
-    with SingleTickerProviderStateMixin {
+class _TweenProgressBarState extends State<TweenProgressBar> with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<double> _anim;
   double _target = 0;

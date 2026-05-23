@@ -14,8 +14,8 @@ final brandingProvider = AsyncNotifierProvider<BrandingNotifier, Branding>(
 
 final brandingValueProvider = Provider<Branding>((ref) {
   return ref.watch(brandingProvider).when(
-    data: (b) => b,
-    loading: () => Branding.defaults,
-    error: (_, __) => Branding.defaults,
-  );
+        data: (b) => b,
+        loading: () => Branding.defaults,
+        error: (_, __) => Branding.defaults,
+      );
 });

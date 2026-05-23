@@ -41,8 +41,6 @@ class HeritageListState {
 }
 
 class HeritageListNotifier extends Notifier<HeritageListState> {
-  static const _pageSize = 20;
-
   @override
   HeritageListState build() {
     Future.microtask(refresh);
@@ -63,8 +61,6 @@ class HeritageListNotifier extends Notifier<HeritageListState> {
         countryCode: state.filters.countryCode,
         status: state.filters.status,
         search: state.filters.search,
-        limit: _pageSize,
-        offset: 0,
       );
       state = state.copyWith(
         items: page.items,
@@ -86,7 +82,6 @@ class HeritageListNotifier extends Notifier<HeritageListState> {
         countryCode: state.filters.countryCode,
         status: state.filters.status,
         search: state.filters.search,
-        limit: _pageSize,
         offset: state.items.length,
       );
       state = state.copyWith(
@@ -128,7 +123,6 @@ class HeritageListNotifier extends Notifier<HeritageListState> {
   }
 }
 
-final heritageListProvider =
-    NotifierProvider<HeritageListNotifier, HeritageListState>(
+final heritageListProvider = NotifierProvider<HeritageListNotifier, HeritageListState>(
   HeritageListNotifier.new,
 );

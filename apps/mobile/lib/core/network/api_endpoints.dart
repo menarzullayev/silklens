@@ -52,10 +52,8 @@ abstract final class ApiEndpoints {
   // Billing (SILK-0104..0107)
   static const String billingPlans = '/v1/billing/plans';
   static const String billingSubscriptions = '/v1/billing/subscriptions';
-  static const String billingSubscriptionsCancel =
-      '/v1/billing/subscriptions/cancel';
-  static const String billingSubscriptionsResume =
-      '/v1/billing/subscriptions/resume';
+  static const String billingSubscriptionsCancel = '/v1/billing/subscriptions/cancel';
+  static const String billingSubscriptionsResume = '/v1/billing/subscriptions/resume';
   static const String billingMeSubscription = '/v1/billing/me/subscription';
   static const String billingMeInvoices = '/v1/billing/me/invoices';
   static const String billingMeEntitlements = '/v1/billing/me/entitlements';

@@ -36,19 +36,16 @@ class FlutterSecureTokenStorage implements SecureTokenStorage {
   Future<String?> readRefreshToken() => _storage.read(key: _refreshKey);
 
   @override
-  Future<void> writeAccessToken(String token) =>
-      _storage.write(key: _accessKey, value: token);
+  Future<void> writeAccessToken(String token) => _storage.write(key: _accessKey, value: token);
 
   @override
-  Future<void> writeRefreshToken(String token) =>
-      _storage.write(key: _refreshKey, value: token);
+  Future<void> writeRefreshToken(String token) => _storage.write(key: _refreshKey, value: token);
 
   @override
   Future<String?> readUserSnapshot() => _storage.read(key: _userKey);
 
   @override
-  Future<void> writeUserSnapshot(String json) =>
-      _storage.write(key: _userKey, value: json);
+  Future<void> writeUserSnapshot(String json) => _storage.write(key: _userKey, value: json);
 
   @override
   Future<void> clear() async {
@@ -91,8 +88,7 @@ class InMemorySecureTokenStorage implements SecureTokenStorage {
   }
 }
 
-final Provider<SecureTokenStorage> secureTokenStorageProvider =
-    Provider<SecureTokenStorage>(
+final Provider<SecureTokenStorage> secureTokenStorageProvider = Provider<SecureTokenStorage>(
   (Ref ref) => FlutterSecureTokenStorage(
     const FlutterSecureStorage(
       aOptions: AndroidOptions(encryptedSharedPreferences: true),

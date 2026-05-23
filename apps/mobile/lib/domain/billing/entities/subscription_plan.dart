@@ -19,10 +19,12 @@ class SubscriptionPlan {
         billingPeriod: j['billing_period'] as String? ?? 'monthly',
         trialDays: j['trial_days'] as int? ?? 0,
         isDefault: j['is_default'] as bool? ?? false,
-        price: (j['price'] as Map?)?['amount'] != null
-            ? double.tryParse(j['price']['amount'].toString())
-            : null,
-        currency: (j['price'] as Map?)?['currency'] as String? ?? 'USD',
+        price: () {
+          final priceMap = j['price'] as Map<String, dynamic>?;
+          final amount = priceMap?['amount'];
+          return amount != null ? double.tryParse(amount.toString()) : null;
+        }(),
+        currency: (j['price'] as Map<String, dynamic>?)?['currency'] as String? ?? 'USD',
       );
   final String id;
   final String slug;

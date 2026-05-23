@@ -18,8 +18,6 @@ class TelemetryInterceptor extends Interceptor {
 
   String _generateId() {
     final bytes = List<int>.generate(16, (_) => _random.nextInt(256));
-    return bytes
-        .map((int b) => b.toRadixString(16).padLeft(2, '0'))
-        .join();
+    return bytes.map((int b) => b.toRadixString(16).padLeft(2, '0')).join();
   }
 }

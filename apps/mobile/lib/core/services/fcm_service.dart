@@ -32,8 +32,7 @@ class FcmService {
   FcmService(this._ref);
   final Ref _ref;
 
-  final FlutterLocalNotificationsPlugin _localNotifications =
-      FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
 
   static const _androidChannel = AndroidNotificationChannel(
     'silklens_default',
@@ -80,8 +79,7 @@ class FcmService {
 
     // Create the Android notification channel.
     await _localNotifications
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(_androidChannel);
 
     // Listen for messages arriving while the app is in the foreground.
@@ -102,8 +100,7 @@ class FcmService {
 
   Future<void> _registerToken(String token) async {
     try {
-      final platform =
-          defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android';
+      final platform = defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android';
       // Use the token itself as a stable installation ID — it is unique per
       // app install and rotates with the token, keeping the backend in sync.
       await _ref.read(silkLensApiClientProvider).registerPushDevice(

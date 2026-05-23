@@ -21,8 +21,7 @@ class AuroraBackground extends StatefulWidget {
   State<AuroraBackground> createState() => _AuroraBackgroundState();
 }
 
-class _AuroraBackgroundState extends State<AuroraBackground>
-    with SingleTickerProviderStateMixin {
+class _AuroraBackgroundState extends State<AuroraBackground> with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<double> _phase;
 

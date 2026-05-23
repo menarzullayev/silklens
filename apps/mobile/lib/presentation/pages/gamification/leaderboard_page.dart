@@ -17,8 +17,7 @@ class _LeaderboardPageState extends ConsumerState<LeaderboardPage> {
   static const _gold = Color(0xFFB78628);
   static const _goldLight = Color(0xFFE5C97A);
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   List<String> get _periods => [
         _s('lb_period_weekly'),
@@ -39,8 +38,7 @@ class _LeaderboardPageState extends ConsumerState<LeaderboardPage> {
   Widget build(BuildContext context) {
     const slug = 'global';
     final period = _periodSlugs[_periodIndex];
-    final entriesAsync =
-        ref.watch(leaderboardEntriesProvider((slug, period)));
+    final entriesAsync = ref.watch(leaderboardEntriesProvider((slug, period)));
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D2337),
@@ -98,8 +96,7 @@ class _LeaderboardPageState extends ConsumerState<LeaderboardPage> {
                                   ? const Color(0xFF1A1200)
                                   : Colors.white.withValues(alpha: 0.6),
                               fontSize: 13,
-                              fontWeight:
-                                  active ? FontWeight.w700 : FontWeight.w400,
+                              fontWeight: active ? FontWeight.w700 : FontWeight.w400,
                             ),
                           ),
                         ),
@@ -242,18 +239,14 @@ class _LeaderboardRow extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: isTop3
-                  ? medalColor
-                  : Colors.white.withValues(alpha: 0.1),
+              color: isTop3 ? medalColor : Colors.white.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
                 '${entry.rank}',
                 style: TextStyle(
-                  color: isTop3
-                      ? const Color(0xFF1A1200)
-                      : Colors.white.withValues(alpha: 0.7),
+                  color: isTop3 ? const Color(0xFF1A1200) : Colors.white.withValues(alpha: 0.7),
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
                 ),
@@ -296,9 +289,7 @@ class _LeaderboardRow extends StatelessWidget {
                   style: TextStyle(
                     color: entry.isCurrentUser ? _gold : Colors.white,
                     fontSize: 13,
-                    fontWeight: entry.isCurrentUser
-                        ? FontWeight.w700
-                        : FontWeight.w500,
+                    fontWeight: entry.isCurrentUser ? FontWeight.w700 : FontWeight.w500,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -328,20 +319,14 @@ class _LeaderboardRow extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    entry.delta >= 0
-                        ? Icons.arrow_drop_up_rounded
-                        : Icons.arrow_drop_down_rounded,
-                    color: entry.delta >= 0
-                        ? Colors.greenAccent
-                        : Colors.redAccent,
+                    entry.delta >= 0 ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
+                    color: entry.delta >= 0 ? Colors.greenAccent : Colors.redAccent,
                     size: 16,
                   ),
                   Text(
                     '${entry.delta.abs()}',
                     style: TextStyle(
-                      color: entry.delta >= 0
-                          ? Colors.greenAccent
-                          : Colors.redAccent,
+                      color: entry.delta >= 0 ? Colors.greenAccent : Colors.redAccent,
                       fontSize: 11,
                     ),
                   ),

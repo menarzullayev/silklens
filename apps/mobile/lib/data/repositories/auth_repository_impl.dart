@@ -430,8 +430,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
 // ── Riverpod provider ────────────────────────────────────────────────────────
 
-final Provider<AuthRepository> authRepositoryProvider =
-    Provider<AuthRepository>(
+final Provider<AuthRepository> authRepositoryProvider = Provider<AuthRepository>(
   (Ref ref) => AuthRepositoryImpl(
     ref.watch(silkLensApiClientProvider),
     ref.watch(secureTokenStorageProvider),

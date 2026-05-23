@@ -54,8 +54,7 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
             hintText: _s('profile_edit_name_hint'),
             hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
             enabledBorder: UnderlineInputBorder(
-              borderSide:
-                  BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
             ),
             focusedBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: Color(0xFFB78628)),
@@ -86,9 +85,7 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
 
     setState(() => _updatingProfile = true);
     try {
-      await ref
-          .read(silkLensApiClientProvider)
-          .updateProfile(displayName: newName);
+      await ref.read(silkLensApiClientProvider).updateProfile(displayName: newName);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_s('profile_update_success'))),
@@ -181,9 +178,7 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
                     children: [
                       // Avatar
                       GestureDetector(
-                        onTap: widget.isOwn
-                            ? () => _showEditNameDialog(displayName)
-                            : null,
+                        onTap: widget.isOwn ? () => _showEditNameDialog(displayName) : null,
                         child: Container(
                           width: 80,
                           height: 80,
@@ -264,55 +259,54 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
                   ),
                   const SizedBox(height: 16),
                   // Stats — real XP + social counts (SILK-0117)
-                  Builder(builder: (context) {
-                    final stats = ref.watch(profileStatsProvider);
-                    if (stats.isLoading) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Color(0xFFB78628),
+                  Builder(
+                    builder: (context) {
+                      final stats = ref.watch(profileStatsProvider);
+                      if (stats.isLoading) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFFB78628),
+                              ),
                             ),
                           ),
-                        ),
+                        );
+                      }
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _StatCol(
+                            stats.placesVisited > 0 ? '${stats.placesVisited}' : '–',
+                            _s('profile_stat_places'),
+                          ),
+                          _StatCol(
+                            '${stats.followersCount}',
+                            _s('profile_stat_followers'),
+                          ),
+                          _StatCol(
+                            '${stats.followingCount}',
+                            _s('profile_stat_following'),
+                          ),
+                          _StatCol(
+                            stats.xp > 0 ? '${stats.xp}' : '–',
+                            _s('profile_stat_xp'),
+                          ),
+                        ],
                       );
-                    }
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _StatCol(
-                          stats.placesVisited > 0
-                              ? '${stats.placesVisited}'
-                              : '–',
-                          _s('profile_stat_places'),
-                        ),
-                        _StatCol(
-                          '${stats.followersCount}',
-                          _s('profile_stat_followers'),
-                        ),
-                        _StatCol(
-                          '${stats.followingCount}',
-                          _s('profile_stat_following'),
-                        ),
-                        _StatCol(
-                          stats.xp > 0 ? '${stats.xp}' : '–',
-                          _s('profile_stat_xp'),
-                        ),
-                      ],
-                    );
-                  }),
+                    },
+                  ),
                   const SizedBox(height: 16), // Action buttons
                   if (!widget.isOwn)
                     Row(
                       children: [
                         Expanded(
                           child: GestureDetector(
-                            onTap: () =>
-                                setState(() => _following = !_following),
+                            onTap: () => setState(() => _following = !_following),
                             child: Container(
                               height: 42,
                               decoration: BoxDecoration(
@@ -322,20 +316,15 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
                                 borderRadius: BorderRadius.circular(12),
                                 border: _following
                                     ? Border.all(
-                                        color:
-                                            Colors.white.withValues(alpha: 0.3),
+                                        color: Colors.white.withValues(alpha: 0.3),
                                       )
                                     : null,
                               ),
                               child: Center(
                                 child: Text(
-                                  _following
-                                      ? _s('profile_following_btn')
-                                      : _s('profile_follow'),
+                                  _following ? _s('profile_following_btn') : _s('profile_follow'),
                                   style: TextStyle(
-                                    color: _following
-                                        ? Colors.white
-                                        : const Color(0xFF1A1200),
+                                    color: _following ? Colors.white : const Color(0xFF1A1200),
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),

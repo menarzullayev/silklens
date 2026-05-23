@@ -13,8 +13,7 @@ import 'package:silklens/presentation/providers/locale_provider.dart';
 class CarbonPage extends HookConsumerWidget {
   const CarbonPage({super.key});
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   static const _transports = <(String, String, IconData)>[
     ('car_petrol', 'carbon_transport_car', Icons.directions_car),
@@ -34,21 +33,23 @@ class CarbonPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    useEffect(() {
-      SystemChrome.setSystemUIOverlayStyle(
-        const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-          systemNavigationBarColor: Color(0xFF0D2337),
-          systemNavigationBarIconBrightness: Brightness.light,
-        ),
-      );
-      return null;
-    }, const []);
+    useEffect(
+      () {
+        SystemChrome.setSystemUIOverlayStyle(
+          const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light,
+            systemNavigationBarColor: Color(0xFF0D2337),
+            systemNavigationBarIconBrightness: Brightness.light,
+          ),
+        );
+        return null;
+      },
+      const [],
+    );
 
     final locale = ref.watch(activeLocaleProvider);
-    final legs =
-        useState<List<Map<String, dynamic>>>([]);
+    final legs = useState<List<Map<String, dynamic>>>([]);
     final selectedTransport = useState('car_petrol');
     final distCtrl = useTextEditingController();
     final result = useState<Map<String, dynamic>?>(null);
@@ -208,9 +209,7 @@ class CarbonPage extends HookConsumerWidget {
                           : Colors.white.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isSelected
-                            ? const Color(0xFFB78628)
-                            : Colors.white12,
+                        color: isSelected ? const Color(0xFFB78628) : Colors.white12,
                       ),
                     ),
                     child: Row(
@@ -219,21 +218,15 @@ class CarbonPage extends HookConsumerWidget {
                         Icon(
                           icon,
                           size: 18,
-                          color: isSelected
-                              ? Colors.white
-                              : Colors.white60,
+                          color: isSelected ? Colors.white : Colors.white60,
                         ),
                         const SizedBox(width: 6),
                         Text(
                           _s(labelKey),
                           style: TextStyle(
-                            color: isSelected
-                                ? Colors.white
-                                : Colors.white60,
+                            color: isSelected ? Colors.white : Colors.white60,
                             fontSize: 12,
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
                       ],
@@ -250,8 +243,7 @@ class CarbonPage extends HookConsumerWidget {
               Expanded(
                 child: TextField(
                   controller: distCtrl,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     hintText: _s('carbon_distance_hint'),
@@ -267,8 +259,7 @@ class CarbonPage extends HookConsumerWidget {
                       vertical: 14,
                     ),
                     suffixText: 'km',
-                    suffixStyle:
-                        const TextStyle(color: Colors.white38),
+                    suffixStyle: const TextStyle(color: Colors.white38),
                   ),
                   onSubmitted: (_) => addLeg(),
                 ),
@@ -313,13 +304,11 @@ class CarbonPage extends HookConsumerWidget {
             ...legs.value.asMap().entries.map((entry) {
               final i = entry.key;
               final leg = entry.value;
-              final transportId =
-                  leg['transport_type'] as String? ?? '';
+              final transportId = leg['transport_type'] as String? ?? '';
               final dist = leg['distance_km'];
               final transportEntry = _transports.firstWhere(
                 (t) => t.$1 == transportId,
-                orElse: () =>
-                    ('', 'carbon_transport_car', Icons.directions_car),
+                orElse: () => ('', 'carbon_transport_car', Icons.directions_car),
               );
               return Container(
                 margin: const EdgeInsets.only(bottom: 6),

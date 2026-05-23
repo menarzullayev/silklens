@@ -10,41 +10,45 @@ import 'package:silklens/presentation/providers/locale_provider.dart';
 class EmergencyPage extends HookConsumerWidget {
   const EmergencyPage({super.key});
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    useEffect(() {
-      SystemChrome.setSystemUIOverlayStyle(
-        const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-          systemNavigationBarColor: Color(0xFF0D2337),
-          systemNavigationBarIconBrightness: Brightness.light,
-        ),
-      );
-      return null;
-    }, const []);
+    useEffect(
+      () {
+        SystemChrome.setSystemUIOverlayStyle(
+          const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light,
+            systemNavigationBarColor: Color(0xFF0D2337),
+            systemNavigationBarIconBrightness: Brightness.light,
+          ),
+        );
+        return null;
+      },
+      const [],
+    );
 
     final locale = ref.watch(activeLocaleProvider);
     final contacts = useState<List<dynamic>>([]);
     final isLoading = useState(true);
 
-    useEffect(() {
-      isLoading.value = true;
-      Future(() async {
-        try {
-          final client = ref.read(silkLensApiClientProvider);
-          contacts.value = await client.getEmergencyContacts(
-            countryCode: 'UZ',
-            language: locale.languageCode,
-          );
-        } catch (_) {}
-        isLoading.value = false;
-      });
-      return null;
-    }, [locale.languageCode]);
+    useEffect(
+      () {
+        isLoading.value = true;
+        Future(() async {
+          try {
+            final client = ref.read(silkLensApiClientProvider);
+            contacts.value = await client.getEmergencyContacts(
+              language: locale.languageCode,
+            );
+          } catch (_) {}
+          isLoading.value = false;
+        });
+        return null;
+      },
+      [locale.languageCode],
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D2337),

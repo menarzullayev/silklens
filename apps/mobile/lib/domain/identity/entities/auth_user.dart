@@ -33,9 +33,13 @@ class AuthUser {
   final String? avatarUrl;
 
   Map<String, dynamic> toJson() => {
-        'id': id, 'pub_id': pubId, 'tenant_id': tenantId,
-        'residency_region': residencyRegion, 'trust_tier': trustTier,
-        'preferred_locale': preferredLocale, 'is_verified': isVerified,
+        'id': id,
+        'pub_id': pubId,
+        'tenant_id': tenantId,
+        'residency_region': residencyRegion,
+        'trust_tier': trustTier,
+        'preferred_locale': preferredLocale,
+        'is_verified': isVerified,
         if (displayName != null) 'display_name': displayName,
         if (avatarUrl != null) 'avatar_url': avatarUrl,
       };

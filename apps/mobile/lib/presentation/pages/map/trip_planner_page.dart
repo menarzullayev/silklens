@@ -10,8 +10,7 @@ import 'package:silklens/presentation/providers/locale_provider.dart';
 class TripPlannerPage extends HookConsumerWidget {
   const TripPlannerPage({super.key});
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   static const _cities = <String>[
     'Samarqand',
@@ -24,17 +23,20 @@ class TripPlannerPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    useEffect(() {
-      SystemChrome.setSystemUIOverlayStyle(
-        const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-          systemNavigationBarColor: Color(0xFF0D2337),
-          systemNavigationBarIconBrightness: Brightness.light,
-        ),
-      );
-      return null;
-    }, const []);
+    useEffect(
+      () {
+        SystemChrome.setSystemUIOverlayStyle(
+          const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light,
+            systemNavigationBarColor: Color(0xFF0D2337),
+            systemNavigationBarIconBrightness: Brightness.light,
+          ),
+        );
+        return null;
+      },
+      const [],
+    );
 
     final locale = ref.watch(activeLocaleProvider);
     final selectedCities = useState<Set<String>>({});
@@ -50,12 +52,11 @@ class TripPlannerPage extends HookConsumerWidget {
       errorMsg.value = null;
       result.value = null;
       try {
-        result.value =
-            await ref.read(silkLensApiClientProvider).createTrip(
-                  cities: selectedCities.value.toList(),
-                  budgetUsd: budget.value,
-                  language: locale.languageCode,
-                );
+        result.value = await ref.read(silkLensApiClientProvider).createTrip(
+              cities: selectedCities.value.toList(),
+              budgetUsd: budget.value,
+              language: locale.languageCode,
+            );
       } catch (_) {
         errorMsg.value = _s('trip_error');
       }
@@ -114,14 +115,10 @@ class TripPlannerPage extends HookConsumerWidget {
                 checkmarkColor: Colors.white,
                 labelStyle: TextStyle(
                   color: isSelected ? Colors.white : Colors.white70,
-                  fontWeight: isSelected
-                      ? FontWeight.bold
-                      : FontWeight.normal,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
                 side: BorderSide(
-                  color: isSelected
-                      ? const Color(0xFFB78628)
-                      : Colors.white24,
+                  color: isSelected ? const Color(0xFFB78628) : Colors.white24,
                 ),
               );
             }).toList(),
@@ -188,12 +185,9 @@ class TripPlannerPage extends HookConsumerWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
-                disabledBackgroundColor:
-                    const Color(0xFFB78628).withValues(alpha: 0.4),
+                disabledBackgroundColor: const Color(0xFFB78628).withValues(alpha: 0.4),
               ),
-              onPressed: (isLoading.value || selectedCities.value.isEmpty)
-                  ? null
-                  : submit,
+              onPressed: (isLoading.value || selectedCities.value.isEmpty) ? null : submit,
               child: isLoading.value
                   ? const SizedBox(
                       height: 20,
@@ -239,8 +233,7 @@ class TripPlannerPage extends HookConsumerWidget {
             ...dayPlan.asMap().entries.map((entry) {
               final dayIndex = entry.key + 1;
               final day = entry.value as Map<String, dynamic>;
-              final activities =
-                  (day['activities'] as List?) ?? [];
+              final activities = (day['activities'] as List?) ?? [];
               return _DayCard(
                 dayIndex: dayIndex,
                 day: day,

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 class LevelUpDialog extends StatelessWidget {
   const LevelUpDialog({
-    required this.newLevel, required this.levelName, super.key,
+    required this.newLevel,
+    required this.levelName,
+    super.key,
   });
   final int newLevel;
   final String levelName;

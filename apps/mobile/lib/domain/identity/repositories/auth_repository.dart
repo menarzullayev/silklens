@@ -4,6 +4,7 @@
 // The presentation layer only ever sees this interface — Clean Architecture
 // invariant per ADR-0003 mirrored on mobile.
 
+import 'package:silklens/core/error/failures.dart' show AuthFailure;
 import 'package:silklens/core/utils/result.dart';
 import 'package:silklens/domain/identity/entities/auth_session.dart';
 import 'package:silklens/domain/identity/entities/auth_user.dart';

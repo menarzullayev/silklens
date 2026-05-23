@@ -10,7 +10,7 @@ class CachedBranding {
   });
 
   final String tenantId;
-  final String appNameJson;  // JSON string e.g. '{"en":"SilkLens"}'
+  final String appNameJson; // JSON string e.g. '{"en":"SilkLens"}'
   final String primaryColor;
   final String? logoUrl;
   final String themeModeDefault;

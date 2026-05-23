@@ -31,8 +31,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   final _cardHolderCtrl = TextEditingController();
   final _couponCtrl = TextEditingController();
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   @override
   void dispose() {
@@ -49,16 +48,14 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     final slug = widget.planSlug;
     if (slug != null) {
       try {
-        return billing.plans
-            .firstWhere((p) => p['slug'] == slug);
+        return billing.plans.firstWhere((p) => p['slug'] == slug);
       } catch (_) {
         // slug not found — fall through to first paid plan
       }
     }
     // Default: first non-free plan
     try {
-      return billing.plans
-          .firstWhere((p) => (p['slug'] as String? ?? '') != 'free');
+      return billing.plans.firstWhere((p) => (p['slug'] as String? ?? '') != 'free');
     } catch (_) {
       return billing.plans.first;
     }
@@ -69,10 +66,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     final raw = plan['display_name'];
     if (raw is Map) {
       final locale = LocaleService.instance.locale;
-      return (raw[locale] as String?) ??
-          (raw['en'] as String?) ??
-          plan['slug'] as String? ??
-          '—';
+      return (raw[locale] as String?) ?? (raw['en'] as String?) ?? plan['slug'] as String? ?? '—';
     }
     return raw as String? ?? plan['slug'] as String? ?? '—';
   }
@@ -80,8 +74,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   String _priceLabel(Map<String, dynamic>? plan) {
     if (plan == null) return '—';
     final amount = plan['price_monthly'] as num?;
-    final currency =
-        plan['currency'] as String? ?? _s('billing_currency');
+    final currency = plan['currency'] as String? ?? _s('billing_currency');
     if (amount == null) return _s('billing_free');
     return '$amount $currency / ${_s('billing_month')}';
   }
@@ -169,9 +162,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   : () async {
                       final code = _couponCtrl.text.trim();
                       if (code.isEmpty) return;
-                      final ok = await ref
-                          .read(billingProvider.notifier)
-                          .validateCoupon(
+                      final ok = await ref.read(billingProvider.notifier).validateCoupon(
                             code,
                             _priceAmount(_resolvePlan(billing)).toDouble(),
                           );
@@ -408,9 +399,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   ),
                   child: Icon(
                     icon,
-                    color: selected
-                        ? _gold
-                        : Colors.white.withValues(alpha: 0.5),
+                    color: selected ? _gold : Colors.white.withValues(alpha: 0.5),
                     size: 22,
                   ),
                 ),
@@ -444,9 +433,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: selected
-                          ? _gold
-                          : Colors.white.withValues(alpha: 0.3),
+                      color: selected ? _gold : Colors.white.withValues(alpha: 0.3),
                       width: 2,
                     ),
                     color: selected ? _gold : Colors.transparent,
@@ -631,9 +618,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               : const LinearGradient(
                   colors: [Color(0xFFB78628), Color(0xFFE5C97A)],
                 ),
-          color: isLoading
-              ? Colors.white.withValues(alpha: 0.12)
-              : null,
+          color: isLoading ? Colors.white.withValues(alpha: 0.12) : null,
           borderRadius: BorderRadius.circular(14),
           boxShadow: isLoading
               ? null
@@ -685,8 +670,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     // TODO(SILK-0105): integrate flutter_stripe — obtain a real PaymentMethod
     // token before calling start(). The mock token is accepted by the backend
     // MockPaymentProvider in non-production environments only.
-    final mockToken =
-        'mock_token_${DateTime.now().millisecondsSinceEpoch}';
+    final mockToken = 'mock_token_${DateTime.now().millisecondsSinceEpoch}';
 
     try {
       await ref.read(subscriptionNotifierProvider.notifier).start(

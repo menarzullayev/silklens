@@ -29,9 +29,11 @@ class _OfflineBannerState extends State<OfflineBanner> {
   Future<void> _checkInitial() async {
     final results = await Connectivity().checkConnectivity();
     if (mounted) {
-      setState(() => _isOffline = results.every(
-            (r) => r == ConnectivityResult.none,
-          ),);
+      setState(
+        () => _isOffline = results.every(
+          (r) => r == ConnectivityResult.none,
+        ),
+      );
     }
   }
 

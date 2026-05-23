@@ -19,8 +19,7 @@ class _PlansPageState extends ConsumerState<PlansPage> {
   int _selected = 1; // default to first paid plan
   static const _gold = Color(0xFFB78628);
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   String _planDisplayName(Map<String, dynamic> plan) {
     final raw = plan['display_name'];
@@ -36,9 +35,7 @@ class _PlansPageState extends ConsumerState<PlansPage> {
   String _planDescription(Map<String, dynamic> plan) {
     final raw = plan['description'];
     if (raw is Map) {
-      return (raw[LocaleService.instance.locale] as String?) ??
-          (raw['en'] as String?) ??
-          '';
+      return (raw[LocaleService.instance.locale] as String?) ?? (raw['en'] as String?) ?? '';
     }
     return raw as String? ?? '';
   }
@@ -173,9 +170,7 @@ class _PlansPageState extends ConsumerState<PlansPage> {
                     child: Text(
                       _s('billing_monthly'),
                       style: TextStyle(
-                        color: !_annual
-                            ? const Color(0xFF1A1200)
-                            : Colors.white,
+                        color: !_annual ? const Color(0xFF1A1200) : Colors.white,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -199,9 +194,7 @@ class _PlansPageState extends ConsumerState<PlansPage> {
                       Text(
                         _s('billing_yearly'),
                         style: TextStyle(
-                          color: _annual
-                              ? const Color(0xFF1A1200)
-                              : Colors.white,
+                          color: _annual ? const Color(0xFF1A1200) : Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -259,8 +252,8 @@ class _PlansPageState extends ConsumerState<PlansPage> {
         final selected = _selected == i;
         final isCurrent = slug == billing.currentPlanSlug;
         // Mark the second plan as recommended if API doesn't specify.
-        final recommended = (plan['recommended'] as bool? ?? false) ||
-            (i == 1 && plans.length >= 3);
+        final recommended =
+            (plan['recommended'] as bool? ?? false) || (i == 1 && plans.length >= 3);
 
         return GestureDetector(
           onTap: () => setState(() => _selected = i),
@@ -273,9 +266,7 @@ class _PlansPageState extends ConsumerState<PlansPage> {
                   : Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: selected
-                    ? _gold
-                    : Colors.white.withValues(alpha: 0.12),
+                color: selected ? _gold : Colors.white.withValues(alpha: 0.12),
                 width: selected ? 2 : 1,
               ),
               boxShadow: selected
@@ -346,9 +337,7 @@ class _PlansPageState extends ConsumerState<PlansPage> {
                 Text(
                   _planPrice(plan, _annual),
                   style: TextStyle(
-                    color: slug == 'free'
-                        ? Colors.white.withValues(alpha: 0.5)
-                        : _gold,
+                    color: slug == 'free' ? Colors.white.withValues(alpha: 0.5) : _gold,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
@@ -377,9 +366,7 @@ class _PlansPageState extends ConsumerState<PlansPage> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: GestureDetector(
-        onTap: isFree
-            ? null
-            : () => context.go('/billing/checkout?plan=$slug'),
+        onTap: isFree ? null : () => context.go('/billing/checkout?plan=$slug'),
         child: Container(
           height: 54,
           width: double.infinity,
@@ -394,13 +381,9 @@ class _PlansPageState extends ConsumerState<PlansPage> {
           ),
           child: Center(
             child: Text(
-              isFree
-                  ? _s('billing_current_plan')
-                  : _s('billing_trial_cta'),
+              isFree ? _s('billing_current_plan') : _s('billing_trial_cta'),
               style: TextStyle(
-                color: isFree
-                    ? Colors.white.withValues(alpha: 0.5)
-                    : const Color(0xFF1A1200),
+                color: isFree ? Colors.white.withValues(alpha: 0.5) : const Color(0xFF1A1200),
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),

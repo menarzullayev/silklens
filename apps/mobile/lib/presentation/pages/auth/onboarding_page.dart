@@ -63,8 +63,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     super.dispose();
   }
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   void _next() {
     if (_currentPage < 2) {
@@ -177,8 +176,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 Expanded(
                   child: PageView.builder(
                     controller: _pageController,
-                    onPageChanged: (i) =>
-                        setState(() => _currentPage = i),
+                    onPageChanged: (i) => setState(() => _currentPage = i),
                     itemCount: 3,
                     itemBuilder: (_, i) => _PageContent(
                       pageIndex: i,
@@ -253,9 +251,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           Expanded(
                             flex: _currentPage > 0 ? 2 : 1,
                             child: _GoldNextButton(
-                              label: _currentPage == 2
-                                  ? _s('onb_get_started')
-                                  : _s('onb_next'),
+                              label: _currentPage == 2 ? _s('onb_get_started') : _s('onb_next'),
                               onTap: _next,
                             ),
                           ),

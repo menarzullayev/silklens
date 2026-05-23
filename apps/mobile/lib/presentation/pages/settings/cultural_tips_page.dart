@@ -10,8 +10,7 @@ import 'package:silklens/presentation/providers/locale_provider.dart';
 class CulturalTipsPage extends HookConsumerWidget {
   const CulturalTipsPage({super.key});
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   static const _contextKeys = <String?>[
     null,
@@ -24,38 +23,43 @@ class CulturalTipsPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    useEffect(() {
-      SystemChrome.setSystemUIOverlayStyle(
-        const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-          systemNavigationBarColor: Color(0xFF0D2337),
-          systemNavigationBarIconBrightness: Brightness.light,
-        ),
-      );
-      return null;
-    }, const []);
+    useEffect(
+      () {
+        SystemChrome.setSystemUIOverlayStyle(
+          const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light,
+            systemNavigationBarColor: Color(0xFF0D2337),
+            systemNavigationBarIconBrightness: Brightness.light,
+          ),
+        );
+        return null;
+      },
+      const [],
+    );
 
     final locale = ref.watch(activeLocaleProvider);
     final selectedCtx = useState<String?>(null);
     final tips = useState<List<dynamic>>([]);
     final isLoading = useState(true);
 
-    useEffect(() {
-      isLoading.value = true;
-      Future(() async {
-        try {
-          final client = ref.read(silkLensApiClientProvider);
-          tips.value = await client.getCulturalTips(
-            countryCode: 'UZ',
-            language: locale.languageCode,
-            tipContext: selectedCtx.value,
-          );
-        } catch (_) {}
-        isLoading.value = false;
-      });
-      return null;
-    }, [selectedCtx.value, locale.languageCode]);
+    useEffect(
+      () {
+        isLoading.value = true;
+        Future(() async {
+          try {
+            final client = ref.read(silkLensApiClientProvider);
+            tips.value = await client.getCulturalTips(
+              language: locale.languageCode,
+              tipContext: selectedCtx.value,
+            );
+          } catch (_) {}
+          isLoading.value = false;
+        });
+        return null;
+      },
+      [selectedCtx.value, locale.languageCode],
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D2337),
@@ -91,9 +95,7 @@ class CulturalTipsPage extends HookConsumerWidget {
               separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (_, i) {
                 final ctx = _contextKeys[i];
-                final label = ctx == null
-                    ? _s('ctips_filter_all')
-                    : _s('ctips_filter_$ctx');
+                final label = ctx == null ? _s('ctips_filter_all') : _s('ctips_filter_$ctx');
                 final isSelected = selectedCtx.value == ctx;
                 return ChoiceChip(
                   label: Text(label),
@@ -106,9 +108,7 @@ class CulturalTipsPage extends HookConsumerWidget {
                     fontSize: 13,
                   ),
                   side: BorderSide(
-                    color: isSelected
-                        ? const Color(0xFFB78628)
-                        : Colors.white24,
+                    color: isSelected ? const Color(0xFFB78628) : Colors.white24,
                   ),
                 );
               },
@@ -133,8 +133,7 @@ class CulturalTipsPage extends HookConsumerWidget {
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                         itemCount: tips.value.length,
                         itemBuilder: (_, i) {
-                          final tip =
-                              tips.value[i] as Map<String, dynamic>;
+                          final tip = tips.value[i] as Map<String, dynamic>;
                           return _TipCard(tip: tip);
                         },
                       ),

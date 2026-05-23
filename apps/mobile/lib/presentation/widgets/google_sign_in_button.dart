@@ -21,13 +21,15 @@ class GoogleSignInButton extends StatelessWidget {
           children: [
             // Google G icon (simplified)
             Container(
-              width: 24, height: 24,
+              width: 24,
+              height: 24,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Center(
-                child: Text('G',
+                child: Text(
+                  'G',
                   style: TextStyle(
                     color: Color(0xFF4285F4),
                     fontSize: 16,

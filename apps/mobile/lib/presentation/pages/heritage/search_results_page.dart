@@ -33,32 +33,33 @@ class SearchResultsPage extends HookConsumerWidget {
       [Color(0xFF2D5A1B), Color(0xFF4A7C3F)],
     ];
 
-    useEffect(() {
-      Future<void> load() async {
-        if (query.trim().isEmpty) {
-          isLoading.value = false;
-          return;
+    useEffect(
+      () {
+        Future<void> load() async {
+          if (query.trim().isEmpty) {
+            isLoading.value = false;
+            return;
+          }
+          try {
+            final client = ref.read(silkLensApiClientProvider);
+            final data = await client.searchHeritage(
+              query: query.trim(),
+              lang: locale,
+            );
+            final hits = (data['hits'] as List?) ?? [];
+            results.value = hits.whereType<Map<String, dynamic>>().toList();
+          } catch (_) {
+            errorMsg.value = s('search_error');
+          } finally {
+            isLoading.value = false;
+          }
         }
-        try {
-          final client = ref.read(silkLensApiClientProvider);
-          final data = await client.searchHeritage(
-            query: query.trim(),
-            lang: locale,
-          );
-          final hits = (data['hits'] as List?) ?? [];
-          results.value = hits
-              .whereType<Map<String, dynamic>>()
-              .toList();
-        } catch (_) {
-          errorMsg.value = s('search_error');
-        } finally {
-          isLoading.value = false;
-        }
-      }
 
-      unawaited(load());
-      return null;
-    }, [query]);
+        unawaited(load());
+        return null;
+      },
+      [query],
+    );
 
     final count = results.value.length;
     final title = count == 0 && !isLoading.value
@@ -86,9 +87,7 @@ class SearchResultsPage extends HookConsumerWidget {
           if (!isLoading.value && results.value.isNotEmpty)
             IconButton(
               icon: Icon(
-                gridView.value
-                    ? Icons.view_list_rounded
-                    : Icons.grid_view_rounded,
+                gridView.value ? Icons.view_list_rounded : Icons.grid_view_rounded,
                 color: Colors.white,
               ),
               onPressed: () => gridView.value = !gridView.value,
@@ -212,8 +211,7 @@ class _ResultCard extends StatelessWidget {
   String get _name {
     final nameMap = hit['name'];
     if (nameMap is Map) {
-      return (nameMap[locale] ?? nameMap['en'] ?? nameMap.values.firstOrNull)
-              ?.toString() ??
+      return (nameMap[locale] ?? nameMap['en'] ?? nameMap.values.firstOrNull)?.toString() ??
           hit['pub_id']?.toString() ??
           '';
     }
@@ -237,8 +235,7 @@ class _ResultCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(16),
-          border:
-              Border.all(color: Colors.white.withValues(alpha: 0.10)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
         ),
         child: isGrid
             ? Column(

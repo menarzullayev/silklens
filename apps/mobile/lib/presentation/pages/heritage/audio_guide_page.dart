@@ -49,24 +49,27 @@ class AudioGuidePage extends HookConsumerWidget {
     final hasError = useState(false);
     final position = useState(Duration.zero);
     final duration = useState(Duration.zero);
-    final speed = useState<double>(1.0);
+    final speed = useState<double>(1);
     final selectedLang = useState(locale);
 
     // Wire player streams to local state.
-    useEffect(() {
-      final subs = [
-        player.positionStream.listen((p) => position.value = p),
-        player.durationStream.listen((d) {
-          if (d != null) duration.value = d;
-        }),
-        player.playingStream.listen((p) => isPlaying.value = p),
-      ];
-      return () {
-        for (final s in subs) {
-          s.cancel();
-        }
-      };
-    }, [player]);
+    useEffect(
+      () {
+        final subs = [
+          player.positionStream.listen((p) => position.value = p),
+          player.durationStream.listen((d) {
+            if (d != null) duration.value = d;
+          }),
+          player.playingStream.listen((p) => isPlaying.value = p),
+        ];
+        return () {
+          for (final s in subs) {
+            s.cancel();
+          }
+        };
+      },
+      [player],
+    );
 
     // Load (or reload) audio whenever selected language changes.
     Future<void> loadAudio(String lang) async {
@@ -85,8 +88,7 @@ class AudioGuidePage extends HookConsumerWidget {
           text: text,
           language: lang,
         );
-        final url = ttsResponse['signed_url'] as String? ??
-            ttsResponse['url'] as String?;
+        final url = ttsResponse['signed_url'] as String? ?? ttsResponse['url'] as String?;
         if (url != null && url.isNotEmpty) {
           await player.setUrl(url);
         }
@@ -98,10 +100,13 @@ class AudioGuidePage extends HookConsumerWidget {
     }
 
     // Initial load.
-    useEffect(() {
-      loadAudio(selectedLang.value);
-      return null;
-    }, const []);
+    useEffect(
+      () {
+        loadAudio(selectedLang.value);
+        return null;
+      },
+      const [],
+    );
 
     // Reload when language chip is tapped.
     // (handled inline in the chip tap callback below)
@@ -112,10 +117,8 @@ class AudioGuidePage extends HookConsumerWidget {
       return '$m:$sec';
     }
 
-    final maxMs =
-        math.max(duration.value.inMilliseconds, 1);
-    final progress =
-        (position.value.inMilliseconds / maxMs).clamp(0.0, 1.0);
+    final maxMs = math.max(duration.value.inMilliseconds, 1);
+    final progress = (position.value.inMilliseconds / maxMs).clamp(0.0, 1.0);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D2337),
@@ -241,8 +244,7 @@ class AudioGuidePage extends HookConsumerWidget {
                                     vertical: 8,
                                   ),
                                   decoration: BoxDecoration(
-                                    border:
-                                        Border.all(color: _gold),
+                                    border: Border.all(color: _gold),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
@@ -262,8 +264,7 @@ class AudioGuidePage extends HookConsumerWidget {
                         SliderTheme(
                           data: SliderThemeData(
                             activeTrackColor: _gold,
-                            inactiveTrackColor:
-                                Colors.white.withValues(alpha: 0.2),
+                            inactiveTrackColor: Colors.white.withValues(alpha: 0.2),
                             thumbColor: _gold,
                             overlayColor: _gold.withValues(alpha: 0.2),
                             trackHeight: 3,
@@ -271,18 +272,15 @@ class AudioGuidePage extends HookConsumerWidget {
                           child: Slider(
                             value: progress,
                             onChanged: (v) {
-                              final seekMs =
-                                  (v * duration.value.inMilliseconds).toInt();
+                              final seekMs = (v * duration.value.inMilliseconds).toInt();
                               player.seek(Duration(milliseconds: seekMs));
                             },
                           ),
                         ),
                         Padding(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
                           child: Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
                                 formatDuration(position.value),
@@ -314,9 +312,7 @@ class AudioGuidePage extends HookConsumerWidget {
                               Icons.skip_previous_rounded,
                               color: Colors.white,
                             ),
-                            onPressed: isLoading.value
-                                ? null
-                                : () => player.seek(Duration.zero),
+                            onPressed: isLoading.value ? null : () => player.seek(Duration.zero),
                           ),
                           IconButton(
                             icon: const Icon(
@@ -330,8 +326,7 @@ class AudioGuidePage extends HookConsumerWidget {
                                       Duration(
                                         milliseconds: math.max(
                                           0,
-                                          position.value.inMilliseconds -
-                                              10000,
+                                          position.value.inMilliseconds - 10000,
                                         ),
                                       ),
                                     ),
@@ -366,9 +361,7 @@ class AudioGuidePage extends HookConsumerWidget {
                                 ],
                               ),
                               child: Icon(
-                                isPlaying.value
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
+                                isPlaying.value ? Icons.pause_rounded : Icons.play_arrow_rounded,
                                 color: const Color(0xFF1A1200),
                                 size: 36,
                               ),
@@ -387,8 +380,7 @@ class AudioGuidePage extends HookConsumerWidget {
                                       Duration(
                                         milliseconds: math.min(
                                           duration.value.inMilliseconds,
-                                          position.value.inMilliseconds +
-                                              10000,
+                                          position.value.inMilliseconds + 10000,
                                         ),
                                       ),
                                     ),
@@ -398,9 +390,7 @@ class AudioGuidePage extends HookConsumerWidget {
                               Icons.skip_next_rounded,
                               color: Colors.white,
                             ),
-                            onPressed: isLoading.value
-                                ? null
-                                : () => player.seek(duration.value),
+                            onPressed: isLoading.value ? null : () => player.seek(duration.value),
                           ),
                         ],
                       ),
@@ -422,8 +412,7 @@ class AudioGuidePage extends HookConsumerWidget {
                                     },
                                     child: Container(
                                       margin: const EdgeInsets.only(right: 6),
-                                      padding:
-                                          const EdgeInsets.symmetric(
+                                      padding: const EdgeInsets.symmetric(
                                         horizontal: 8,
                                         vertical: 4,
                                       ),
@@ -433,8 +422,7 @@ class AudioGuidePage extends HookConsumerWidget {
                                             : Colors.white.withValues(
                                                 alpha: 0.08,
                                               ),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
                                         '${sp}x',
@@ -472,13 +460,11 @@ class AudioGuidePage extends HookConsumerWidget {
                                                 width: 2,
                                               )
                                             : null,
-                                        borderRadius:
-                                            BorderRadius.circular(6),
+                                        borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
                                         e.value,
-                                        style:
-                                            const TextStyle(fontSize: 18),
+                                        style: const TextStyle(fontSize: 18),
                                       ),
                                     ),
                                   ),

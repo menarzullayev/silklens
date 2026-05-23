@@ -42,8 +42,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get onboardingSlide3Title => '나만의 지도 만들기';
 
   @override
-  String get onboardingSlide3Body =>
-      '장소를 저장하고, 리뷰를 공유하며, 실크로드를 탐험하면서 배지를 획득하세요.';
+  String get onboardingSlide3Body => '장소를 저장하고, 리뷰를 공유하며, 실크로드를 탐험하면서 배지를 획득하세요.';
 
   @override
   String get onboardingSignIn => '로그인';

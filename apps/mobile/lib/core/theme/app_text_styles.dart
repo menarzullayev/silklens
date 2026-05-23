@@ -15,8 +15,7 @@ class AppTextStyles {
       AppFonts.inter(fontSize: 18, weight: FontWeight.w600, color: color);
 
   // Body — Inter
-  static TextStyle bodyLg(Color color) =>
-      AppFonts.inter(fontSize: 16, color: color);
+  static TextStyle bodyLg(Color color) => AppFonts.inter(fontSize: 16, color: color);
   static TextStyle bodyMd(Color color) => AppFonts.inter(color: color);
 
   // Label — Inter

@@ -73,15 +73,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get cameraPlaceholderTitle => 'Kamera';
 
   @override
-  String get cameraPlaceholderBody =>
-      'Vision-Pipeline erscheint in FAZA 2 — Woche 3.';
+  String get cameraPlaceholderBody => 'Vision-Pipeline erscheint in FAZA 2 — Woche 3.';
 
   @override
   String get mapPlaceholderTitle => 'Karte';
 
   @override
-  String get mapPlaceholderBody =>
-      'Mapbox/OSM-Integration erscheint in FAZA 2 — Woche 3.';
+  String get mapPlaceholderBody => 'Mapbox/OSM-Integration erscheint in FAZA 2 — Woche 3.';
 
   @override
   String get profileTitle => 'Profil';
@@ -118,8 +116,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get authSignInTitle => 'Willkommen zurück';
 
   @override
-  String get authSignInSubtitle =>
-      'Melden Sie sich an, um das Erkunden fortzusetzen.';
+  String get authSignInSubtitle => 'Melden Sie sich an, um das Erkunden fortzusetzen.';
 
   @override
   String get authSignInCta => 'Anmelden';
@@ -169,20 +166,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get authComingSoon => 'Demnächst verfügbar';
 
   @override
-  String get authErrorInvalidEmail =>
-      'Geben Sie eine gültige E-Mail-Adresse ein.';
+  String get authErrorInvalidEmail => 'Geben Sie eine gültige E-Mail-Adresse ein.';
 
   @override
-  String get authErrorPasswordTooShort =>
-      'Das Passwort muss mindestens 12 Zeichen lang sein.';
+  String get authErrorPasswordTooShort => 'Das Passwort muss mindestens 12 Zeichen lang sein.';
 
   @override
   String get authErrorPasswordWeak =>
       'Das Passwort muss Groß- und Kleinbuchstaben sowie mindestens eine Ziffer enthalten.';
 
   @override
-  String get authErrorPasswordsDontMatch =>
-      'Die Passwörter stimmen nicht überein.';
+  String get authErrorPasswordsDontMatch => 'Die Passwörter stimmen nicht überein.';
 
   @override
   String get authErrorRequired => 'Dieses Feld ist erforderlich.';
@@ -191,20 +185,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get authErrorInvalidCredentials => 'E-Mail oder Passwort ist falsch.';
 
   @override
-  String get authErrorRateLimited =>
-      'Zu viele Versuche. Bitte versuchen Sie es später erneut.';
+  String get authErrorRateLimited => 'Zu viele Versuche. Bitte versuchen Sie es später erneut.';
 
   @override
-  String get authErrorEmailTaken =>
-      'Diese E-Mail-Adresse ist bereits registriert.';
+  String get authErrorEmailTaken => 'Diese E-Mail-Adresse ist bereits registriert.';
 
   @override
-  String get authErrorNetwork =>
-      'Netzwerkfehler. Überprüfen Sie Ihre Verbindung.';
+  String get authErrorNetwork => 'Netzwerkfehler. Überprüfen Sie Ihre Verbindung.';
 
   @override
-  String get authErrorUnknown =>
-      'Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.';
+  String get authErrorUnknown => 'Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.';
 
   @override
   String get heritageListTitle => 'Entdecken';
@@ -278,8 +268,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Noch nichts gespeichert. Tippen Sie auf einer Detailseite auf Speichern.';
 
   @override
-  String get heritageLoadMoreError =>
-      'Laden fehlgeschlagen — tippen Sie zum Wiederholen.';
+  String get heritageLoadMoreError => 'Laden fehlgeschlagen — tippen Sie zum Wiederholen.';
 
   @override
   String get commonRetry => 'Erneut versuchen';
@@ -366,8 +355,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get chatSuggestionHotels => 'Was sind die besten Hotels in der Nähe?';
 
   @override
-  String get chatSuggestionLegends =>
-      'Erzählen Sie mir eine Legende über diesen Ort.';
+  String get chatSuggestionLegends => 'Erzählen Sie mir eine Legende über diesen Ort.';
 
   @override
   String get profileTabActivity => 'Aktivität';
@@ -397,8 +385,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get profileReviewsNew => 'Neue Bewertung';
 
   @override
-  String get profileFriendsEmpty =>
-      'Laden Sie Freunde ein, SilkLens beizutreten';
+  String get profileFriendsEmpty => 'Laden Sie Freunde ein, SilkLens beizutreten';
 
   @override
   String get profileFriendsInvite => 'Einladen';
@@ -509,8 +496,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get billingCheckoutTitle => 'Kasse';
 
   @override
-  String get billingCheckoutSubtitle =>
-      'Geben Sie Ihre Zahlungsmethode ein, um zu abonnieren';
+  String get billingCheckoutSubtitle => 'Geben Sie Ihre Zahlungsmethode ein, um zu abonnieren';
 
   @override
   String get billingCheckoutToken => 'Zahlungstoken';
@@ -555,8 +541,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get emailVerifyInvalidCode => 'Code ist falsch oder abgelaufen.';
 
   @override
-  String get emailVerifyResendError =>
-      'Senden fehlgeschlagen. Bitte erneut versuchen.';
+  String get emailVerifyResendError => 'Senden fehlgeschlagen. Bitte erneut versuchen.';
 
   @override
   String get emailVerifyResending => 'Wird gesendet...';

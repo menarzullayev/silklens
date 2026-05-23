@@ -77,16 +77,11 @@ class ProfileStatsNotifier extends Notifier<ProfileStats> {
       final followersData = results[1];
       final followingData = results[2];
 
-      final xp = (xpData['balance'] as num?)?.toInt() ??
-          (xpData['xp'] as num?)?.toInt() ??
-          0;
-      final followersCount =
-          (followersData['total'] as num?)?.toInt() ?? 0;
-      final followingCount =
-          (followingData['total'] as num?)?.toInt() ?? 0;
+      final xp = (xpData['balance'] as num?)?.toInt() ?? (xpData['xp'] as num?)?.toInt() ?? 0;
+      final followersCount = (followersData['total'] as num?)?.toInt() ?? 0;
+      final followingCount = (followingData['total'] as num?)?.toInt() ?? 0;
       // places_visited may be returned alongside XP in future; default 0.
-      final places =
-          (xpData['places_visited'] as num?)?.toInt() ?? 0;
+      final places = (xpData['places_visited'] as num?)?.toInt() ?? 0;
 
       state = ProfileStats(
         xp: xp,
@@ -102,7 +97,6 @@ class ProfileStatsNotifier extends Notifier<ProfileStats> {
   Future<void> refresh(String pubId) => load(pubId);
 }
 
-final profileStatsProvider =
-    NotifierProvider<ProfileStatsNotifier, ProfileStats>(
+final profileStatsProvider = NotifierProvider<ProfileStatsNotifier, ProfileStats>(
   ProfileStatsNotifier.new,
 );

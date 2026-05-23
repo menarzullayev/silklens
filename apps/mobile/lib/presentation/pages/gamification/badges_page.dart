@@ -17,8 +17,7 @@ class _BadgesPageState extends ConsumerState<BadgesPage> {
   int _activeFilter = 0;
   static const _gold = Color(0xFFB78628);
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   List<String> get _filters => [
         _s('badge_filter_all'),
@@ -45,9 +44,7 @@ class _BadgesPageState extends ConsumerState<BadgesPage> {
         )
         .key;
     if (targetCategory.isEmpty) return badges;
-    return badges
-        .where((b) => b.category.toLowerCase() == targetCategory)
-        .toList();
+    return badges.where((b) => b.category.toLowerCase() == targetCategory).toList();
   }
 
   @override
@@ -90,22 +87,16 @@ class _BadgesPageState extends ConsumerState<BadgesPage> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: _activeFilter == i
-                        ? _gold
-                        : Colors.white.withValues(alpha: 0.08),
+                    color: _activeFilter == i ? _gold : Colors.white.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(
-                      color: _activeFilter == i
-                          ? _gold
-                          : Colors.white.withValues(alpha: 0.15),
+                      color: _activeFilter == i ? _gold : Colors.white.withValues(alpha: 0.15),
                     ),
                   ),
                   child: Text(
                     _filters[i],
                     style: TextStyle(
-                      color: _activeFilter == i
-                          ? const Color(0xFF1A1200)
-                          : Colors.white,
+                      color: _activeFilter == i ? const Color(0xFF1A1200) : Colors.white,
                       fontSize: 13,
                     ),
                   ),
@@ -140,8 +131,7 @@ class _BadgesPageState extends ConsumerState<BadgesPage> {
                     ),
                     const SizedBox(height: 16),
                     GestureDetector(
-                      onTap: () =>
-                          ref.invalidate(badgesProvider),
+                      onTap: () => ref.invalidate(badgesProvider),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,
@@ -173,8 +163,7 @@ class _BadgesPageState extends ConsumerState<BadgesPage> {
                   children: [
                     // Progress row
                     Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Row(
                         children: [
                           Text(
@@ -194,9 +183,7 @@ class _BadgesPageState extends ConsumerState<BadgesPage> {
                                 borderRadius: BorderRadius.circular(2),
                               ),
                               child: FractionallySizedBox(
-                                widthFactor: badges.isEmpty
-                                    ? 0
-                                    : earned / badges.length,
+                                widthFactor: badges.isEmpty ? 0 : earned / badges.length,
                                 alignment: Alignment.centerLeft,
                                 child: Container(
                                   decoration: BoxDecoration(
@@ -227,15 +214,13 @@ class _BadgesPageState extends ConsumerState<BadgesPage> {
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                               ),
-                              gridDelegate: const
-                                  SliverGridDelegateWithFixedCrossAxisCount(
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 3,
                                 crossAxisSpacing: 12,
                                 mainAxisSpacing: 12,
                               ),
                               itemCount: filtered.length,
-                              itemBuilder: (_, i) =>
-                                  _BadgeTile(badge: filtered[i]),
+                              itemBuilder: (_, i) => _BadgeTile(badge: filtered[i]),
                             ),
                     ),
                   ],
@@ -270,9 +255,7 @@ class _BadgeTile extends StatelessWidget {
           color: earned ? null : Colors.white.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: earned
-                ? const Color(0xFFB78628)
-                : Colors.white.withValues(alpha: 0.12),
+            color: earned ? const Color(0xFFB78628) : Colors.white.withValues(alpha: 0.12),
           ),
           boxShadow: earned
               ? const [
@@ -284,12 +267,8 @@ class _BadgeTile extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              earned
-                  ? Icons.workspace_premium_rounded
-                  : Icons.lock_outline_rounded,
-              color: earned
-                  ? const Color(0xFF1A1200)
-                  : Colors.white.withValues(alpha: 0.4),
+              earned ? Icons.workspace_premium_rounded : Icons.lock_outline_rounded,
+              color: earned ? const Color(0xFF1A1200) : Colors.white.withValues(alpha: 0.4),
               size: 28,
             ),
             const SizedBox(height: 6),
@@ -298,9 +277,7 @@ class _BadgeTile extends StatelessWidget {
               child: Text(
                 badge.name,
                 style: TextStyle(
-                  color: earned
-                      ? const Color(0xFF1A1200)
-                      : Colors.white.withValues(alpha: 0.4),
+                  color: earned ? const Color(0xFF1A1200) : Colors.white.withValues(alpha: 0.4),
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                 ),

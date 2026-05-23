@@ -10,8 +10,7 @@ class XPDashboardPage extends ConsumerWidget {
   static const _gold = Color(0xFFB78628);
   static const _goldLight = Color(0xFFE5C97A);
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -49,8 +48,7 @@ class XPDashboardPage extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
               GestureDetector(
-                onTap: () =>
-                    ref.read(gamificationProvider.notifier).refresh(),
+                onTap: () => ref.read(gamificationProvider.notifier).refresh(),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
@@ -146,8 +144,7 @@ class XPDashboardPage extends ConsumerWidget {
                                   borderRadius: BorderRadius.circular(5),
                                 ),
                                 child: FractionallySizedBox(
-                                  widthFactor: state.progressPct
-                                      .clamp(0.0, 1.0),
+                                  widthFactor: state.progressPct.clamp(0.0, 1.0),
                                   alignment: Alignment.centerLeft,
                                   child: Container(
                                     decoration: BoxDecoration(
@@ -332,8 +329,7 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(16),
-        border:
-            Border.all(color: Colors.white.withValues(alpha: 0.10)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

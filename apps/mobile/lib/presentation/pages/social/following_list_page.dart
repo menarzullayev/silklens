@@ -20,8 +20,7 @@ class _FollowingListPageState extends ConsumerState<FollowingListPage> {
   int _activeFilter = 0;
   final _searchController = TextEditingController();
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   List<String> get _filters => [
         _s('following_filter_all'),
@@ -106,8 +105,7 @@ class _FollowingListPageState extends ConsumerState<FollowingListPage> {
               ),
               child: TextField(
                 controller: _searchController,
-                style:
-                    const TextStyle(color: Colors.white, fontSize: 14),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
                 decoration: InputDecoration(
                   hintText: _s('following_search_hint'),
                   hintStyle: TextStyle(
@@ -120,8 +118,7 @@ class _FollowingListPageState extends ConsumerState<FollowingListPage> {
                     size: 20,
                   ),
                   border: InputBorder.none,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 onChanged: (_) => setState(() {}),
               ),
@@ -145,22 +142,16 @@ class _FollowingListPageState extends ConsumerState<FollowingListPage> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: _activeFilter == i
-                        ? _gold
-                        : Colors.white.withValues(alpha: 0.07),
+                    color: _activeFilter == i ? _gold : Colors.white.withValues(alpha: 0.07),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: _activeFilter == i
-                          ? _gold
-                          : Colors.white.withValues(alpha: 0.15),
+                      color: _activeFilter == i ? _gold : Colors.white.withValues(alpha: 0.15),
                     ),
                   ),
                   child: Text(
                     _filters[i],
                     style: TextStyle(
-                      color: _activeFilter == i
-                          ? const Color(0xFF1A1200)
-                          : Colors.white,
+                      color: _activeFilter == i ? const Color(0xFF1A1200) : Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -200,27 +191,21 @@ class _FollowingListPageState extends ConsumerState<FollowingListPage> {
                               vertical: 8,
                             ),
                             itemCount: displayed.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 8),
+                            separatorBuilder: (_, __) => const SizedBox(height: 8),
                             itemBuilder: (_, i) {
                               final user = displayed[i];
                               final levelNum = user.levelNumber ?? 1;
-                              final levelLabel = user.levelName ??
-                                  'Level $levelNum';
+                              final levelLabel = user.levelName ?? 'Level $levelNum';
                               final handle = user.username ?? user.pubId;
-                              final name = user.displayName ??
-                                  user.username ??
-                                  '?';
+                              final name = user.displayName ?? user.username ?? '?';
                               return _UserRow(
                                 pubId: user.pubId,
                                 name: name,
                                 handle: '@$handle',
                                 levelLabel: levelLabel,
                                 isFollowing: user.isFollowing,
-                                onFollow: () =>
-                                    notifier.follow(user.pubId),
-                                onUnfollow: () =>
-                                    notifier.unfollow(user.pubId),
+                                onFollow: () => notifier.follow(user.pubId),
+                                onUnfollow: () => notifier.unfollow(user.pubId),
                               );
                             },
                           ),
@@ -379,9 +364,7 @@ class _UserRowState extends State<_UserRow> {
             ),
             child: Center(
               child: Text(
-                widget.name.isNotEmpty
-                    ? widget.name[0].toUpperCase()
-                    : '?',
+                widget.name.isNotEmpty ? widget.name[0].toUpperCase() : '?',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -445,9 +428,7 @@ class _UserRowState extends State<_UserRow> {
                 vertical: 7,
               ),
               decoration: BoxDecoration(
-                color: _following
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : _gold,
+                color: _following ? Colors.white.withValues(alpha: 0.08) : _gold,
                 borderRadius: BorderRadius.circular(10),
                 border: _following
                     ? Border.all(
@@ -466,9 +447,7 @@ class _UserRowState extends State<_UserRow> {
                         'following_action_follow',
                       ),
                 style: TextStyle(
-                  color: _following
-                      ? Colors.white
-                      : const Color(0xFF1A1200),
+                  color: _following ? Colors.white : const Color(0xFF1A1200),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),

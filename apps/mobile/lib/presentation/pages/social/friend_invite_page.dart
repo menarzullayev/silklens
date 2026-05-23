@@ -10,8 +10,7 @@ class FriendInvitePage extends ConsumerStatefulWidget {
   const FriendInvitePage({super.key});
 
   @override
-  ConsumerState<FriendInvitePage> createState() =>
-      _FriendInvitePageState();
+  ConsumerState<FriendInvitePage> createState() => _FriendInvitePageState();
 }
 
 class _FriendInvitePageState extends ConsumerState<FriendInvitePage> {
@@ -20,11 +19,9 @@ class _FriendInvitePageState extends ConsumerState<FriendInvitePage> {
 
   bool _copied = false;
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
-  String _inviteLink(String token) =>
-      'silklens://invite?token=$token';
+  String _inviteLink(String token) => 'silklens://invite?token=$token';
 
   String _expiryLabel(String? expiresAt) {
     if (expiresAt == null) return '';
@@ -133,8 +130,7 @@ class _FriendInvitePageState extends ConsumerState<FriendInvitePage> {
                               Text(
                                 _s('invite_error'),
                                 style: TextStyle(
-                                  color:
-                                      Colors.white.withValues(alpha: 0.45),
+                                  color: Colors.white.withValues(alpha: 0.45),
                                   fontSize: 12,
                                 ),
                                 textAlign: TextAlign.center,
@@ -169,8 +165,7 @@ class _FriendInvitePageState extends ConsumerState<FriendInvitePage> {
                             )
                           : Center(
                               child: Column(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   const Icon(
                                     Icons.qr_code_2_rounded,
@@ -216,8 +211,7 @@ class _FriendInvitePageState extends ConsumerState<FriendInvitePage> {
               decoration: BoxDecoration(
                 color: _gold.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(20),
-                border:
-                    Border.all(color: _gold.withValues(alpha: 0.35)),
+                border: Border.all(color: _gold.withValues(alpha: 0.35)),
               ),
               child: Row(
                 children: [
@@ -312,32 +306,22 @@ class _FriendInvitePageState extends ConsumerState<FriendInvitePage> {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: _copied
-                              ? Colors.green.withValues(alpha: 0.2)
-                              : _gold,
+                          color: _copied ? Colors.green.withValues(alpha: 0.2) : _gold,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              _copied
-                                  ? Icons.check_rounded
-                                  : Icons.copy_rounded,
-                              color: _copied
-                                  ? Colors.green
-                                  : const Color(0xFF1A1200),
+                              _copied ? Icons.check_rounded : Icons.copy_rounded,
+                              color: _copied ? Colors.green : const Color(0xFF1A1200),
                               size: 16,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              _copied
-                                  ? _s('invite_copied')
-                                  : _s('invite_copy'),
+                              _copied ? _s('invite_copied') : _s('invite_copy'),
                               style: TextStyle(
-                                color: _copied
-                                    ? Colors.green
-                                    : const Color(0xFF1A1200),
+                                color: _copied ? Colors.green : const Color(0xFF1A1200),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                               ),

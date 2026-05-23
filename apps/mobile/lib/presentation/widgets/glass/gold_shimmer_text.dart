@@ -18,8 +18,7 @@ class GoldShimmerText extends StatefulWidget {
   State<GoldShimmerText> createState() => _GoldShimmerTextState();
 }
 
-class _GoldShimmerTextState extends State<GoldShimmerText>
-    with SingleTickerProviderStateMixin {
+class _GoldShimmerTextState extends State<GoldShimmerText> with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
 
   @override

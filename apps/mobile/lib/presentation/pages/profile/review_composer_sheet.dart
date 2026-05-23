@@ -13,8 +13,7 @@ class ReviewComposerSheet extends ConsumerStatefulWidget {
   final String heritagePubId;
 
   @override
-  ConsumerState<ReviewComposerSheet> createState() =>
-      _ReviewComposerSheetState();
+  ConsumerState<ReviewComposerSheet> createState() => _ReviewComposerSheetState();
 }
 
 class _ReviewComposerSheetState extends ConsumerState<ReviewComposerSheet> {
@@ -140,12 +139,8 @@ class _ReviewComposerSheetState extends ConsumerState<ReviewComposerSheet> {
                 child: Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: Icon(
-                    filled
-                        ? Icons.star_rounded
-                        : Icons.star_outline_rounded,
-                    color: filled
-                        ? _gold
-                        : Colors.white.withValues(alpha: 0.3),
+                    filled ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: filled ? _gold : Colors.white.withValues(alpha: 0.3),
                     size: 36,
                   ),
                 ),
@@ -156,9 +151,7 @@ class _ReviewComposerSheetState extends ConsumerState<ReviewComposerSheet> {
           Text(
             _starLabel,
             style: TextStyle(
-              color: _starRating == 0
-                  ? Colors.white.withValues(alpha: 0.35)
-                  : _gold,
+              color: _starRating == 0 ? Colors.white.withValues(alpha: 0.35) : _gold,
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -174,8 +167,7 @@ class _ReviewComposerSheetState extends ConsumerState<ReviewComposerSheet> {
                 color: Colors.white.withValues(alpha: 0.12),
               ),
             ),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             child: TextField(
               controller: _textController,
               maxLines: 4,
@@ -212,23 +204,15 @@ class _ReviewComposerSheetState extends ConsumerState<ReviewComposerSheet> {
               child: Row(
                 children: [
                   Icon(
-                    _hasPhoto
-                        ? Icons.check_circle_rounded
-                        : Icons.add_photo_alternate_outlined,
-                    color: _hasPhoto
-                        ? _gold
-                        : Colors.white.withValues(alpha: 0.5),
+                    _hasPhoto ? Icons.check_circle_rounded : Icons.add_photo_alternate_outlined,
+                    color: _hasPhoto ? _gold : Colors.white.withValues(alpha: 0.5),
                     size: 22,
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    _hasPhoto
-                        ? _s('review_photo_added')
-                        : _s('review_photo_add'),
+                    _hasPhoto ? _s('review_photo_added') : _s('review_photo_add'),
                     style: TextStyle(
-                      color: _hasPhoto
-                          ? _gold
-                          : Colors.white.withValues(alpha: 0.6),
+                      color: _hasPhoto ? _gold : Colors.white.withValues(alpha: 0.6),
                       fontSize: 14,
                     ),
                   ),
@@ -251,9 +235,7 @@ class _ReviewComposerSheetState extends ConsumerState<ReviewComposerSheet> {
                         colors: [Color(0xFFB78628), Color(0xFFE5C97A)],
                       )
                     : null,
-                color: _isSubmitting
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : null,
+                color: _isSubmitting ? Colors.white.withValues(alpha: 0.08) : null,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Center(

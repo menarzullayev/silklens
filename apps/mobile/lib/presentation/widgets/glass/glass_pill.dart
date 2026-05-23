@@ -25,14 +25,10 @@ class GlassPill extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive
-              ? _gold
-              : Colors.white.withValues(alpha: 0.08),
+          color: isActive ? _gold : Colors.white.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(100),
           border: Border.all(
-            color: isActive
-                ? _gold
-                : Colors.white.withValues(alpha: 0.18),
+            color: isActive ? _gold : Colors.white.withValues(alpha: 0.18),
           ),
           boxShadow: isActive
               ? [

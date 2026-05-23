@@ -63,7 +63,6 @@ class _GovernmentPageState extends ConsumerState<GovernmentPage> {
     try {
       final client = ref.read(silkLensApiClientProvider);
       final items = await client.getGovernmentInfo(
-        countryCode: 'UZ',
         language: LocaleService.instance.locale,
         kind: _selectedKind,
       );
@@ -208,9 +207,7 @@ class _GovernmentPageState extends ConsumerState<GovernmentPage> {
                                       const SizedBox(width: 6),
                                     ],
                                     Text(
-                                      kindIdx >= 0
-                                          ? _kindNames[kindIdx]
-                                          : kindStr,
+                                      kindIdx >= 0 ? _kindNames[kindIdx] : kindStr,
                                       style: const TextStyle(
                                         color: Color(0xFFB78628),
                                         fontSize: 12,

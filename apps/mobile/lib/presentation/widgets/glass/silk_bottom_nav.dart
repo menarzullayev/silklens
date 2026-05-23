@@ -122,9 +122,7 @@ class _NavItem extends StatelessWidget {
                   : null,
               child: Icon(
                 isActive ? activeIcon : inactiveIcon,
-                color: isActive
-                    ? gold
-                    : Colors.white.withValues(alpha: 0.45),
+                color: isActive ? gold : Colors.white.withValues(alpha: 0.45),
                 size: 22,
               ),
             ),

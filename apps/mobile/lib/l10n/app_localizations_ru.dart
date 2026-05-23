@@ -18,8 +18,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get onboardingTitle => 'Исследуйте наследие с помощью камеры';
 
   @override
-  String get onboardingSubtitle =>
-      'Наведите камеру на памятник — узнайте его историю мгновенно.';
+  String get onboardingSubtitle => 'Наведите камеру на памятник — узнайте его историю мгновенно.';
 
   @override
   String get onboardingCta => 'Начать исследование';
@@ -31,22 +30,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get onboardingSlide1Title => 'Распознавайте наследие за секунды';
 
   @override
-  String get onboardingSlide1Body =>
-      'Наведите камеру на любой памятник — ИИ расскажет, что это.';
+  String get onboardingSlide1Body => 'Наведите камеру на любой памятник — ИИ расскажет, что это.';
 
   @override
   String get onboardingSlide2Title => 'Слушайте историю';
 
   @override
-  String get onboardingSlide2Body =>
-      'Персональный аудио-гид — выберите язык и любимый регион.';
+  String get onboardingSlide2Body => 'Персональный аудио-гид — выберите язык и любимый регион.';
 
   @override
   String get onboardingSlide3Title => 'Создайте свой атлас';
 
   @override
-  String get onboardingSlide3Body =>
-      'Сохраняйте места, делитесь отзывами и зарабатывайте значки.';
+  String get onboardingSlide3Body => 'Сохраняйте места, делитесь отзывами и зарабатывайте значки.';
 
   @override
   String get onboardingSignIn => 'Войти';
@@ -73,15 +69,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get cameraPlaceholderTitle => 'Камера';
 
   @override
-  String get cameraPlaceholderBody =>
-      'Распознавание появится в FAZA 2 — неделя 3.';
+  String get cameraPlaceholderBody => 'Распознавание появится в FAZA 2 — неделя 3.';
 
   @override
   String get mapPlaceholderTitle => 'Карта';
 
   @override
-  String get mapPlaceholderBody =>
-      'Интеграция Mapbox / OSM появится в FAZA 2 — неделя 3.';
+  String get mapPlaceholderBody => 'Интеграция Mapbox / OSM появится в FAZA 2 — неделя 3.';
 
   @override
   String get profileTitle => 'Профиль';
@@ -127,8 +121,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get authSignUpTitle => 'Создать аккаунт';
 
   @override
-  String get authSignUpSubtitle =>
-      'Сохраняйте объекты, делитесь отзывами, получайте значки.';
+  String get authSignUpSubtitle => 'Сохраняйте объекты, делитесь отзывами, получайте значки.';
 
   @override
   String get authSignUpCta => 'Создать аккаунт';
@@ -171,8 +164,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get authErrorInvalidEmail => 'Введите корректный email.';
 
   @override
-  String get authErrorPasswordTooShort =>
-      'Пароль должен быть не короче 12 символов.';
+  String get authErrorPasswordTooShort => 'Пароль должен быть не короче 12 символов.';
 
   @override
   String get authErrorPasswordWeak =>
@@ -221,8 +213,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get heritageSearchEmptyTitle => 'Пусто';
 
   @override
-  String get heritageSearchEmptyBody =>
-      'Попробуйте другой запрос или посмотрите все объекты.';
+  String get heritageSearchEmptyBody => 'Попробуйте другой запрос или посмотрите все объекты.';
 
   @override
   String get heritageRecentSearches => 'Недавние запросы';
@@ -271,8 +262,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Пока ничего не сохранено. Нажмите “Сохранить” на странице объекта.';
 
   @override
-  String get heritageLoadMoreError =>
-      'Не удалось загрузить — нажмите для повтора.';
+  String get heritageLoadMoreError => 'Не удалось загрузить — нажмите для повтора.';
 
   @override
   String get commonRetry => 'Повторить';
@@ -545,8 +535,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get emailVerifyInvalidCode => 'Код неверный или истёк.';
 
   @override
-  String get emailVerifyResendError =>
-      'Не удалось отправить email. Попробуйте снова.';
+  String get emailVerifyResendError => 'Не удалось отправить email. Попробуйте снова.';
 
   @override
   String get emailVerifyResending => 'Отправка...';

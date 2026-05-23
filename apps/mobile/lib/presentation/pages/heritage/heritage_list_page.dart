@@ -62,19 +62,21 @@ class HeritageListPage extends HookConsumerWidget {
 
     String s(String key) => AppStrings.get(lang, key);
 
-    useEffect(() {
-      void onScroll() {
-        appBarBlur.value = (scrollCtrl.offset / 80).clamp(0.0, 1.0);
-        if (scrollCtrl.hasClients &&
-            scrollCtrl.position.pixels >=
-                scrollCtrl.position.maxScrollExtent - 200) {
-          notifier.loadMore();
+    useEffect(
+      () {
+        void onScroll() {
+          appBarBlur.value = (scrollCtrl.offset / 80).clamp(0.0, 1.0);
+          if (scrollCtrl.hasClients &&
+              scrollCtrl.position.pixels >= scrollCtrl.position.maxScrollExtent - 200) {
+            notifier.loadMore();
+          }
         }
-      }
 
-      scrollCtrl.addListener(onScroll);
-      return () => scrollCtrl.removeListener(onScroll);
-    }, [scrollCtrl]);
+        scrollCtrl.addListener(onScroll);
+        return () => scrollCtrl.removeListener(onScroll);
+      },
+      [scrollCtrl],
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D2337),
@@ -124,12 +126,10 @@ class HeritageListPage extends HookConsumerWidget {
                   flexibleSpace: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
-                      color: Colors.white
-                          .withValues(alpha: 0.08 * appBarBlur.value),
+                      color: Colors.white.withValues(alpha: 0.08 * appBarBlur.value),
                       border: Border(
                         bottom: BorderSide(
-                          color: Colors.white
-                              .withValues(alpha: 0.10 * appBarBlur.value),
+                          color: Colors.white.withValues(alpha: 0.10 * appBarBlur.value),
                         ),
                       ),
                     ),
@@ -232,8 +232,7 @@ class HeritageListPage extends HookConsumerWidget {
                           onTap: () {
                             activeCategory.value = i;
                             notifier.updateFilter(
-                              listState.filters
-                                  .copyWith(kindSlug: _kindSlugs[i]),
+                              listState.filters.copyWith(kindSlug: _kindSlugs[i]),
                             );
                           },
                           child: AnimatedContainer(
@@ -259,21 +258,15 @@ class HeritageListPage extends HookConsumerWidget {
                                 Icon(
                                   _categoryIcons[i],
                                   size: 13,
-                                  color: active
-                                      ? const Color(0xFF1A1200)
-                                      : Colors.white,
+                                  color: active ? const Color(0xFF1A1200) : Colors.white,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   s(_categoryKeys[i]),
                                   style: TextStyle(
-                                    color: active
-                                        ? const Color(0xFF1A1200)
-                                        : Colors.white,
+                                    color: active ? const Color(0xFF1A1200) : Colors.white,
                                     fontSize: 13,
-                                    fontWeight: active
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
+                                    fontWeight: active ? FontWeight.w600 : FontWeight.w400,
                                   ),
                                 ),
                               ],
@@ -342,8 +335,7 @@ class HeritageListPage extends HookConsumerWidget {
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     sliver: SliverGrid(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
@@ -388,8 +380,7 @@ class HeritageListPage extends HookConsumerWidget {
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     sliver: SliverGrid(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
@@ -727,9 +718,7 @@ class _NavIcon extends StatelessWidget {
         children: [
           Icon(
             icon,
-            color: active
-                ? const Color(0xFFB78628)
-                : Colors.white.withValues(alpha: 0.45),
+            color: active ? const Color(0xFFB78628) : Colors.white.withValues(alpha: 0.45),
             size: 24,
           ),
           if (active)

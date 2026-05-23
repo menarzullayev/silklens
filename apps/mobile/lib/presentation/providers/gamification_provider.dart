@@ -106,11 +106,8 @@ class GamificationNotifier extends Notifier<XpState> {
       final currentXp = (xp['current_xp'] as num?)?.toInt() ?? 0;
       final xpToNext = (xp['xp_to_next_level'] as num?)?.toInt() ?? 1000;
       final rawPct = (xp['progress_pct'] as num?)?.toDouble();
-      final computedPct = rawPct ??
-          (xpToNext > 0 ? (currentXp % xpToNext) / xpToNext : 0.0);
-      final levelNum = (xp['level_number'] as num?)?.toInt() ??
-          (xp['level'] as num?)?.toInt() ??
-          1;
+      final computedPct = rawPct ?? (xpToNext > 0 ? (currentXp % xpToNext) / xpToNext : 0.0);
+      final levelNum = (xp['level_number'] as num?)?.toInt() ?? (xp['level'] as num?)?.toInt() ?? 1;
 
       state = state.copyWith(
         currentXp: currentXp,
@@ -139,8 +136,7 @@ class GamificationNotifier extends Notifier<XpState> {
       final repo = ref.read(gamificationRepositoryProvider);
       final streak = await repo.tickStreakRaw();
       state = state.copyWith(
-        currentStreak:
-            (streak['current_streak'] as num?)?.toInt() ?? state.currentStreak,
+        currentStreak: (streak['current_streak'] as num?)?.toInt() ?? state.currentStreak,
       );
     } catch (_) {
       // Silent — streak tick is best-effort.
@@ -148,8 +144,7 @@ class GamificationNotifier extends Notifier<XpState> {
   }
 }
 
-final gamificationProvider =
-    NotifierProvider<GamificationNotifier, XpState>(
+final gamificationProvider = NotifierProvider<GamificationNotifier, XpState>(
   GamificationNotifier.new,
 );
 
@@ -180,8 +175,7 @@ final streakProvider = FutureProvider<StreakEntity>((ref) async {
 // Leaderboard entries — FutureProvider.family keyed by (slug, period)
 // ---------------------------------------------------------------------------
 
-final leaderboardEntriesProvider =
-    FutureProvider.family<List<LeaderboardEntry>, (String, String)>(
+final leaderboardEntriesProvider = FutureProvider.family<List<LeaderboardEntry>, (String, String)>(
   (ref, args) async {
     final (slug, period) = args;
     final repo = ref.watch(gamificationRepositoryProvider);

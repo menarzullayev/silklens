@@ -49,9 +49,8 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _loading = true);
 
-    final success = await ref
-        .read(authNotifierProvider.notifier)
-        .login(_emailCtrl.text.trim(), _passCtrl.text);
+    final success =
+        await ref.read(authNotifierProvider.notifier).login(_emailCtrl.text.trim(), _passCtrl.text);
 
     if (!mounted) return;
     setState(() => _loading = false);
@@ -71,8 +70,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     }
   }
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   Future<void> _googleSignIn() async {
     setState(() => _loading = true);
@@ -95,9 +93,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         }
         return;
       }
-      final success = await ref
-          .read(authNotifierProvider.notifier)
-          .loginWithGoogle(accessToken);
+      final success = await ref.read(authNotifierProvider.notifier).loginWithGoogle(accessToken);
       if (!mounted) return;
       setState(() => _loading = false);
       if (success) {
@@ -271,8 +267,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                               color: Colors.white.withValues(alpha: 0.5),
                               size: 20,
                             ),
-                            onPressed: () =>
-                                setState(() => _obscurePass = !_obscurePass),
+                            onPressed: () => setState(() => _obscurePass = !_obscurePass),
                           ),
                         ),
                         validator: (v) {

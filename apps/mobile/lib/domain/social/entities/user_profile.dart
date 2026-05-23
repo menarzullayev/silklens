@@ -20,19 +20,19 @@ class UserProfile {
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> j) => UserProfile(
-    pubId: j['pub_id'] as String? ?? '',
-    displayName: j['display_name'] as String?,
-    avatarUrl: j['avatar_url'] as String?,
-    bio: j['bio'] as String?,
-    countryCode: j['country_code'] as String?,
-    followersCount: j['followers_count'] as int? ?? 0,
-    followingCount: j['following_count'] as int? ?? 0,
-    isFollowing: j['is_following'] as bool? ?? false,
-    xp: j['xp'] as int? ?? 0,
-    levelNumber: j['level_number'] as int? ?? 1,
-    levelName: j['level_name'] as String?,
-    placesCount: j['places_count'] as int? ?? 0,
-  );
+        pubId: j['pub_id'] as String? ?? '',
+        displayName: j['display_name'] as String?,
+        avatarUrl: j['avatar_url'] as String?,
+        bio: j['bio'] as String?,
+        countryCode: j['country_code'] as String?,
+        followersCount: j['followers_count'] as int? ?? 0,
+        followingCount: j['following_count'] as int? ?? 0,
+        isFollowing: j['is_following'] as bool? ?? false,
+        xp: j['xp'] as int? ?? 0,
+        levelNumber: j['level_number'] as int? ?? 1,
+        levelName: j['level_name'] as String?,
+        placesCount: j['places_count'] as int? ?? 0,
+      );
 
   final String pubId;
   final String? displayName;

@@ -22,8 +22,7 @@ class ErrorInterceptor extends Interceptor {
           statusCode: err.response?.statusCode,
         ),
       DioExceptionType.cancel => ApiException('Request cancelled'),
-      DioExceptionType.badCertificate =>
-        NetworkException('Bad TLS certificate'),
+      DioExceptionType.badCertificate => NetworkException('Bad TLS certificate'),
     };
     handler.reject(
       DioException(

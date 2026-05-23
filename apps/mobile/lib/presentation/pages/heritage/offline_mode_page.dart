@@ -76,8 +76,7 @@ class _OfflineModePageState extends ConsumerState<OfflineModePage> {
     _loadBundles();
   }
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   Future<void> _loadBundles() async {
     setState(() => _isLoadingBundles = true);
@@ -86,9 +85,7 @@ class _OfflineModePageState extends ConsumerState<OfflineModePage> {
       final locale = LocaleService.instance.locale;
       final data = await client.getOfflineBundles(language: locale);
       final items = (data['items'] as List?) ?? [];
-      final parsed = items
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
+      final parsed = items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
       if (mounted) {
         setState(() {
           _bundles = parsed.isNotEmpty ? parsed : _buildFallback();
@@ -106,8 +103,7 @@ class _OfflineModePageState extends ConsumerState<OfflineModePage> {
     }
   }
 
-  List<Map<String, dynamic>> _buildFallback() =>
-      List<Map<String, dynamic>>.from(_fallbackBundles);
+  List<Map<String, dynamic>> _buildFallback() => List<Map<String, dynamic>>.from(_fallbackBundles);
 
   Future<void> _download(String bundleId) async {
     if (_downloading.contains(bundleId)) return;
@@ -125,8 +121,7 @@ class _OfflineModePageState extends ConsumerState<OfflineModePage> {
           // Mark bundle status in list.
           final idx = _bundles.indexWhere((b) => b['id'] == bundleId);
           if (idx != -1) {
-            _bundles[idx] = Map.from(_bundles[idx])
-              ..['status'] = 'available';
+            _bundles[idx] = Map.from(_bundles[idx])..['status'] = 'available';
           }
         });
       }
@@ -225,10 +220,8 @@ class _OfflineModePageState extends ConsumerState<OfflineModePage> {
                         itemBuilder: (_, i) => _BundleTile(
                           bundle: _bundles[i],
                           isAvailable: _isAvailable(_bundles[i]),
-                          isDownloading: _downloading
-                              .contains(_bundles[i]['id'] as String? ?? ''),
-                          onDownload: () =>
-                              _download(_bundles[i]['id'] as String? ?? ''),
+                          isDownloading: _downloading.contains(_bundles[i]['id'] as String? ?? ''),
+                          onDownload: () => _download(_bundles[i]['id'] as String? ?? ''),
                           sAvailable: _s('offline_status_available'),
                           sNeedsNet: _s('offline_status_needs_internet'),
                           sDownload: _s('offline_download_btn'),
@@ -267,9 +260,8 @@ class _BundleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = bundle['name'] as String? ??
-        bundle['title'] as String? ??
-        (bundle['id'] as String? ?? '');
+    final name =
+        bundle['name'] as String? ?? bundle['title'] as String? ?? (bundle['id'] as String? ?? '');
     final sizeMb = bundle['size_mb'] as int? ?? 0;
 
     return Padding(
@@ -314,12 +306,8 @@ class _BundleTile extends StatelessWidget {
                         ),
                       )
                     : Icon(
-                        isAvailable
-                            ? Icons.check_circle
-                            : Icons.signal_wifi_off,
-                        color: isAvailable
-                            ? const Color(0xFF4CAF50)
-                            : Colors.white38,
+                        isAvailable ? Icons.check_circle : Icons.signal_wifi_off,
+                        color: isAvailable ? const Color(0xFF4CAF50) : Colors.white38,
                         size: 20,
                       ),
               ),
@@ -343,9 +331,7 @@ class _BundleTile extends StatelessWidget {
                     Text(
                       isAvailable ? sAvailable : sNeedsNet,
                       style: TextStyle(
-                        color: isAvailable
-                            ? const Color(0xFF4CAF50)
-                            : const Color(0xFFFF6B6B),
+                        color: isAvailable ? const Color(0xFF4CAF50) : const Color(0xFFFF6B6B),
                         fontSize: 11,
                       ),
                     ),

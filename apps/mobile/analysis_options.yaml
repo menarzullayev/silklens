@@ -23,3 +23,9 @@ linter:
     prefer_relative_imports: false  # Absolute imports per package: are preferred for Clean Arch boundaries.
     always_use_package_imports: true
     sort_pub_dependencies: false
+    # Match dart format --line-length=100 (backend ruff uses 100 too).
+    lines_longer_than_80_chars: false
+    # Style noise — explicit redundancy is sometimes clearer than implicit defaults.
+    avoid_redundant_argument_values: false
+    # Cascades are an aesthetic choice; calling .add twice is fine.
+    cascade_invocations: false

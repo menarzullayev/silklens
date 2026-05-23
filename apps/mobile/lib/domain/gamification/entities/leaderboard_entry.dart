@@ -16,16 +16,16 @@ class LeaderboardEntry {
   });
 
   factory LeaderboardEntry.fromJson(Map<String, dynamic> j) => LeaderboardEntry(
-    rank: j['rank'] as int,
-    userId: j['user_id'] as String,
-    displayName: j['display_name'] as String,
-    countryCode: j['country_code'] as String? ?? 'UZ',
-    xp: j['xp'] as int,
-    delta: j['delta'] as int? ?? 0,
-    isCurrentUser: j['is_current_user'] as bool? ?? false,
-    avatarUrl: j['avatar_url'] as String?,
-    levelName: j['level_name'] as String?,
-  );
+        rank: j['rank'] as int,
+        userId: j['user_id'] as String,
+        displayName: j['display_name'] as String,
+        countryCode: j['country_code'] as String? ?? 'UZ',
+        xp: j['xp'] as int,
+        delta: j['delta'] as int? ?? 0,
+        isCurrentUser: j['is_current_user'] as bool? ?? false,
+        avatarUrl: j['avatar_url'] as String?,
+        levelName: j['level_name'] as String?,
+      );
 
   final int rank;
   final String userId;

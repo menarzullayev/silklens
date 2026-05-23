@@ -18,8 +18,7 @@ class ReviewAnalysisWidget extends ConsumerWidget {
 
   static const _gold = Color(0xFFB78628);
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -70,8 +69,7 @@ class _AnalysisCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authenticity =
-        (analysis['authenticity_score'] as num?)?.toDouble() ?? 0.0;
+    final authenticity = (analysis['authenticity_score'] as num?)?.toDouble() ?? 0.0;
     final summaryMd = analysis['summary_md'] as String? ?? '';
     final pros = (analysis['top_pros'] as List?)?.cast<String>() ?? [];
     final cons = (analysis['top_cons'] as List?)?.cast<String>() ?? [];
@@ -116,12 +114,9 @@ class _AnalysisCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  worth
-                      ? s('review_analysis_worth_yes')
-                      : s('review_analysis_worth_no'),
+                  worth ? s('review_analysis_worth_yes') : s('review_analysis_worth_no'),
                   style: TextStyle(
-                    color:
-                        worth ? const Color(0xFF4CAF50) : Colors.redAccent,
+                    color: worth ? const Color(0xFF4CAF50) : Colors.redAccent,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),

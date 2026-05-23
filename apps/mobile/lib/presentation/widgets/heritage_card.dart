@@ -40,8 +40,11 @@ class HeritageCard extends StatelessWidget {
                       child: Image.network(
                         hero,
                         fit: BoxFit.cover,
-                        errorBuilder: (BuildContext _, Object __,
-                                StackTrace? ___,) =>
+                        errorBuilder: (
+                          BuildContext _,
+                          Object __,
+                          StackTrace? ___,
+                        ) =>
                             _PlaceholderImage(theme: theme),
                       ),
                     )
@@ -83,7 +86,7 @@ class HeritageCard extends StatelessWidget {
                           visualDensity: VisualDensity.compact,
                           padding: EdgeInsets.zero,
                           label: Text(
-                            l10n.heritageDetailUnesco ?? 'UNESCO',
+                            l10n.heritageDetailUnesco,
                           ),
                           avatar: const Icon(Icons.star, size: 16),
                         ),

@@ -10,8 +10,7 @@ import 'package:silklens/data/repositories/social_repository_impl.dart';
 // ---------------------------------------------------------------------------
 
 /// Flat list consumed by ActivityFeedPage.
-final feedProvider =
-    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+final feedProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final page = await ref.watch(socialRepositoryProvider).getFeed();
   return page.items.map((i) => i.toPageMap()).toList();
 });
@@ -58,9 +57,8 @@ class NotificationsNotifier extends Notifier<NotificationsState> {
   Future<void> refresh({bool unreadOnly = false}) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final page = await ref
-          .read(socialRepositoryProvider)
-          .getNotifications(unreadOnly: unreadOnly);
+      final page =
+          await ref.read(socialRepositoryProvider).getNotifications(unreadOnly: unreadOnly);
       state = state.copyWith(
         items: page.items,
         isLoading: false,
@@ -78,9 +76,7 @@ class NotificationsNotifier extends Notifier<NotificationsState> {
     try {
       await ref.read(socialRepositoryProvider).markRead(id);
       state = state.copyWith(
-        items: state.items
-            .map((n) => n.id == id ? n.copyWith(isRead: true) : n)
-            .toList(),
+        items: state.items.map((n) => n.id == id ? n.copyWith(isRead: true) : n).toList(),
       );
     } catch (_) {
       // Optimistic update stays; silently ignore network failure.
@@ -97,18 +93,13 @@ class NotificationsNotifier extends Notifier<NotificationsState> {
   }
 }
 
-final notificationsProvider =
-    NotifierProvider<NotificationsNotifier, NotificationsState>(
+final notificationsProvider = NotifierProvider<NotificationsNotifier, NotificationsState>(
   NotificationsNotifier.new,
 );
 
 /// Unread badge count — derived from notificationsProvider.
 final unreadCountProvider = Provider<int>((ref) {
-  return ref
-      .watch(notificationsProvider)
-      .items
-      .where((n) => !n.isRead)
-      .length;
+  return ref.watch(notificationsProvider).items.where((n) => !n.isRead).length;
 });
 
 // ---------------------------------------------------------------------------
@@ -143,8 +134,7 @@ class FollowingListState {
       );
 }
 
-class FollowingListNotifier
-    extends FamilyNotifier<FollowingListState, String> {
+class FollowingListNotifier extends FamilyNotifier<FollowingListState, String> {
   @override
   FollowingListState build(String userPubId) {
     Future.microtask(() => _load(userPubId));
@@ -202,8 +192,8 @@ class FollowingListNotifier
   Future<void> reload(String userPubId) => _load(userPubId);
 }
 
-final followingListProvider = NotifierProviderFamily<FollowingListNotifier,
-    FollowingListState, String>(
+final followingListProvider =
+    NotifierProviderFamily<FollowingListNotifier, FollowingListState, String>(
   FollowingListNotifier.new,
 );
 
@@ -249,9 +239,7 @@ class FriendInviteNotifier extends Notifier<FriendInviteState> {
   Future<void> createInvite({String? message}) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final inv = await ref
-          .read(socialRepositoryProvider)
-          .createInvitation(message: message);
+      final inv = await ref.read(socialRepositoryProvider).createInvitation(message: message);
       state = state.copyWith(
         token: inv.token,
         expiresAt: inv.expiresAt,
@@ -263,7 +251,6 @@ class FriendInviteNotifier extends Notifier<FriendInviteState> {
   }
 }
 
-final friendInviteProvider =
-    NotifierProvider<FriendInviteNotifier, FriendInviteState>(
+final friendInviteProvider = NotifierProvider<FriendInviteNotifier, FriendInviteState>(
   FriendInviteNotifier.new,
 );

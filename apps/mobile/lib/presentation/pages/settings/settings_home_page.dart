@@ -34,41 +34,46 @@ class SettingsHomePage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
               ),
-              child: Row(children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Color(0xFFB78628), Color(0xFF1F3A93)],
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFB78628), Color(0xFF1F3A93)],
+                      ),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'A',
+                        style: TextStyle(
+                            color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700,),
+                      ),
                     ),
                   ),
-                  child: const Center(
-                    child: Text(
-                      'A',
-                      style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Aziz Karimov',
+                          style: TextStyle(
+                              color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600,),
+                        ),
+                        Text(
+                          'aziz@email.com',
+                          style:
+                              TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Aziz Karimov',
-                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                      ),
-                      Text(
-                        'aziz@email.com',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right, color: Colors.white38),
-              ],),
+                  const Icon(Icons.chevron_right, color: Colors.white38),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -252,17 +257,19 @@ class _SettingsRow extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
-        child: Row(children: [
-          Icon(icon, color: iconColor ?? Colors.white.withValues(alpha: 0.7), size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(label, style: TextStyle(color: labelColor ?? Colors.white, fontSize: 14)),
-          ),
-          if (subtitle != null)
-            Text(subtitle!, style: const TextStyle(color: Color(0xFFB78628), fontSize: 12)),
-          const SizedBox(width: 4),
-          Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3), size: 18),
-        ],),
+        child: Row(
+          children: [
+            Icon(icon, color: iconColor ?? Colors.white.withValues(alpha: 0.7), size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(label, style: TextStyle(color: labelColor ?? Colors.white, fontSize: 14)),
+            ),
+            if (subtitle != null)
+              Text(subtitle!, style: const TextStyle(color: Color(0xFFB78628), fontSize: 12)),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3), size: 18),
+          ],
+        ),
       ),
     );
   }

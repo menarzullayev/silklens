@@ -97,8 +97,15 @@ class _CompassRosePainter extends CustomPainter {
     );
   }
 
-  void _drawDashedCircle(Canvas c, double cx, double cy, double r,
-      int n, Color color, double width,) {
+  void _drawDashedCircle(
+    Canvas c,
+    double cx,
+    double cy,
+    double r,
+    int n,
+    Color color,
+    double width,
+  ) {
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
@@ -109,7 +116,10 @@ class _CompassRosePainter extends CustomPainter {
       final a2 = 2 * pi * (i + 0.45) / n;
       c.drawArc(
         Rect.fromCircle(center: Offset(cx, cy), radius: r),
-        a1, a2 - a1, false, paint,
+        a1,
+        a2 - a1,
+        false,
+        paint,
       );
     }
   }
@@ -157,8 +167,11 @@ class _AICameraPainter extends CustomPainter {
 
     // Camera body (white rounded rect)
     final bodyRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: Offset(cx, cy + r * 0.04),
-          width: r * 1.5, height: r * 1.1,),
+      Rect.fromCenter(
+        center: Offset(cx, cy + r * 0.04),
+        width: r * 1.5,
+        height: r * 1.1,
+      ),
       Radius.circular(r * 0.18),
     );
     canvas.drawRRect(bodyRect, whitePaint);
@@ -169,8 +182,11 @@ class _AICameraPainter extends CustomPainter {
     final notchTop = cy - r * 0.63;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(cx, notchTop),
-            width: notchW, height: notchH,),
+        Rect.fromCenter(
+          center: Offset(cx, notchTop),
+          width: notchW,
+          height: notchH,
+        ),
         Radius.circular(r * 0.08),
       ),
       whitePaint,
@@ -255,7 +271,7 @@ class _CommunityPainter extends CustomPainter {
     final avatarR = r * 0.28;
     // 3 avatar positions (triangle)
     final positions = [
-      Offset(cx, cy - r * 0.40),        // top center
+      Offset(cx, cy - r * 0.40), // top center
       Offset(cx - r * 0.42, cy + r * 0.25), // bottom left
       Offset(cx + r * 0.42, cy + r * 0.25), // bottom right
     ];
@@ -278,7 +294,8 @@ class _CommunityPainter extends CustomPainter {
 
       // Glow
       canvas.drawCircle(
-        pos, avatarR + 4 * s,
+        pos,
+        avatarR + 4 * s,
         Paint()
           ..color = const Color(0x33B78628)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
@@ -286,13 +303,15 @@ class _CommunityPainter extends CustomPainter {
 
       // Background fill
       canvas.drawCircle(
-        pos, avatarR,
+        pos,
+        avatarR,
         Paint()..color = const Color(0xFF1A2A3A),
       );
 
       // Gold border (main = thicker)
       canvas.drawCircle(
-        pos, avatarR,
+        pos,
+        avatarR,
         Paint()
           ..color = isMain ? const Color(0xFFB78628) : const Color(0x88B78628)
           ..style = PaintingStyle.stroke
@@ -303,7 +322,8 @@ class _CommunityPainter extends CustomPainter {
       final headR = avatarR * 0.36;
       final headY = pos.dy - avatarR * 0.15;
       canvas.drawCircle(
-        Offset(pos.dx, headY), headR,
+        Offset(pos.dx, headY),
+        headR,
         Paint()..color = Colors.white,
       );
       // Body arc
@@ -313,7 +333,9 @@ class _CommunityPainter extends CustomPainter {
           width: avatarR * 1.3,
           height: avatarR * 1.0,
         ),
-        pi, pi, false,
+        pi,
+        pi,
+        false,
         Paint()
           ..color = Colors.white
           ..style = PaintingStyle.stroke

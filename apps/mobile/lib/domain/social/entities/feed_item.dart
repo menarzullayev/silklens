@@ -24,25 +24,25 @@ class FeedItem {
   });
 
   factory FeedItem.fromJson(Map<String, dynamic> j) => FeedItem(
-    id: j['id'] as String,
-    kind: FeedItemKind.values.firstWhere(
-      (k) => k.name == j['kind'],
-      orElse: () => FeedItemKind.checkIn,
-    ),
-    actorName: j['actor_name'] as String,
-    timestamp: DateTime.parse(j['timestamp'] as String),
-    actorAvatarUrl: j['actor_avatar_url'] as String?,
-    actorCountryCode: j['actor_country_code'] as String?,
-    placeId: j['place_id'] as String?,
-    placeName: j['place_name'] as String?,
-    photoUrls: (j['photo_urls'] as List?)?.cast<String>() ?? [],
-    likesCount: j['likes_count'] as int? ?? 0,
-    commentsCount: j['comments_count'] as int? ?? 0,
-    isLiked: j['is_liked'] as bool? ?? false,
-    isBookmarked: j['is_bookmarked'] as bool? ?? false,
-    xpEarned: j['xp_earned'] as int?,
-    badgeName: j['badge_name'] as String?,
-  );
+        id: j['id'] as String,
+        kind: FeedItemKind.values.firstWhere(
+          (k) => k.name == j['kind'],
+          orElse: () => FeedItemKind.checkIn,
+        ),
+        actorName: j['actor_name'] as String,
+        timestamp: DateTime.parse(j['timestamp'] as String),
+        actorAvatarUrl: j['actor_avatar_url'] as String?,
+        actorCountryCode: j['actor_country_code'] as String?,
+        placeId: j['place_id'] as String?,
+        placeName: j['place_name'] as String?,
+        photoUrls: (j['photo_urls'] as List?)?.cast<String>() ?? [],
+        likesCount: j['likes_count'] as int? ?? 0,
+        commentsCount: j['comments_count'] as int? ?? 0,
+        isLiked: j['is_liked'] as bool? ?? false,
+        isBookmarked: j['is_bookmarked'] as bool? ?? false,
+        xpEarned: j['xp_earned'] as int?,
+        badgeName: j['badge_name'] as String?,
+      );
 
   final String id;
   final FeedItemKind kind;

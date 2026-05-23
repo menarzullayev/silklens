@@ -14,46 +14,50 @@ class WeatherGuidePage extends HookConsumerWidget {
   static const double _defaultLat = 39.6270;
   static const double _defaultLng = 66.9750;
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    useEffect(() {
-      SystemChrome.setSystemUIOverlayStyle(
-        const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-          systemNavigationBarColor: Color(0xFF0D2337),
-          systemNavigationBarIconBrightness: Brightness.light,
-        ),
-      );
-      return null;
-    }, const []);
+    useEffect(
+      () {
+        SystemChrome.setSystemUIOverlayStyle(
+          const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light,
+            systemNavigationBarColor: Color(0xFF0D2337),
+            systemNavigationBarIconBrightness: Brightness.light,
+          ),
+        );
+        return null;
+      },
+      const [],
+    );
 
     final locale = ref.watch(activeLocaleProvider);
     final guide = useState<Map<String, dynamic>?>(null);
     final isLoading = useState(true);
     final hasError = useState(false);
 
-    useEffect(() {
-      isLoading.value = true;
-      hasError.value = false;
-      Future(() async {
-        try {
-          guide.value =
-              await ref.read(silkLensApiClientProvider).getWeatherGuide(
-                    lat: _defaultLat,
-                    lng: _defaultLng,
-                    language: locale.languageCode,
-                  );
-        } catch (_) {
-          hasError.value = true;
-        }
-        isLoading.value = false;
-      });
-      return null;
-    }, [locale.languageCode]);
+    useEffect(
+      () {
+        isLoading.value = true;
+        hasError.value = false;
+        Future(() async {
+          try {
+            guide.value = await ref.read(silkLensApiClientProvider).getWeatherGuide(
+                  lat: _defaultLat,
+                  lng: _defaultLng,
+                  language: locale.languageCode,
+                );
+          } catch (_) {
+            hasError.value = true;
+          }
+          isLoading.value = false;
+        });
+        return null;
+      },
+      [locale.languageCode],
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D2337),

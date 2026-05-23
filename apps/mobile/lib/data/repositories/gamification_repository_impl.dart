@@ -59,10 +59,7 @@ class GamificationRepositoryImpl implements GamificationRepository {
   Future<Result<List<Badge>>> badges() async {
     try {
       final items = await _client.getBadges();
-      final badges = items
-          .cast<Map<String, dynamic>>()
-          .map(Badge.fromJson)
-          .toList();
+      final badges = items.cast<Map<String, dynamic>>().map(Badge.fromJson).toList();
       return Success(badges);
     } on DioException catch (e) {
       return FailureResult(_mapDio(e));
@@ -127,7 +124,6 @@ class GamificationRepositoryImpl implements GamificationRepository {
 // Riverpod provider
 // ---------------------------------------------------------------------------
 
-final gamificationRepositoryProvider =
-    Provider<GamificationRepositoryImpl>((ref) {
+final gamificationRepositoryProvider = Provider<GamificationRepositoryImpl>((ref) {
   return GamificationRepositoryImpl(ref.watch(silkLensApiClientProvider));
 });

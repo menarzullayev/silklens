@@ -36,16 +36,14 @@ class SilkAppBar extends StatelessWidget implements PreferredSizeWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Row(
             children: [
-              if (leading != null) leading!
-              else const SizedBox(width: 48),
+              if (leading != null) leading! else const SizedBox(width: 48),
               if (centerTitle)
                 Expanded(
                   child: Center(child: _titleWidget()),
                 )
               else
                 Expanded(child: _titleWidget()),
-              if (actions != null) ...actions!
-              else const SizedBox(width: 48),
+              if (actions != null) ...actions! else const SizedBox(width: 48),
             ],
           ),
         ),

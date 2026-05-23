@@ -28,7 +28,7 @@ class EmailField extends StatelessWidget {
       autocorrect: false,
       textInputAction: TextInputAction.next,
       decoration: InputDecoration(
-        labelText: l10n.authEmailLabel ?? 'Email',
+        labelText: l10n.authEmailLabel,
         border: const OutlineInputBorder(),
         prefixIcon: const Icon(Icons.email_outlined),
       ),
@@ -72,7 +72,7 @@ class _PasswordFieldState extends State<PasswordField> {
       enableSuggestions: false,
       textInputAction: widget.textInputAction,
       decoration: InputDecoration(
-        labelText: widget.label ?? (l10n.authPasswordLabel ?? 'Password'),
+        labelText: widget.label ?? l10n.authPasswordLabel,
         border: const OutlineInputBorder(),
         prefixIcon: const Icon(Icons.lock_outline),
         suffixIcon: IconButton(

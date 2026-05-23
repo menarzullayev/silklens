@@ -10,12 +10,10 @@ class NotificationPrefsPage extends ConsumerStatefulWidget {
   const NotificationPrefsPage({super.key});
 
   @override
-  ConsumerState<NotificationPrefsPage> createState() =>
-      _NotificationPrefsPageState();
+  ConsumerState<NotificationPrefsPage> createState() => _NotificationPrefsPageState();
 }
 
-class _NotificationPrefsPageState
-    extends ConsumerState<NotificationPrefsPage> {
+class _NotificationPrefsPageState extends ConsumerState<NotificationPrefsPage> {
   // Quiet hours
   bool _quietHours = true;
 
@@ -63,7 +61,8 @@ class _NotificationPrefsPageState
       // Map API response to local toggles; fall through to defaults on
       // any shape mismatch — the UI still works offline.
       final items = prefs['items'] as List? ?? prefs['preferences'] as List? ?? [];
-      for (final item in items) {
+      for (final rawItem in items) {
+        final item = rawItem is Map<String, dynamic> ? rawItem : <String, dynamic>{};
         final slug = item['category_slug'] as String? ?? '';
         final channel = item['channel'] as String? ?? '';
         final enabled = (item['enabled'] as bool?) ?? true;

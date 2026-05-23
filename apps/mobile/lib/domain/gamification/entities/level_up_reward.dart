@@ -7,11 +7,11 @@ class LevelUpReward {
   });
 
   factory LevelUpReward.fromJson(Map<String, dynamic> j) => LevelUpReward(
-    title: j['title'] as String,
-    iconSlug: j['icon_slug'] as String,
-    description: j['description'] as String,
-    xpBonus: j['xp_bonus'] as int? ?? 0,
-  );
+        title: j['title'] as String,
+        iconSlug: j['icon_slug'] as String,
+        description: j['description'] as String,
+        xpBonus: j['xp_bonus'] as int? ?? 0,
+      );
 
   final String title;
   final String iconSlug;

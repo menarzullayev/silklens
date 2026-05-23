@@ -33,9 +33,7 @@ class GoldButton extends StatelessWidget {
         child: Container(
           height: height,
           decoration: BoxDecoration(
-            gradient: enabled
-                ? const LinearGradient(colors: [_gold1, _gold2])
-                : null,
+            gradient: enabled ? const LinearGradient(colors: [_gold1, _gold2]) : null,
             color: enabled ? null : Colors.white.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(borderRadius),
             boxShadow: enabled

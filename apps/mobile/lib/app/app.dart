@@ -33,8 +33,7 @@ class SilkLensApp extends ConsumerWidget {
       // in OS-level task switchers before the first frame paints, so we
       // keep it as the canonical product name. Per Project-Decisions §1
       // anything user-facing must come from localization / remote config.
-      onGenerateTitle: (BuildContext context) =>
-          AppLocalizations.of(context).appName ?? 'SilkLens',
+      onGenerateTitle: (BuildContext context) => AppLocalizations.of(context).appName,
       debugShowCheckedModeBanner: false,
       theme: themePack.light,
       darkTheme: themePack.dark,

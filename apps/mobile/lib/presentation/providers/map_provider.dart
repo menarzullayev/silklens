@@ -85,8 +85,7 @@ class MapFilters {
         'page_size': pageSize,
       };
 
-  MapFilters copyWith({String? country, MapLayer? layer, int? pageSize}) =>
-      MapFilters(
+  MapFilters copyWith({String? country, MapLayer? layer, int? pageSize}) => MapFilters(
         country: country ?? this.country,
         layer: layer ?? this.layer,
         pageSize: pageSize ?? this.pageSize,
@@ -122,8 +121,7 @@ class MapState {
 }
 
 /// Resolves which tile provider to use given the runtime environment.
-final Provider<MapTileProvider> mapTileProviderProvider =
-    Provider<MapTileProvider>(
+final Provider<MapTileProvider> mapTileProviderProvider = Provider<MapTileProvider>(
   (Ref ref) {
     final token = ref.watch(appEnvironmentProvider).mapboxPublicToken;
     return token.isNotEmpty ? MapTileProvider.mapbox : MapTileProvider.osm;

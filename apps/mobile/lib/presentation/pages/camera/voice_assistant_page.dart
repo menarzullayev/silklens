@@ -28,8 +28,7 @@ class _VoiceAssistantPageState extends ConsumerState<VoiceAssistantPage>
 
   // ---- helpers ----
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   // ---- lifecycle ----
 
@@ -89,8 +88,7 @@ class _VoiceAssistantPageState extends ConsumerState<VoiceAssistantPage>
         content: Text(_s('voice_recording_soon')),
         backgroundColor: const Color(0xFF1A3A5C),
         behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 3),
       ),
     );
@@ -209,8 +207,7 @@ class _VoiceAssistantPageState extends ConsumerState<VoiceAssistantPage>
     required bool isListening,
     required bool isProcessing,
   }) {
-    final color =
-        isListening ? Colors.redAccent : const Color(0xFFB78628);
+    final color = isListening ? Colors.redAccent : const Color(0xFFB78628);
 
     return GestureDetector(
       onTapDown: (_) => _onMicDown(),

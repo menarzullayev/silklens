@@ -10,8 +10,7 @@ class StreakPage extends ConsumerWidget {
 
   static const _gold = Color(0xFFB78628);
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -207,13 +206,9 @@ class _StreakContent extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: active
-                            ? _gold
-                            : Colors.white.withValues(alpha: 0.08),
+                        color: active ? _gold : Colors.white.withValues(alpha: 0.08),
                         shape: BoxShape.circle,
-                        border: isToday
-                            ? Border.all(color: Colors.white, width: 2)
-                            : null,
+                        border: isToday ? Border.all(color: Colors.white, width: 2) : null,
                         boxShadow: active
                             ? [
                                 BoxShadow(
@@ -263,11 +258,8 @@ class _StreakContent extends StatelessWidget {
                 ...milestoneDays.map((days) {
                   final reached = streak.currentStreak >= days;
                   // Find XP reward from milestone data if available.
-                  final milestone = streak.milestones
-                      .where((m) => m.days == days)
-                      .firstOrNull;
-                  final xpReward =
-                      milestone?.xpReward ?? days * 10;
+                  final milestone = streak.milestones.where((m) => m.days == days).firstOrNull;
+                  final xpReward = milestone?.xpReward ?? days * 10;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: Row(
@@ -276,15 +268,11 @@ class _StreakContent extends StatelessWidget {
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
-                            color: reached
-                                ? _gold
-                                : Colors.white.withValues(alpha: 0.08),
+                            color: reached ? _gold : Colors.white.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            reached
-                                ? Icons.check_rounded
-                                : Icons.lock_outline_rounded,
+                            reached ? Icons.check_rounded : Icons.lock_outline_rounded,
                             color: reached
                                 ? const Color(0xFF1A1200)
                                 : Colors.white.withValues(alpha: 0.4),
@@ -295,22 +283,16 @@ class _StreakContent extends StatelessWidget {
                         Text(
                           '$days ${s('streak_milestone_suffix')}',
                           style: TextStyle(
-                            color: reached
-                                ? Colors.white
-                                : Colors.white.withValues(alpha: 0.4),
+                            color: reached ? Colors.white : Colors.white.withValues(alpha: 0.4),
                             fontSize: 13,
-                            fontWeight: reached
-                                ? FontWeight.w600
-                                : FontWeight.w400,
+                            fontWeight: reached ? FontWeight.w600 : FontWeight.w400,
                           ),
                         ),
                         const Spacer(),
                         Text(
                           '+$xpReward XP',
                           style: TextStyle(
-                            color: reached
-                                ? _gold
-                                : Colors.white.withValues(alpha: 0.3),
+                            color: reached ? _gold : Colors.white.withValues(alpha: 0.3),
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                           ),

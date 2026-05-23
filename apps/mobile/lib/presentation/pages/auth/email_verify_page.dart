@@ -16,8 +16,7 @@ class EmailVerifyPage extends ConsumerStatefulWidget {
 }
 
 class _EmailVerifyPageState extends ConsumerState<EmailVerifyPage> {
-  final List<TextEditingController> _ctrls =
-      List.generate(6, (_) => TextEditingController());
+  final List<TextEditingController> _ctrls = List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _nodes = List.generate(6, (_) => FocusNode());
   bool _loading = false;
   bool _resending = false;
@@ -276,8 +275,7 @@ class _EmailVerifyPageState extends ConsumerState<EmailVerifyPage> {
                           borderRadius: BorderRadius.circular(14),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFB78628)
-                                  .withValues(alpha: 0.35),
+                              color: const Color(0xFFB78628).withValues(alpha: 0.35),
                               blurRadius: 16,
                               offset: const Offset(0, 4),
                             ),
@@ -396,9 +394,7 @@ class _OtpBox extends StatelessWidget {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(
-              color: hasError
-                  ? const Color(0xFFFF6B6B)
-                  : const Color(0xFFB78628),
+              color: hasError ? const Color(0xFFFF6B6B) : const Color(0xFFB78628),
               width: 2,
             ),
           ),

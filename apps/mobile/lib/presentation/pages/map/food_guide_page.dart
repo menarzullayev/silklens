@@ -13,29 +13,30 @@ import 'package:silklens/presentation/providers/locale_provider.dart';
 class FoodGuidePage extends HookConsumerWidget {
   const FoodGuidePage({super.key});
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    useEffect(() {
-      SystemChrome.setSystemUIOverlayStyle(
-        const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-          systemNavigationBarColor: Color(0xFF0D2337),
-          systemNavigationBarIconBrightness: Brightness.light,
-        ),
-      );
-      return null;
-    }, const []);
+    useEffect(
+      () {
+        SystemChrome.setSystemUIOverlayStyle(
+          const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light,
+            systemNavigationBarColor: Color(0xFF0D2337),
+            systemNavigationBarIconBrightness: Brightness.light,
+          ),
+        );
+        return null;
+      },
+      const [],
+    );
 
     final locale = ref.watch(activeLocaleProvider);
     final controller = useTextEditingController();
     final isLoading = useState(false);
     final aiReply = useState<String?>(null);
-    final restaurants =
-        useState<List<Map<String, dynamic>>>([]);
+    final restaurants = useState<List<Map<String, dynamic>>>([]);
     final mustTry = useState<List<String>>([]);
     final dietaryTips = useState<List<String>>([]);
     final selectedDietary = useState<List<String>>([]);
@@ -51,24 +52,24 @@ class FoodGuidePage extends HookConsumerWidget {
           dietaryPreferences: selectedDietary.value,
         );
         aiReply.value = result['reply'] as String?;
-        restaurants.value =
-            ((result['restaurant_recommendations'] as List?) ?? [])
-                .map((e) => Map<String, dynamic>.from(e as Map))
-                .toList();
-        mustTry.value = ((result['must_try_dishes'] as List?) ?? [])
-            .cast<String>();
-        dietaryTips.value =
-            ((result['dietary_tips'] as List?) ?? []).cast<String>();
+        restaurants.value = ((result['restaurant_recommendations'] as List?) ?? [])
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+        mustTry.value = ((result['must_try_dishes'] as List?) ?? []).cast<String>();
+        dietaryTips.value = ((result['dietary_tips'] as List?) ?? []).cast<String>();
       } catch (_) {}
       isLoading.value = false;
     }
 
-    useEffect(() {
-      Future(
-        () => search(''),
-      );
-      return null;
-    }, const []);
+    useEffect(
+      () {
+        Future(
+          () => search(''),
+        );
+        return null;
+      },
+      const [],
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D2337),
@@ -105,11 +106,9 @@ class FoodGuidePage extends HookConsumerWidget {
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       hintText: _s('food_search_hint'),
-                      hintStyle:
-                          const TextStyle(color: Colors.white38),
+                      hintStyle: const TextStyle(color: Colors.white38),
                       filled: true,
-                      fillColor:
-                          Colors.white.withValues(alpha: 0.08),
+                      fillColor: Colors.white.withValues(alpha: 0.08),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide.none,
@@ -155,8 +154,7 @@ class FoodGuidePage extends HookConsumerWidget {
                                 fontSize: 12,
                               ),
                             ),
-                            backgroundColor: const Color(0xFF1F3A93)
-                                .withValues(alpha: 0.5),
+                            backgroundColor: const Color(0xFF1F3A93).withValues(alpha: 0.5),
                             side: BorderSide.none,
                           ),
                         )
@@ -299,7 +297,7 @@ class _RestaurantCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name = restaurant['name'] as String? ?? '';
-    final priceRange = restaurant['price_range'] as String? ?? '\$\$';
+    final priceRange = restaurant['price_range'] as String? ?? r'$$';
     final distanceKm = restaurant['distance_km'];
     final cuisine = restaurant['cuisine'] as String? ?? '';
 

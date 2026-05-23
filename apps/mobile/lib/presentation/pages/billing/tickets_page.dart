@@ -53,9 +53,7 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
       final items = await ref.read(silkLensApiClientProvider).getMyTickets();
       if (!mounted) return;
       setState(() {
-        _tickets = items
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
+        _tickets = items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -150,7 +148,8 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
             const SizedBox(height: 16),
             Text(
               _s('tickets_empty_title'),
-              style: const TextStyle(color: Colors.white70, fontSize: 18, fontWeight: FontWeight.w600),
+              style:
+                  const TextStyle(color: Colors.white70, fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
@@ -212,9 +211,7 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
           color: isValid ? _gold.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.1),
           width: isValid ? 1.5 : 1,
         ),
-        boxShadow: isValid
-            ? [BoxShadow(color: _gold.withValues(alpha: 0.08), blurRadius: 16)]
-            : [],
+        boxShadow: isValid ? [BoxShadow(color: _gold.withValues(alpha: 0.08), blurRadius: 16)] : [],
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
@@ -262,9 +259,12 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.calendar_today_rounded, size: 11, color: Colors.white.withValues(alpha: 0.4)),
+                          Icon(Icons.calendar_today_rounded,
+                              size: 11, color: Colors.white.withValues(alpha: 0.4),),
                           const SizedBox(width: 4),
-                          Text(visitDate, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
+                          Text(visitDate,
+                              style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.5), fontSize: 12,),),
                         ],
                       ),
                     ],
@@ -283,7 +283,8 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
                     ),
                     child: Text(
                       statusLabel,
-                      style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w700),
+                      style:
+                          TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w700),
                     ),
                   ),
                   if (isValid) ...[
@@ -321,7 +322,8 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
             children: [
               Text(
                 name,
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                style:
+                    const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
@@ -333,7 +335,6 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
                 ),
                 child: QrImageView(
                   data: qrPayload,
-                  version: QrVersions.auto,
                   size: 200,
                   backgroundColor: Colors.white,
                 ),

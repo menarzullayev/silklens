@@ -30,8 +30,7 @@ class _MapPageState extends ConsumerState<MapPage> {
     final heritageState = ref.watch(heritageListProvider);
     final lang = ref.watch(activeLocaleProvider).languageCode;
 
-    final geoItems =
-        heritageState.items.where((h) => h.hasGeolocation).toList();
+    final geoItems = heritageState.items.where((h) => h.hasGeolocation).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D2337),
@@ -45,8 +44,7 @@ class _MapPageState extends ConsumerState<MapPage> {
             ),
             children: [
               TileLayer(
-                urlTemplate:
-                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.silklens.app',
               ),
               MarkerLayer(

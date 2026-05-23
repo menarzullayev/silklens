@@ -12,13 +12,11 @@ class AuthChoicePage extends StatefulWidget {
   State<AuthChoicePage> createState() => _AuthChoicePageState();
 }
 
-class _AuthChoicePageState extends State<AuthChoicePage>
-    with SingleTickerProviderStateMixin {
+class _AuthChoicePageState extends State<AuthChoicePage> with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<double> _fade;
 
-  String _s(String key) =>
-      AppStrings.get(LocaleService.instance.locale, key);
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
 
   @override
   void initState() {
@@ -186,8 +184,7 @@ class _AuthChoicePageState extends State<AuthChoicePage>
                                 borderRadius: BorderRadius.circular(14),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFFB78628)
-                                        .withValues(alpha: 0.35),
+                                    color: const Color(0xFFB78628).withValues(alpha: 0.35),
                                     blurRadius: 16,
                                     offset: const Offset(0, 4),
                                   ),
@@ -196,7 +193,7 @@ class _AuthChoicePageState extends State<AuthChoicePage>
                               child: Center(
                                 child: Text(
                                   _s('auth_signin_btn'),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: Color(0xFF1A1200),
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
