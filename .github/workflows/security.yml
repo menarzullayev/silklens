@@ -199,3 +199,232 @@ jobs:
         uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{ matrix.language }}"
+
+  # ---------------------------------------------------------------------------
+  # Trivy container-image scan: OS-level CVEs + package CVEs inside the image.
+  # Complements trivy-fs (which scans the source tree) by catching vulns in
+  # system packages (libpq5, curl, openssl, …) that have no pip representation.
+  # Skipped on pull_request events — trivy-fs already gates PRs and image
+  # builds add 3-5 min to PR feedback loops.
+  # ---------------------------------------------------------------------------
+  trivy-image:
+    name: Trivy — container image (OS + pkg CVEs)
+    runs-on: ubuntu-24.04
+    # Only run on push to main and the weekly schedule — not on every PR.
+    if: github.event_name != 'pull_request'
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sudo sh -s -- -b /usr/local/bin
+          trivy --version
+
+      - name: Build API image
+        # Build for the local platform only — this is a security scan, not a
+        # release artefact, so we don't need multi-arch here.
+        # No --no-cache so GHA's implicit layer cache is used; the scan result
+        # is the same since we always get the latest resolved packages.
+        run: |
+          docker build \
+            --tag silklens-api:ci \
+            --file services/api/Dockerfile \
+            services/api/
+
+      - name: Scan image with Trivy
+        # HIGH+ with --ignore-unfixed: only actionable CVEs (a fix exists) fail
+        # the build.  OS-level and package-level vulns both covered.
+        run: |
+          trivy image \
+            --exit-code 1 \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            --scanners vuln,misconfig \
+            --format sarif \
+            --output trivy-image.sarif \
+            --timeout 15m \
+            silklens-api:ci
+
+      - name: Upload image scan SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-image
+
+      - name: Post image scan summary
+        if: always()
+        run: |
+          {
+            echo "### Trivy image scan — \`silklens-api\`"
+            echo ""
+            trivy image \
+              --severity HIGH,CRITICAL \
+              --ignore-unfixed \
+              --scanners vuln,misconfig \
+              --format table \
+              silklens-api:ci 2>/dev/null || true
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
+  # SBOM: generate CycloneDX SBOMs for the API and admin surfaces and upload
+  # them as workflow artefacts (90-day retention).
+  #
+  # Two SBOMs are produced:
+  #   sbom-api.cdx.json   — Python deps parsed from services/api/pyproject.toml
+  #   sbom-admin.cdx.json — Node deps parsed from apps/admin/package.json
+  #
+  # Note: the release pipeline also attaches an image-level SBOM to the OCI
+  # manifest via `buildx --sbom=true` (SPDX format).  The two complement each
+  # other: this job provides source-time visibility; the release job captures
+  # exactly-installed versions baked into the published image.
+  # ---------------------------------------------------------------------------
+  sbom:
+    name: SBOM — CycloneDX (API + admin)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sudo sh -s -- -b /usr/local/bin
+          trivy --version
+
+      - name: Generate API SBOM (CycloneDX JSON)
+        run: |
+          trivy fs services/api \
+            --format cyclonedx \
+            --output sbom-api.cdx.json \
+            --scanners vuln \
+            --quiet
+
+      - name: Generate admin SBOM (CycloneDX JSON)
+        run: |
+          trivy fs apps/admin \
+            --format cyclonedx \
+            --output sbom-admin.cdx.json \
+            --scanners vuln \
+            --quiet
+
+      - name: Upload SBOMs as workflow artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: |
+            sbom-api.cdx.json
+            sbom-admin.cdx.json
+          retention-days: 90
+
+      - name: Post SBOM summary
+        run: |
+          api_count=$(python3 -c "
+          import json, sys
+          try:
+            d = json.load(open('sbom-api.cdx.json'))
+            print(len(d.get('components', [])))
+          except Exception:
+            print('?')
+          ")
+          admin_count=$(python3 -c "
+          import json, sys
+          try:
+            d = json.load(open('sbom-admin.cdx.json'))
+            print(len(d.get('components', [])))
+          except Exception:
+            print('?')
+          ")
+          {
+            echo "### SBOM generated — \`${{ github.sha }}\`"
+            echo ""
+            echo "| Surface | Format | Components | Artefact |"
+            echo "|---|---|---|---|"
+            echo "| API (Python) | CycloneDX JSON | $api_count | \`sbom-api.cdx.json\` |"
+            echo "| Admin (Node) | CycloneDX JSON | $admin_count | \`sbom-admin.cdx.json\` |"
+            echo ""
+            echo "> Container-level SBOM (exact installed versions) is attached to the"
+            echo "> OCI manifest by the release pipeline via \`docker buildx --sbom=true\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
+  # License compliance: detect copyleft (GPL / AGPL) and other legally
+  # problematic licenses in all production and dev dependencies.
+  #
+  # Trivy license severity classification used here:
+  #   CRITICAL → AGPL-* (server-side copyleft — incompatible with SaaS)
+  #   HIGH     → GPL-*  (copyleft — incompatible with proprietary distribution)
+  #   MEDIUM   → LGPL-*, MPL-*, CDDL-* (reciprocal — review required)
+  #   LOW      → MIT, Apache-2.0, BSD-*, ISC (permissive — OK)
+  #
+  # Gate: CRITICAL and HIGH fail the build.  MEDIUM is a warning.
+  # If a dep legitimately uses GPL (e.g. a CLI tool never shipped in the
+  # binary), add it to .trivyignore with a comment and expiry date.
+  # ---------------------------------------------------------------------------
+  license-check:
+    name: License compliance — API + admin
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sudo sh -s -- -b /usr/local/bin
+          trivy --version
+
+      - name: License scan — API (fail on CRITICAL/HIGH)
+        run: |
+          trivy fs services/api \
+            --scanners license \
+            --license-full \
+            --severity CRITICAL,HIGH \
+            --exit-code 1 \
+            --format table
+
+      - name: License scan — admin (fail on CRITICAL/HIGH)
+        run: |
+          trivy fs apps/admin \
+            --scanners license \
+            --license-full \
+            --severity CRITICAL,HIGH \
+            --exit-code 1 \
+            --format table
+
+      - name: Full license report (all severities — advisory)
+        # Always run; non-blocking.  Gives visibility into MEDIUM/LOW licenses.
+        if: always()
+        continue-on-error: true
+        run: |
+          {
+            echo "### License compliance report"
+            echo ""
+            echo "#### API (Python)"
+            echo '```'
+            trivy fs services/api \
+              --scanners license \
+              --license-full \
+              --format table 2>/dev/null || true
+            echo '```'
+            echo ""
+            echo "#### Admin (Node)"
+            echo '```'
+            trivy fs apps/admin \
+              --scanners license \
+              --license-full \
+              --format table 2>/dev/null || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

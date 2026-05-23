@@ -97,3 +97,9 @@ finalDesign/
 # Schemathesis test cache
 .schemathesis/
 logs/schemathesis-junit.xml
+
+# --- Local security scan outputs (`make sbom`, `make api-trivy-image`) ---
+sbom-*.cdx.json
+sbom-*.spdx.json
+trivy-*.sarif
+trivy-*.json

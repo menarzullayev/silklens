@@ -1,0 +1,24 @@
+# SilkLens — Trivy CVE / vulnerability allowlist
+# =============================================================================
+# Format:  <VULN-ID> [exp:<YYYY-MM-DD>]  # <reason>
+#
+# Rules:
+#   - Every entry MUST have an inline comment explaining WHY it is suppressed.
+#   - Use an expiry date (exp:) for time-limited suppressions (e.g. upstream
+#     fix pending, grace period for a scheduled upgrade).
+#   - Remove expired entries; they show up as parse warnings.
+#
+# Reference: https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/
+#
+# Example entries (commented out):
+#
+#   # CVE-2023-12345 exp:2024-06-01  # Only exploitable via X; not reachable
+#   #                                # through our API surface. Track: SILK-XXXX
+#
+#   # GHSA-xxxx-yyyy-zzzz            # False positive: affects feature Y which
+#   #                                # we don't enable.
+#
+# =============================================================================
+# No suppressions at this time.
+# Add entries here when a specific CVE is confirmed non-exploitable or
+# already mitigated at the infrastructure layer.
