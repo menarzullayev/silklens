@@ -81,7 +81,7 @@ async def mood_recommendations(
     """Mood-aware heritage + listing recommendations. No auth required."""
     if body.mood not in _VALID_MOODS:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail={
                 "code": "mood.invalid",
                 "message": f"mood must be one of: {', '.join(sorted(_VALID_MOODS))}",

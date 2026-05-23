@@ -381,7 +381,10 @@ async def initiate_challenge(
         pub_id=user.pub_id,
     )
     method = MfaMethodKind(payload.method)
-    challenge = await service.initiate_challenge(user_ctx, method=method)
+    # Direct /auth/mfa/challenge always initiates a pure step-up — the caller
+    # already has a real session and just needs an elevated short-lived
+    # phantom token, not a fresh refresh-token family.
+    challenge = await service.initiate_challenge(user_ctx, method=method, purpose="step_up")
     return ChallengeResponse(
         challenge_id=challenge.id,
         method=method.value,

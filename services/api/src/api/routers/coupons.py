@@ -74,7 +74,7 @@ async def validate_coupon(
     min_order = float(coupon["min_order_usd"] or 0)
     if body.order_value_usd < min_order:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail={
                 "code": "billing.coupon_min_order",
                 "message": f"Minimum order ${min_order:.2f} required",

@@ -190,7 +190,7 @@ async def register(
         )
         if check.first() is None:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail={"code": "TENANT_NOT_FOUND", "message": "Unknown tenant_id"},
             )
 
@@ -258,7 +258,7 @@ async def login(
         )
         if check.first() is None:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail={"code": "TENANT_NOT_FOUND", "message": "Unknown tenant_id"},
             )
     try:
@@ -929,7 +929,7 @@ async def reset_password(
         stored = await r.get(redis_key)
         if stored is None or stored != body.code:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail={
                     "code": "identity.invalid_otp",
                     "message": "Kod noto'g'ri yoki muddati o'tgan",

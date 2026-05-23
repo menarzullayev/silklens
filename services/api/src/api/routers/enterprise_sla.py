@@ -217,7 +217,7 @@ def _svc(session: AsyncSession) -> EnterpriseService:
 def _validate_month(month: str) -> str:
     if not _MONTH_RE.match(month):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail={"code": "enterprise.invalid_month", "message": "month must be YYYY-MM"},
         )
     return month

@@ -417,8 +417,16 @@ class MfaService:
         user_ctx: MfaUserContext,
         *,
         method: MfaMethodKind,
+        purpose: str = "step_up_or_login",
     ) -> MfaChallenge:
-        """Create a short-lived challenge the client completes via /verify."""
+        """Create a short-lived challenge the client completes via /verify.
+
+        ``purpose`` distinguishes how the resulting verification should be
+        treated. ``step_up_or_login`` (default) is used by the login-gate
+        path and lets ``/verify`` mint a full session (access + refresh).
+        ``step_up`` is used by the direct ``/auth/mfa/challenge`` endpoint
+        and results in a short-lived phantom access token only.
+        """
         now = self._clock.now()
         challenge_bytes = secrets.token_bytes(32)
         challenge = MfaChallenge(
@@ -427,7 +435,7 @@ class MfaService:
             residency_region=user_ctx.residency_region,
             method=method,
             challenge_bytes=challenge_bytes,
-            metadata={"purpose": "step_up_or_login"},
+            metadata={"purpose": purpose},
             expires_at=now + timedelta(seconds=self._challenge_ttl_seconds),
             completed_at=None,
             created_at=now,

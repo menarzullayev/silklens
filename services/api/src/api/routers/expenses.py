@@ -134,7 +134,7 @@ async def create_budget(
     """
     if body.end_date and body.start_date and body.end_date < body.start_date:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail={"code": "expenses.invalid_dates", "message": "end_date must be >= start_date"},
         )
 
@@ -258,7 +258,7 @@ async def add_expense(
     """
     if body.category not in _CATEGORY_VALUES:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail={
                 "code": "expenses.invalid_category",
                 "message": f"category must be one of: {', '.join(_CATEGORY_VALUES)}",
@@ -318,7 +318,7 @@ async def add_expense(
                     (budget_id, category, amount_usd, description, entry_date)
                 VALUES
                     (:bid, :category, :amount, :desc,
-                     COALESCE(:entry_date::date, CURRENT_DATE))
+                     COALESCE(cast(:entry_date AS date), CURRENT_DATE))
                 RETURNING
                     id, budget_id, category, amount_usd,
                     description, entry_date, created_at
@@ -385,7 +385,7 @@ async def expense_summary(
                 FROM budget_entries be
                 JOIN travel_budgets tb ON tb.id = be.budget_id
                 WHERE tb.user_id = :uid
-                  AND (:bid IS NULL OR be.budget_id = :bid::uuid)
+                  AND (cast(:bid AS uuid) IS NULL OR be.budget_id = cast(:bid AS uuid))
                 GROUP BY be.category
                 ORDER BY total_usd DESC
                 """

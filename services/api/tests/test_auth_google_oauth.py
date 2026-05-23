@@ -223,7 +223,7 @@ async def test_google_returning_user_finds_by_identity(
         lambda **kw: real_async(transport=transport, **kw),
     )
 
-    first = await http.post("/v1/auth/google", json={"access_token": "tok1"})
+    first = await http.post("/v1/auth/google", json={"access_token": "first_visit_tok"})
     assert first.status_code == 200
     user_id = first.json()["user"]["id"]
 
@@ -245,7 +245,7 @@ async def test_google_returning_user_finds_by_identity(
         lambda **kw: real_async(transport=transport2, **kw),
     )
 
-    second = await http.post("/v1/auth/google", json={"access_token": "tok2"})
+    second = await http.post("/v1/auth/google", json={"access_token": "second_visit_tok"})
     assert second.status_code == 200
     assert second.json()["user"]["id"] == user_id  # same user
 
@@ -276,7 +276,7 @@ async def test_google_rejects_invalid_token(http: AsyncClient, monkeypatch) -> N
         lambda **kw: real_async(transport=transport, **kw),
     )
 
-    response = await http.post("/v1/auth/google", json={"access_token": "bad"})
+    response = await http.post("/v1/auth/google", json={"access_token": "bad_token_x"})
     assert response.status_code == 401
     assert response.json()["detail"]["code"] == "GOOGLE_TOKEN_INVALID"
 
@@ -298,7 +298,7 @@ async def test_google_rejects_missing_email(http: AsyncClient, monkeypatch) -> N
         lambda **kw: real_async(transport=transport, **kw),
     )
 
-    response = await http.post("/v1/auth/google", json={"access_token": "tok"})
+    response = await http.post("/v1/auth/google", json={"access_token": "valid_token_x"})
     assert response.status_code == 400
     assert response.json()["detail"]["code"] == "GOOGLE_NO_EMAIL"
 
@@ -320,6 +320,6 @@ async def test_google_rejects_missing_subject(http: AsyncClient, monkeypatch) ->
         lambda **kw: real_async(transport=transport, **kw),
     )
 
-    response = await http.post("/v1/auth/google", json={"access_token": "tok"})
+    response = await http.post("/v1/auth/google", json={"access_token": "valid_token_y"})
     assert response.status_code == 400
     assert response.json()["detail"]["code"] == "GOOGLE_NO_SUB"

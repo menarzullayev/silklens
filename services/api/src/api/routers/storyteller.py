@@ -85,7 +85,7 @@ async def list_heritage_stories(
 
     if kind is not None and kind not in _STORY_PREDICATES:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail={
                 "code": "stories.invalid_kind",
                 "message": f"kind must be one of: {', '.join(_STORY_PREDICATES)}",

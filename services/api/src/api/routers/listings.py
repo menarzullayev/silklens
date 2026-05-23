@@ -145,7 +145,7 @@ async def search_listings(
     """
     if category not in _VALID_CATEGORIES:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail={
                 "code": "listings.invalid_category",
                 "message": f"category must be one of: {', '.join(sorted(_VALID_CATEGORIES))}",
