@@ -9,7 +9,7 @@ POST /v1/trips/quick-plan   — quick itinerary for limited time (public)
 from __future__ import annotations
 
 import json
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status

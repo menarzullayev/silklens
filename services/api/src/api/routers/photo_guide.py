@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -67,7 +67,7 @@ PhotoGuideOut = AngleOut | OverlayOut
 # managed via the admin panel (system_settings / heritage_facts) — never edit
 # this file for per-site customisation in production.
 
-_ANGLE_DB: dict[str, dict] = {
+_ANGLE_DB: dict[str, dict[str, Any]] = {
     "registan": {
         "azimuth_deg": 315,
         "elevation_deg": 12,
@@ -116,7 +116,7 @@ _ANGLE_DB: dict[str, dict] = {
 }
 
 # Historical photos — public domain / CC0 only.
-_HISTORICAL_PHOTOS: dict[str, dict] = {
+_HISTORICAL_PHOTOS: dict[str, dict[str, Any]] = {
     "registan": {
         "photo_url": (
             "https://upload.wikimedia.org/wikipedia/commons/thumb"
@@ -152,8 +152,8 @@ async def _ai_angle_suggestion(
     lat: float | None,
     lng: float | None,
     lang: str,
-    settings,
-) -> dict:
+    settings: Any,
+) -> dict[str, Any]:
     """Return an AI-generated photo angle suggestion when no preset exists.
 
     Falls back gracefully to a safe default on any provider failure so the
@@ -261,11 +261,11 @@ async def photo_guide(
     site_name_lower = site_name.lower()
 
     # Locate a preset by substring match against the normalised site name.
-    angle_preset: dict | None = next(
+    angle_preset: dict[str, Any] | None = next(
         (data for key, data in _ANGLE_DB.items() if key in site_name_lower),
         None,
     )
-    hist_preset: dict | None = next(
+    hist_preset: dict[str, Any] | None = next(
         (data for key, data in _HISTORICAL_PHOTOS.items() if key in site_name_lower),
         None,
     )

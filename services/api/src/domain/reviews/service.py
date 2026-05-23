@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import Any
 from uuid import UUID
 
 from src.domain.reviews.entities import (
@@ -48,7 +49,7 @@ class ReviewService:
         language_tag: str,
         title: str | None,
         visited_at: date | None,
-        ratings: list[dict],
+        ratings: list[dict[str, Any]],
     ) -> Review:
         heritage_id = await self._repo.heritage_pub_id_to_id(heritage_pub_id)
         if heritage_id is None:
@@ -84,7 +85,7 @@ class ReviewService:
         return review
 
     @staticmethod
-    def _validate_ratings(raw: list[dict]) -> tuple[ReviewRating, ...]:
+    def _validate_ratings(raw: list[dict[str, Any]]) -> tuple[ReviewRating, ...]:
         out: list[ReviewRating] = []
         for entry in raw:
             try:

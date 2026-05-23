@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from src.domain.fundraising.entities import (
@@ -42,7 +43,7 @@ class FundraisingService:
     # Traction / public dashboard
     # -----------------------------------------------------------------------
 
-    async def get_traction_summary(self) -> dict:
+    async def get_traction_summary(self) -> dict[str, Any]:
         """Return curated traction metrics for the public investor page.
 
         Reads the two most recent KPI snapshots and computes a simple

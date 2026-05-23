@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 from uuid import UUID
 
 from src.domain.ai.entities import (
@@ -140,7 +140,7 @@ class AiService:
     # Provider invocation w/ fallback walk
     # ------------------------------------------------------------------
 
-    async def _walk_providers(self, providers: list, req: object) -> object:
+    async def _walk_providers(self, providers: list[Any], req: object) -> object:
         last_exc: Exception | None = None
         for prov in providers:
             try:
@@ -173,7 +173,7 @@ class AiService:
         latency_ms: int = 0,
         cost: float = 0.0,
         output_text: str | None = None,
-        output_jsonb: dict | None = None,
+        output_jsonb: dict[str, Any] | None = None,
     ) -> None:
         # Observability — record inference latency + token usage. The slug
         # is split provider/model so the Grafana panel can group either way.
@@ -246,7 +246,7 @@ class AiService:
                 )
 
     async def _emit_event(
-        self, *, name: str, aggregate_kind: str, aggregate_id: UUID, payload: dict
+        self, *, name: str, aggregate_kind: str, aggregate_id: UUID, payload: dict[str, Any]
     ) -> None:
         await self._repo.emit_event(
             tenant_id=self._tenant_id,
@@ -486,7 +486,7 @@ class AiService:
         query_text: str,
         language: str = "en",
         kind: str = "heritage_text",
-        filters: dict | None = None,
+        filters: dict[str, Any] | None = None,
         limit: int = 10,
     ) -> list[VectorSearchHit]:
         if not query_text.strip():

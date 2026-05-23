@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import UTC
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import text
@@ -22,7 +22,7 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 _ANALYSIS_CACHE_SECONDS = 3600
 
 
-def _fake_detection_score(reviews: list[dict]) -> tuple[float, list[str]]:
+def _fake_detection_score(reviews: list[dict[str, Any]]) -> tuple[float, list[str]]:
     """Heuristic fake review detection. Returns (authenticity_score, flags)."""
     flags: list[str] = []
     if not reviews:
@@ -58,10 +58,10 @@ def _fake_detection_score(reviews: list[dict]) -> tuple[float, list[str]]:
 
 
 async def _ai_summarize(
-    reviews: list[dict],
+    reviews: list[dict[str, Any]],
     lang: str,
-    settings_obj,
-) -> dict:
+    settings_obj: Any,
+) -> dict[str, Any]:
     """Call LLM to summarize reviews. Falls back to heuristic summary."""
     if not reviews or settings_obj.ai_use_mock_providers:
         # Heuristic summary
@@ -97,6 +97,7 @@ Return JSON only:
 
     try:
         import anthropic
+        from anthropic.types import TextBlock
 
         client = anthropic.AsyncAnthropic()
         resp = await client.messages.create(
@@ -104,7 +105,12 @@ Return JSON only:
             max_tokens=512,
             messages=[{"role": "user", "content": prompt}],
         )
-        raw = resp.content[0].text.strip()
+        # Anthropic SDK returns a union of block types; only TextBlock has .text.
+        # Find the first TextBlock or fall back to stub.
+        text_blocks = [b for b in resp.content if isinstance(b, TextBlock)]
+        if not text_blocks:
+            raise ValueError("Anthropic response contained no text blocks")
+        raw = text_blocks[0].text.strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
@@ -125,7 +131,7 @@ async def analyze_reviews(
     session: SessionDep,
     language: Annotated[str, Query(min_length=2, max_length=10)] = "en",
     _rl: None = Depends(rate_limit("10/minute", per="ip", scope="reviews:analyze")),
-) -> dict:
+) -> dict[str, Any]:
     """AI-powered review analysis: authenticity scoring + sentiment summary.
 
     Results cached per heritage site (Redis key not available here, so SQL-backed

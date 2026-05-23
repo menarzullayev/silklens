@@ -7,7 +7,7 @@ GET  /v1/me/memory-book/preview    — preview recent check-ins that would be in
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
@@ -116,7 +116,7 @@ async def generate_memory_book(
         " JOIN heritage_objects ho ON ho.id = hci.heritage_pub_id"
         " WHERE hci.user_id = :uid"
     )
-    params: dict[str, object] = {"uid": ctx.user_id, "lang": lang}
+    params: dict[str, Any] = {"uid": ctx.user_id, "lang": lang}
 
     if body.date_from:
         base_sql += " AND hci.checked_in_at >= :date_from::date"
@@ -139,7 +139,7 @@ async def generate_memory_book(
         )
 
     # Group by calendar day.
-    days: dict[str, list[dict]] = defaultdict(list)
+    days: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for v in visits:
         raw = v.get("checked_in_at")
         date_key = str(raw)[:10] if raw else "unknown"
@@ -268,7 +268,7 @@ async def preview_memory_book(
 # --- Helpers ----------------------------------------------------------------
 
 
-def _stub_narrative(visits: list[dict], lang: str) -> str:
+def _stub_narrative(visits: list[dict[str, Any]], lang: str) -> str:
     """Deterministic fallback narrative used when AI providers are unavailable."""
     site_names = [v.get("site_name") for v in visits[:3] if v.get("site_name")]
     joined = ", ".join(str(n) for n in site_names)

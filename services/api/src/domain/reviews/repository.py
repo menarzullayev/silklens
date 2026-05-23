@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import UUID
 
 from src.domain.reviews.entities import (
@@ -82,7 +82,7 @@ class ReviewRepository(Protocol):
         target_id: UUID,
         author_id: UUID,
         author_residency: str,
-        payload: dict,
+        payload: dict[str, Any],
         status: UgcStatus,
         trust_tier: str,
     ) -> UgcSubmission: ...

@@ -40,7 +40,7 @@ class GamificationService:
         source_id: UUID | None,
         delta: int,
         idempotency_key: str,
-        context: dict | None = None,
+        context: dict[str, Any] | None = None,
     ) -> tuple[XpEvent, XpBalance]:
         if delta == 0:
             raise InvalidXpDelta("delta must be non-zero")

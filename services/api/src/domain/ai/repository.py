@@ -59,7 +59,7 @@ class AiRepository(Protocol):
         input_hash: bytes,
         input_summary: str,
         output_text: str | None,
-        output_jsonb: dict | None,
+        output_jsonb: dict[str, Any] | None,
         input_tokens: int,
         output_tokens: int,
         latency_ms: int,
@@ -96,7 +96,7 @@ class AiRepository(Protocol):
         name: str,
         aggregate_kind: str,
         aggregate_id: UUID,
-        payload: dict,
+        payload: dict[str, Any],
     ) -> None: ...
 
     # ----- quota -----

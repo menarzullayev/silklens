@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import UUID
 
 from src.domain.finetuning.entities import (
@@ -53,7 +53,7 @@ class FinetuningRepository(Protocol):
         provider: JobProvider,
         base_model_slug: str,
         job_kind: JobKind,
-        hyperparams: dict,
+        hyperparams: dict[str, Any],
     ) -> FinetuningJob: ...
 
     async def get_job(self, job_id: UUID) -> FinetuningJob | None: ...

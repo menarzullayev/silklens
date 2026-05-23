@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
+from typing import Any
 from uuid import UUID
 
 # ---------------------------------------------------------------------------
@@ -118,8 +119,8 @@ class FinetuningExample:
     language_tag: str
     is_approved: bool
     created_at: datetime
-    input_metadata: dict = None  # type: ignore[assignment]
-    output_metadata: dict = None  # type: ignore[assignment]
+    input_metadata: dict[str, Any] = None  # type: ignore[assignment]
+    output_metadata: dict[str, Any] = None  # type: ignore[assignment]
     quality_score: Decimal | None = None
     source_id: UUID | None = None
     approved_by: UUID | None = None
@@ -141,13 +142,13 @@ class FinetuningJob:
     base_model_slug: str
     job_kind: JobKind
     status: JobStatus
-    hyperparams: dict
+    hyperparams: dict[str, Any]
     created_at: datetime
     provider_job_id: str | None = None
     started_at: datetime | None = None
     finished_at: datetime | None = None
     output_model_slug: str | None = None
-    eval_metrics: dict = None  # type: ignore[assignment]
+    eval_metrics: dict[str, Any] = None  # type: ignore[assignment]
     cost_usd: Decimal | None = None
 
     def __post_init__(self) -> None:

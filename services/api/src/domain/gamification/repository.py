@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import UUID
 
 from src.domain.gamification.entities import (
@@ -28,7 +28,7 @@ class GamificationRepository(Protocol):
         source_id: UUID | None,
         delta: int,
         idempotency_key: str,
-        context: dict,
+        context: dict[str, Any],
         tenant_id: UUID,
     ) -> tuple[XpEvent, bool]:
         """Returns (event, was_created). When the idempotency key collides we

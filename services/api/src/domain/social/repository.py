@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import UUID
 
 from src.domain.social.entities import (
@@ -93,7 +93,7 @@ class ActivityFeedRepository(Protocol):
         target_kind: str | None = None,
         target_id: UUID | None = None,
         visibility: str = "public",
-        payload: dict | None = None,
+        payload: dict[str, Any] | None = None,
     ) -> UUID: ...
 
     async def fanout_to_followers(self, *, event_id: UUID) -> int:

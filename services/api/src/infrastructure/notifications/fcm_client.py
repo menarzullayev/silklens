@@ -121,17 +121,26 @@ class FcmHttpV1Client:
             "scope": self._FCM_SCOPE,
         }
 
-        def _b64(data: dict) -> bytes:
+        def _b64(data: dict[str, Any]) -> bytes:
             return base64.urlsafe_b64encode(json.dumps(data).encode()).rstrip(b"=")
 
         signing_input = _b64(header) + b"." + _b64(payload)
+
+        from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 
         private_key = serialization.load_pem_private_key(
             self._creds["private_key"].encode(),
             password=None,
             backend=default_backend(),
         )
-        signature = private_key.sign(signing_input, padding.PKCS1v15(), hashes.SHA256())  # type: ignore[arg-type]
+        # Firebase service account keys are RSA — the key union from load_pem
+        # would otherwise force us into a wide isinstance ladder for every
+        # cryptography algorithm. Narrow once, fail loudly if assumption breaks.
+        if not isinstance(private_key, RSAPrivateKey):
+            raise TypeError(
+                f"Firebase service account key must be RSA, got {type(private_key).__name__}"
+            )
+        signature = private_key.sign(signing_input, padding.PKCS1v15(), hashes.SHA256())
         jwt_token = signing_input + b"." + base64.urlsafe_b64encode(signature).rstrip(b"=")
 
         async with httpx.AsyncClient(timeout=15.0) as client:
@@ -156,7 +165,7 @@ class FcmHttpV1Client:
         body: str,
         data: dict[str, str] | None = None,
         image_url: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         notification: dict[str, Any] = {"title": title, "body": body}
         if image_url:
             notification["image"] = image_url
@@ -190,7 +199,8 @@ class FcmHttpV1Client:
             )
 
         if resp.status_code == 200:
-            return resp.json().get("name")
+            name = resp.json().get("name")
+            return str(name) if name is not None else None
 
         # 404 = invalid token (deregister it)
         if resp.status_code == 404:
