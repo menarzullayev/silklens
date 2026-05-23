@@ -13,6 +13,9 @@ import 'package:silklens/presentation/pages/billing/checkout_page.dart';
 import 'package:silklens/presentation/pages/billing/invoices_page.dart';
 import 'package:silklens/presentation/pages/billing/manage_subscription_page.dart';
 import 'package:silklens/presentation/pages/billing/plans_page.dart';
+import 'package:silklens/presentation/pages/billing/tickets_page.dart';
+import 'package:silklens/presentation/pages/settings/emergency_page.dart';
+import 'package:silklens/presentation/pages/map/weather_guide_page.dart';
 import 'package:silklens/presentation/pages/camera/camera_page.dart';
 import 'package:silklens/presentation/pages/gamification/badges_page.dart';
 import 'package:silklens/presentation/pages/gamification/leaderboard_page.dart';
@@ -322,8 +325,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/audio-guide',
-        pageBuilder: (ctx, state) =>
-            _slideUpPage(ctx, state, const AudioGuidePage()),
+        pageBuilder: (ctx, state) => _slideUpPage(
+          ctx,
+          state,
+          AudioGuidePage(
+            heritagePubId: state.uri.queryParameters['pubId'],
+            heritageText: state.uri.queryParameters['text'],
+          ),
+        ),
       ),
       GoRoute(
         path: '/billing',
@@ -332,8 +341,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/billing/checkout',
-        pageBuilder: (ctx, state) =>
-            _slideUpPage(ctx, state, const CheckoutPage()),
+        pageBuilder: (ctx, state) => _slideUpPage(
+          ctx,
+          state,
+          CheckoutPage(
+            planSlug: state.uri.queryParameters['plan'],
+          ),
+        ),
       ),
       GoRoute(
         path: '/billing/invoices',
@@ -344,6 +358,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/billing/manage',
         pageBuilder: (ctx, state) =>
             _slideRightPage(ctx, state, const ManageSubscriptionPage()),
+      ),
+      GoRoute(
+        path: '/billing/tickets',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const TicketsPage()),
+      ),
+      GoRoute(
+        path: '/emergency',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const EmergencyPage()),
+      ),
+      GoRoute(
+        path: '/weather',
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const WeatherGuidePage()),
       ),
       GoRoute(
         path: '/social/profile',

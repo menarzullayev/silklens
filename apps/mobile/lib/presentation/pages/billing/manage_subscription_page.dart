@@ -1,14 +1,61 @@
+// SILK-0106 — Manage subscription page wired to billingProvider (real API).
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/core/l10n/app_strings.dart';
+import 'package:silklens/core/l10n/locale_service.dart';
+import 'package:silklens/presentation/providers/billing_provider.dart';
 
-class ManageSubscriptionPage extends StatelessWidget {
+class ManageSubscriptionPage extends ConsumerWidget {
   const ManageSubscriptionPage({super.key});
 
   static const _bg = Color(0xFF0D2337);
   static const _gold = Color(0xFFB78628);
 
+  String _s(String locale, String key) => AppStrings.get(locale, key);
+
+  String _planDisplayName(Map<String, dynamic>? sub, String locale) {
+    if (sub == null) return AppStrings.get(locale, 'billing_plan_free');
+    final raw = sub['plan_display_name'] ?? sub['plan_slug'] ?? '';
+    if (raw is Map) {
+      return (raw[locale] as String?) ??
+          (raw['en'] as String?) ??
+          sub['plan_slug'] as String? ??
+          '';
+    }
+    return raw as String;
+  }
+
+  // Map entitlement slugs to icon + label key + unit key.
+  static const _entitlementMeta = <String, (IconData, String, String)>{
+    'ai_recognition_daily': (
+      Icons.psychology_rounded,
+      'billing_stat_ai',
+      'billing_unit_times',
+    ),
+    'tts_monthly': (
+      Icons.headphones_rounded,
+      'billing_stat_audio',
+      'billing_unit_items',
+    ),
+    'ar_sessions_monthly': (
+      Icons.view_in_ar_rounded,
+      'billing_stat_ar',
+      'billing_unit_times',
+    ),
+    'storage_mb': (
+      Icons.cloud_rounded,
+      'billing_stat_storage',
+      'billing_unit_mb',
+    ),
+  };
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locale = LocaleService.instance.locale;
+    final billing = ref.watch(billingProvider);
+
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
@@ -21,40 +68,63 @@ class ManageSubscriptionPage extends StatelessWidget {
             size: 20,
           ),
         ),
-        title: const Text(
-          'Obunani boshqarish',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          _s(locale, 'billing_manage_title'),
+          style: const TextStyle(color: Colors.white),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _heroPlanCard(),
-            const SizedBox(height: 20),
-            const Text(
-              'Foydalanish statistikasi',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
+      body: billing.isLoading
+          ? const Center(child: CircularProgressIndicator(color: _gold))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _heroPlanCard(billing, locale),
+                  const SizedBox(height: 20),
+                  Text(
+                    _s(locale, 'billing_usage_title'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _usageGrid(billing, locale),
+                  const SizedBox(height: 20),
+                  _paymentMethodRow(context, locale),
+                  const SizedBox(height: 20),
+                  _actionButtons(context, ref, billing, locale),
+                  if (billing.error != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      billing.error!,
+                      style: const TextStyle(
+                        color: Color(0xFFEF5350),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            _usageGrid(),
-            const SizedBox(height: 20),
-            _paymentMethodRow(context),
-            const SizedBox(height: 20),
-            _actionButtons(context),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _heroPlanCard() {
+  Widget _heroPlanCard(BillingState billing, String locale) {
+    final sub = billing.currentSubscription;
+    final planName = _planDisplayName(sub, locale);
+    final isActive = billing.hasActiveSubscription;
+    final nextPayment = sub?['current_period_end'] as String? ?? '—';
+    final startedAt = sub?['current_period_start'] as String? ?? '—';
+    final priceAmt = sub?['price_amount'];
+    final currency = sub?['currency'] as String? ?? '';
+    final priceLabel = priceAmt != null
+        ? '$priceAmt $currency / ${_s(locale, 'billing_month')}'
+        : _s(locale, 'billing_free');
+
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
@@ -74,9 +144,9 @@ class ManageSubscriptionPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Explorer ⭐',
-                      style: TextStyle(
+                    Text(
+                      planName,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
@@ -84,7 +154,7 @@ class ManageSubscriptionPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Keyingi to'lov: 2026-06-01",
+                      '${_s(locale, 'billing_next_payment')}: $nextPayment',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.5),
                         fontSize: 12,
@@ -99,15 +169,22 @@ class ManageSubscriptionPage extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFB78628), Color(0xFFE5C97A)],
-                  ),
+                  gradient: isActive
+                      ? const LinearGradient(
+                          colors: [Color(0xFFB78628), Color(0xFFE5C97A)],
+                        )
+                      : null,
+                  color: isActive ? null : Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
-                  'FAOL',
+                child: Text(
+                  isActive
+                      ? _s(locale, 'billing_status_active')
+                      : _s(locale, 'billing_status_inactive'),
                   style: TextStyle(
-                    color: Color(0xFF1A1200),
+                    color: isActive
+                        ? const Color(0xFF1A1200)
+                        : Colors.white.withValues(alpha: 0.5),
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
@@ -118,11 +195,23 @@ class ManageSubscriptionPage extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              _planDetail(Icons.calendar_today_rounded, '2026-05-01', 'Boshlangan'),
+              _planDetail(
+                Icons.calendar_today_rounded,
+                startedAt,
+                _s(locale, 'billing_started'),
+              ),
               const SizedBox(width: 20),
-              _planDetail(Icons.attach_money_rounded, "29,900 so'm", 'Oylik'),
+              _planDetail(
+                Icons.attach_money_rounded,
+                priceLabel,
+                _s(locale, 'billing_price'),
+              ),
               const SizedBox(width: 20),
-              _planDetail(Icons.loop_rounded, 'Avtomatik', 'Yangilash'),
+              _planDetail(
+                Icons.loop_rounded,
+                _s(locale, 'billing_auto_renew'),
+                _s(locale, 'billing_renewal'),
+              ),
             ],
           ),
         ],
@@ -160,13 +249,36 @@ class ManageSubscriptionPage extends StatelessWidget {
     );
   }
 
-  Widget _usageGrid() {
-    const stats = [
-      (Icons.psychology_rounded, 'AI Tanish', 23, 50, 'marta'),
-      (Icons.headphones_rounded, 'Audio', 7, 20, 'ta'),
-      (Icons.view_in_ar_rounded, 'AR', 2, 5, 'marta'),
-      (Icons.cloud_rounded, 'Saqlash', 340, 1024, 'MB'),
+  Widget _usageGrid(BillingState billing, String locale) {
+    // Build stats from entitlements when available; fall back to sensible
+    // defaults so the grid is never empty.
+    final entMap = <String, Map<String, dynamic>>{
+      for (final e in billing.entitlements)
+        if (e['slug'] is String) e['slug'] as String: e,
+    };
+
+    final slugOrder = [
+      'ai_recognition_daily',
+      'tts_monthly',
+      'ar_sessions_monthly',
+      'storage_mb',
     ];
+
+    final stats = slugOrder.map((slug) {
+      final meta = _entitlementMeta[slug];
+      final ent = entMap[slug];
+      final icon = meta?.$1 ?? Icons.star_rounded;
+      final labelKey = meta?.$2 ?? 'billing_stat_ai';
+      final unitKey = meta?.$3 ?? 'billing_unit_times';
+
+      final used = (ent?['used'] as num?)?.toInt() ?? 0;
+      final limit = (ent?['limit'] as num?)?.toInt() ?? 0;
+      // -1 means unlimited.
+      final isUnlimited = limit < 0;
+
+      return (icon, labelKey, unitKey, used, limit, isUnlimited);
+    }).toList();
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -178,8 +290,15 @@ class ManageSubscriptionPage extends StatelessWidget {
         childAspectRatio: 1.55,
       ),
       itemBuilder: (_, i) {
-        final (icon, label, used, total, unit) = stats[i];
-        final pct = used / total;
+        final (icon, labelKey, unitKey, used, limit, isUnlimited) = stats[i];
+        final pct = (isUnlimited || limit == 0)
+            ? 0.0
+            : (used / limit).clamp(0.0, 1.0);
+        final limitLabel = isUnlimited
+            ? _s(locale, 'billing_unlimited')
+            : limit.toString();
+        final unit = _s(locale, unitKey);
+
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -195,7 +314,7 @@ class ManageSubscriptionPage extends StatelessWidget {
                   Icon(icon, color: _gold, size: 16),
                   const SizedBox(width: 6),
                   Text(
-                    label,
+                    _s(locale, labelKey),
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.55),
                       fontSize: 11,
@@ -205,7 +324,9 @@ class ManageSubscriptionPage extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                '$used / $total $unit',
+                isUnlimited
+                    ? '$used / $limitLabel'
+                    : '$used / $limit $unit',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 13,
@@ -216,7 +337,7 @@ class ManageSubscriptionPage extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
-                  value: pct.clamp(0.0, 1.0),
+                  value: isUnlimited ? 0.0 : pct,
                   backgroundColor: Colors.white.withValues(alpha: 0.1),
                   valueColor: AlwaysStoppedAnimation<Color>(
                     pct > 0.8 ? const Color(0xFFEF5350) : _gold,
@@ -231,7 +352,7 @@ class ManageSubscriptionPage extends StatelessWidget {
     );
   }
 
-  Widget _paymentMethodRow(BuildContext context) {
+  Widget _paymentMethodRow(BuildContext context, String locale) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
@@ -254,16 +375,18 @@ class ManageSubscriptionPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Visa •••• 4242',
-                  style: TextStyle(
+                // Payment method details come from backend in Phase 2;
+                // show a placeholder label until then.
+                Text(
+                  _s(locale, 'billing_payment_placeholder'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
-                  'Amal qilish muddati: 12/27',
+                  _s(locale, 'billing_payment_coming_soon'),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.4),
                     fontSize: 11,
@@ -280,9 +403,9 @@ class ManageSubscriptionPage extends StatelessWidget {
                 border: Border.all(color: _gold.withValues(alpha: 0.5)),
                 borderRadius: BorderRadius.circular(9),
               ),
-              child: const Text(
-                "O'zgartirish",
-                style: TextStyle(
+              child: Text(
+                _s(locale, 'billing_change'),
+                style: const TextStyle(
                   color: _gold,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -295,10 +418,14 @@ class ManageSubscriptionPage extends StatelessWidget {
     );
   }
 
-  Widget _actionButtons(BuildContext context) {
+  Widget _actionButtons(
+    BuildContext context,
+    WidgetRef ref,
+    BillingState billing,
+    String locale,
+  ) {
     return Column(
       children: [
-        // Upgrade button
         GestureDetector(
           onTap: () => context.go('/billing'),
           child: Container(
@@ -317,16 +444,19 @@ class ManageSubscriptionPage extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Center(
+            child: Center(
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.rocket_launch_rounded,
-                      color: Color(0xFF1A1200), size: 18,),
-                  SizedBox(width: 8),
+                  const Icon(
+                    Icons.rocket_launch_rounded,
+                    color: Color(0xFF1A1200),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
                   Text(
-                    'Heritage Pro ga yuksalish',
-                    style: TextStyle(
+                    _s(locale, 'billing_upgrade_btn'),
+                    style: const TextStyle(
                       color: Color(0xFF1A1200),
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
@@ -338,9 +468,10 @@ class ManageSubscriptionPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        // Cancel button
         GestureDetector(
-          onTap: () => _showCancelDialog(context),
+          onTap: billing.hasActiveSubscription
+              ? () => _showCancelDialog(context, ref, locale)
+              : null,
           child: Container(
             height: 52,
             width: double.infinity,
@@ -348,38 +479,59 @@ class ManageSubscriptionPage extends StatelessWidget {
               color: const Color(0xFFEF5350).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: const Color(0xFFEF5350).withValues(alpha: 0.35),
-              ),
-            ),
-            child: Center(
-              child: Text(
-                'Obunani bekor qilish',
-                style: TextStyle(
-                  color: const Color(0xFFEF5350).withValues(alpha: 0.85),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
+                color: const Color(0xFFEF5350).withValues(
+                  alpha: billing.hasActiveSubscription ? 0.35 : 0.15,
                 ),
               ),
             ),
+            child: billing.isCancelling
+                ? const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFFEF5350),
+                      ),
+                    ),
+                  )
+                : Center(
+                    child: Text(
+                      _s(locale, 'billing_cancel_btn'),
+                      style: TextStyle(
+                        color: const Color(0xFFEF5350).withValues(
+                          alpha: billing.hasActiveSubscription ? 0.85 : 0.4,
+                        ),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
           ),
         ),
       ],
     );
   }
 
-  void _showCancelDialog(BuildContext context) {
+  void _showCancelDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String locale,
+  ) {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF0F2A3D),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Obunani bekor qilish',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        title: Text(
+          _s(locale, 'billing_cancel_title'),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         content: Text(
-          'Haqiqatan ham obunani bekor qilmoqchimisiz? '
-          'Joriy davr tugaguniga qadar xizmatdan foydalanishingiz mumkin.',
+          _s(locale, 'billing_cancel_body'),
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.6),
             fontSize: 13,
@@ -389,19 +541,32 @@ class ManageSubscriptionPage extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Qaytish',
-              style: TextStyle(color: _gold, fontWeight: FontWeight.w600),
+            child: Text(
+              _s(locale, 'billing_cancel_go_back'),
+              style: const TextStyle(
+                color: _gold,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              context.go('/billing');
+              final ok = await ref
+                  .read(billingProvider.notifier)
+                  .cancelSubscription();
+              if (!ok && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(_s(locale, 'billing_cancel_error')),
+                    backgroundColor: const Color(0xFFEF5350),
+                  ),
+                );
+              }
             },
-            child: const Text(
-              'Bekor qilish',
-              style: TextStyle(
+            child: Text(
+              _s(locale, 'billing_cancel_confirm'),
+              style: const TextStyle(
                 color: Color(0xFFEF5350),
                 fontWeight: FontWeight.w700,
               ),

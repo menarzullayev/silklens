@@ -1,72 +1,45 @@
-import 'package:flutter/material.dart';
+// SILK-0107 — Invoices page wired to invoicesProvider (real API).
 
-class InvoicesPage extends StatefulWidget {
+import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/core/l10n/app_strings.dart';
+import 'package:silklens/core/l10n/locale_service.dart';
+import 'package:silklens/presentation/providers/billing_provider.dart';
+
+class InvoicesPage extends ConsumerStatefulWidget {
   const InvoicesPage({super.key});
 
   @override
-  State<InvoicesPage> createState() => _InvoicesPageState();
+  ConsumerState<InvoicesPage> createState() => _InvoicesPageState();
 }
 
-class _InvoicesPageState extends State<InvoicesPage> {
+class _InvoicesPageState extends ConsumerState<InvoicesPage> {
   static const _bg = Color(0xFF0D2337);
   static const _gold = Color(0xFFB78628);
 
-  String _yearFilter = 'Hammasi';
+  String _yearFilter = 'all';
 
-  static const _invoices = [
-    (
-      '2026-05-01',
-      'Explorer ⭐',
-      '29,900',
-      'paid',
-    ),
-    (
-      '2026-04-01',
-      'Explorer ⭐',
-      '29,900',
-      'paid',
-    ),
-    (
-      '2026-03-01',
-      'Heritage Pro 💎',
-      '89,900',
-      'paid',
-    ),
-    (
-      '2026-02-01',
-      'Explorer ⭐',
-      '29,900',
-      'failed',
-    ),
-    (
-      '2026-01-01',
-      'Explorer ⭐',
-      '29,900',
-      'paid',
-    ),
-    (
-      '2025-12-01',
-      'Bepul',
-      '0',
-      'paid',
-    ),
-    (
-      '2025-11-01',
-      'Explorer ⭐',
-      '29,900',
-      'pending',
-    ),
-    (
-      '2025-10-01',
-      'Explorer ⭐',
-      '29,900',
-      'paid',
-    ),
-  ];
+  String _s(String key) =>
+      AppStrings.get(LocaleService.instance.locale, key);
 
-  List<(String, String, String, String)> get _filtered {
-    if (_yearFilter == 'Hammasi') return _invoices;
-    return _invoices.where((inv) => inv.$1.startsWith(_yearFilter)).toList();
+  List<Map<String, dynamic>> _applyFilter(
+    List<Map<String, dynamic>> invoices,
+  ) {
+    if (_yearFilter == 'all') return invoices;
+    return invoices.where((inv) {
+      final date = inv['created_at'] as String? ?? '';
+      return date.startsWith(_yearFilter);
+    }).toList();
+  }
+
+  /// Extract distinct years from the invoice list, sorted descending.
+  List<String> _years(List<Map<String, dynamic>> invoices) {
+    final years = <String>{};
+    for (final inv in invoices) {
+      final date = inv['created_at'] as String? ?? '';
+      if (date.length >= 4) years.add(date.substring(0, 4));
+    }
+    return years.toList()..sort((a, b) => b.compareTo(a));
   }
 
   @override
@@ -83,70 +56,121 @@ class _InvoicesPageState extends State<InvoicesPage> {
             size: 20,
           ),
         ),
-        title: const Text(
-          "To'lov tarixi",
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          _s('billing_invoices_title'),
+          style: const TextStyle(color: Colors.white),
         ),
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _yearFilterChips(),
-          Expanded(child: _invoiceList()),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            onPressed: () => ref.invalidate(invoicesProvider),
+            tooltip: _s('billing_retry'),
+          ),
         ],
       ),
+      body: ref.watch(invoicesProvider).when(
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: _gold),
+            ),
+            error: (err, _) => Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _s('billing_load_error'),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  GestureDetector(
+                    onTap: () => ref.invalidate(invoicesProvider),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _gold.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _gold.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Text(
+                        _s('billing_retry'),
+                        style: const TextStyle(
+                          color: _gold,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            data: (invoices) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _yearFilterChips(invoices),
+                Expanded(child: _invoiceList(_applyFilter(invoices))),
+              ],
+            ),
+          ),
     );
   }
 
-  Widget _yearFilterChips() {
-    const years = ['Hammasi', '2026', '2025'];
+  Widget _yearFilterChips(List<Map<String, dynamic>> invoices) {
+    final years = _years(invoices);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
-          children: years.map((y) {
-            final active = _yearFilter == y;
-            return GestureDetector(
-              onTap: () => setState(() => _yearFilter = y),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: active ? _gold : Colors.white.withValues(alpha: 0.07),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: active
-                        ? _gold
-                        : Colors.white.withValues(alpha: 0.15),
-                  ),
-                ),
-                child: Text(
-                  y,
-                  style: TextStyle(
-                    color: active ? const Color(0xFF1A1200) : Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
+          children: [
+            _chip('all', _s('billing_filter_all')),
+            ...years.map((y) => _chip(y, y)),
+          ],
         ),
       ),
     );
   }
 
-  Widget _invoiceList() {
-    final items = _filtered;
+  Widget _chip(String value, String label) {
+    final active = _yearFilter == value;
+    return GestureDetector(
+      onTap: () => setState(() => _yearFilter = value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? _gold : Colors.white.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: active ? _gold : Colors.white.withValues(alpha: 0.15),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: active ? const Color(0xFF1A1200) : Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _invoiceList(List<Map<String, dynamic>> items) {
     if (items.isEmpty) {
       return Center(
         child: Text(
-          "Bu yil uchun hisob-faktura yo'q",
+          _s('billing_invoices_empty'),
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.4),
             fontSize: 14,
@@ -154,6 +178,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
         ),
       );
     }
+
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: items.length,
@@ -162,8 +187,15 @@ class _InvoicesPageState extends State<InvoicesPage> {
     );
   }
 
-  Widget _invoiceRow((String, String, String, String) inv) {
-    final (date, plan, amount, status) = inv;
+  Widget _invoiceRow(Map<String, dynamic> inv) {
+    final date = inv['created_at'] as String? ?? '';
+    final planName = inv['plan_display_name'] as String? ??
+        inv['plan_slug'] as String? ??
+        '—';
+    final amount = inv['amount_due'] as num? ?? 0;
+    final currency = inv['currency'] as String? ?? '';
+    final status = inv['status'] as String? ?? 'unknown';
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
@@ -173,7 +205,6 @@ class _InvoicesPageState extends State<InvoicesPage> {
       ),
       child: Row(
         children: [
-          // Date column
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -187,7 +218,7 @@ class _InvoicesPageState extends State<InvoicesPage> {
               ),
               const SizedBox(height: 2),
               Text(
-                plan,
+                planName,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.45),
                   fontSize: 11,
@@ -196,9 +227,10 @@ class _InvoicesPageState extends State<InvoicesPage> {
             ],
           ),
           const Spacer(),
-          // Amount
           Text(
-            amount == '0' ? 'Bepul' : "$amount so'm",
+            amount == 0
+                ? _s('billing_free')
+                : '$amount $currency',
             style: const TextStyle(
               color: _gold,
               fontSize: 14,
@@ -206,11 +238,10 @@ class _InvoicesPageState extends State<InvoicesPage> {
             ),
           ),
           const SizedBox(width: 10),
-          // Status badge
           _statusBadge(status),
           const SizedBox(width: 10),
-          // Download button
           GestureDetector(
+            // PDF download is Phase 2; tap is intentionally no-op for now.
             onTap: () {},
             child: Container(
               padding: const EdgeInsets.all(7),
@@ -236,21 +267,23 @@ class _InvoicesPageState extends State<InvoicesPage> {
   Widget _statusBadge(String status) {
     late Color bg;
     late Color fg;
-    late String label;
+    late String key;
+
     switch (status) {
       case 'paid':
         bg = const Color(0xFF1B4332);
         fg = const Color(0xFF4CAF50);
-        label = "To'langan";
+        key = 'billing_status_paid';
       case 'pending':
         bg = const Color(0xFF3D2800);
         fg = _gold;
-        label = 'Kutilmoqda';
+        key = 'billing_status_pending';
       default:
         bg = const Color(0xFF3D1010);
         fg = const Color(0xFFEF5350);
-        label = 'Rad etilgan';
+        key = 'billing_status_failed';
     }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -258,31 +291,22 @@ class _InvoicesPageState extends State<InvoicesPage> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        label,
+        _s(key),
         style: TextStyle(color: fg, fontSize: 10, fontWeight: FontWeight.w700),
       ),
     );
   }
 
   String _formatDate(String iso) {
-    final parts = iso.split('-');
+    if (iso.length < 10) return iso;
+    final parts = iso.substring(0, 10).split('-');
     if (parts.length < 3) return iso;
     const months = [
       '',
-      'Yan',
-      'Fev',
-      'Mar',
-      'Apr',
-      'May',
-      'Iyn',
-      'Iyl',
-      'Avg',
-      'Sen',
-      'Okt',
-      'Noy',
-      'Dek',
+      'Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn',
+      'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek',
     ];
     final m = int.tryParse(parts[1]) ?? 0;
-    return '${parts[2]} ${months[m]} ${parts[0]}';
+    return '${parts[2]} ${m > 0 && m < 13 ? months[m] : parts[1]} ${parts[0]}';
   }
 }

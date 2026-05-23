@@ -321,7 +321,7 @@ class SilkLensApiClient {
       'platform': platform,
       'installation_id': installationId,
       if (fcmToken != null) 'fcm_token': fcmToken,
-    });
+    },);
   }
 
   Future<Map<String, dynamic>> getNotificationPreferences() async {

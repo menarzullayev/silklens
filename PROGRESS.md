@@ -241,7 +241,12 @@ git push --no-verify  # emergency bypass
 ### Jarayonda (qoldiq)
 - [🔄] **SILK-0014** 🟢 **EPIC-006 Domain Entities** — heritage_object, review, booking stub'lari to'ldirilmoqda
 - [🔄] **SILK-0015** 🟢 **EPIC-007 Discovery & Heritage** — search filters, AR overlay placeholder
-- [🔄] **SILK-0016** 🟢 **EPIC-008 Gamification** — XP dashboard, badges grid, leaderboard live data
+- [✅] **SILK-0016** 🟢 **EPIC-008 Gamification** — XP dashboard, badges grid, leaderboard live data
+- [✅] **SILK-0108** 🟢 Wire XpDashboardPage to gamificationProvider (real API)
+- [✅] **SILK-0109** 🟢 Wire BadgesPage to badgesProvider (real API, Badge name-clash fix)
+- [✅] **SILK-0110** 🟢 Wire LeaderboardPage to leaderboardEntriesProvider (real API, period toggle)
+- [✅] **SILK-0111** 🟢 Wire MissionsPage to gamificationProvider (XP snapshot card)
+- [✅] **SILK-0112** 🟢 GamificationRepositoryImpl + SilkLensApiClient gamification section
 - [🔄] **SILK-0017** 🟢 **EPIC-009 Social & Community** — activity feed pagination, notifications
 - [🔄] **SILK-0018** 🟡 **EPIC-010 Billing** — checkout sahifa real Stripe flow
 - [🔄] **SILK-0019** 🟢 **EPIC-011 Settings & Account** — language settings dinamik vocab, GDPR delete flow
@@ -384,6 +389,14 @@ git push --no-verify  # emergency bypass
 ### Flutter Mobile — Settings + Profile + Auth Extension API Wiring (2026-05-23)
 
 - [✅] **SILK-0171** `NotificationPrefsPage` converted to `ConsumerStatefulWidget`; `initState` calls `_loadPreferences()` → `GET /v1/notifications/preferences`; maps `category_slug`/`channel`/`enabled` to 9 local toggles + 3 channel toggles + quiet-hours bool; each toggle change fires `PATCH /v1/notifications/preferences [{category_slug, enabled}]` or `updateNotificationPreferences([{channel, enabled}])`; quiet-hours toggle calls `updateQuietHours(timezone: Asia/Tashkent, startTime, endTime, weekdays)`; error SnackBar via `notif_prefs_save_error` + `notif_quiet_hours_error` i18n keys; `mounted` guards on all async paths; `SilkLensApiClient` extended with `registerPushDevice` + `getDataExportStatus`; `PrivacyGDPRPage` converted to `ConsumerStatefulWidget`; "Yuklab olish" button calls `POST /v1/me/data-export`, shows `AlertDialog` with `privacy_export_title/body/id` keys + request_id, loading spinner during request, error SnackBar via `privacy_export_error`; `_ActionRow` supports `loading` flag + nullable `onTap`; `DeleteAccountPage` converted to `ConsumerStatefulWidget`; delete button calls `SilkLensApiClient.requestAccountDeletion()`, shows `delete_account_scheduled` SnackBar, then calls `authNotifierProvider.logout()`, then `context.go('/')`; loading spinner replaces button text; fixed `_showEditNameDialog` in `UserProfilePage` to remove invalid re-login call after profile update; all 4 locales pre-existing
+
+### Flutter Mobile — Billing API Wiring (2026-05-23)
+
+- [✅] **SILK-0104** `BillingRepositoryImpl` implemented (was stub): wraps `SilkLensApiClient` billing methods `getBillingPlans`, `getCurrentSubscription`, `getInvoices`, `getEntitlements`, `cancelSubscription`; `billingRepositoryProvider` exposed via Riverpod.
+- [✅] **SILK-0105** `PlansPage` + `CheckoutPage` converted to `ConsumerStatefulWidget`/`ConsumerStatefulWidget` reading `billingProvider`: loading/error/retry states; plan cards rendered from `state.plans`; "Current Plan" badge from `state.currentPlanSlug`; `CheckoutPage` receives `planSlug` from router query param `?plan=`; pay button shows "coming soon" dialog (Phase 2 Stripe/Payme); router updated to pass `planSlug`.
+- [✅] **SILK-0106** `ManageSubscriptionPage` converted to `ConsumerWidget` reading `billingProvider`: hero card shows real plan name, next-payment date, price from subscription; usage grid maps entitlement slugs `ai_recognition_daily` / `tts_monthly` / `ar_sessions_monthly` / `storage_mb` to stat cells with live used/limit; cancel button calls `billingNotifier.cancelSubscription()` via dialog; `isCancelling` spinner; error SnackBar.
+- [✅] **SILK-0107** `InvoicesPage` converted to `ConsumerStatefulWidget` reading `invoicesProvider` (`FutureProvider`); loading/error/retry/empty states; year filter chips derived from invoice `created_at` dates; invoice rows show `amount_due`, `currency`, `status`; `ref.invalidate(invoicesProvider)` refresh button.
+- 68 locale keys added across all 4 locales (en/uz/ru/zh) covering billing_plans_title … billing_badge_pci; `SilkLensApiClient` extended with `getBillingPlans`, `getCurrentSubscription`, `getInvoices`, `getEntitlements`, `cancelSubscription`.
 
 ### Technical Debt
 

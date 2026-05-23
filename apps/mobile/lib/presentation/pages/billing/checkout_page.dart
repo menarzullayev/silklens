@@ -1,24 +1,38 @@
+// SILK-0105 — Checkout page: reads real plan from billingProvider.
+// Stripe / Payme integration is Phase 2; pay button shows an informational
+// notice rather than navigating to a mock success screen.
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/core/l10n/app_strings.dart';
+import 'package:silklens/core/l10n/locale_service.dart';
+import 'package:silklens/presentation/providers/billing_provider.dart';
 
-class CheckoutPage extends StatefulWidget {
-  const CheckoutPage({super.key});
+class CheckoutPage extends ConsumerStatefulWidget {
+  /// [planSlug] is set by the router query parameter `?plan=<slug>`.
+  const CheckoutPage({super.key, this.planSlug});
+
+  final String? planSlug;
 
   @override
-  State<CheckoutPage> createState() => _CheckoutPageState();
+  ConsumerState<CheckoutPage> createState() => _CheckoutPageState();
 }
 
-class _CheckoutPageState extends State<CheckoutPage> {
+class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   static const _bg = Color(0xFF0D2337);
   static const _gold = Color(0xFFB78628);
 
-  int _paymentMethod = 0; // 0=Karta, 1=Payme, 2=Click, 3=PayPal
+  int _paymentMethod = 0; // 0=Card, 1=Payme, 2=Click, 3=PayPal
 
   final _cardNumberCtrl = TextEditingController();
   final _expiryCtrl = TextEditingController();
   final _cvvCtrl = TextEditingController();
   final _cardHolderCtrl = TextEditingController();
+  final _couponCtrl = TextEditingController();
+
+  String _s(String key) =>
+      AppStrings.get(LocaleService.instance.locale, key);
 
   @override
   void dispose() {
@@ -26,18 +40,218 @@ class _CheckoutPageState extends State<CheckoutPage> {
     _expiryCtrl.dispose();
     _cvvCtrl.dispose();
     _cardHolderCtrl.dispose();
+    _couponCtrl.dispose();
     super.dispose();
   }
 
-  static const _methods = [
-    (Icons.credit_card, 'Karta', 'Visa / Mastercard'),
-    (Icons.account_balance_wallet, 'Payme', 'Payme hamyon'),
-    (Icons.payments_outlined, 'Click', "Click to'lov"),
-    (Icons.language, 'PayPal', 'PayPal xalqaro'),
-  ];
+  Map<String, dynamic>? _resolvePlan(BillingState billing) {
+    if (billing.plans.isEmpty) return null;
+    final slug = widget.planSlug;
+    if (slug != null) {
+      try {
+        return billing.plans
+            .firstWhere((p) => p['slug'] == slug);
+      } catch (_) {
+        // slug not found — fall through to first paid plan
+      }
+    }
+    // Default: first non-free plan
+    try {
+      return billing.plans
+          .firstWhere((p) => (p['slug'] as String? ?? '') != 'free');
+    } catch (_) {
+      return billing.plans.first;
+    }
+  }
+
+  String _displayName(Map<String, dynamic>? plan) {
+    if (plan == null) return '—';
+    final raw = plan['display_name'];
+    if (raw is Map) {
+      final locale = LocaleService.instance.locale;
+      return (raw[locale] as String?) ??
+          (raw['en'] as String?) ??
+          plan['slug'] as String? ??
+          '—';
+    }
+    return raw as String? ?? plan['slug'] as String? ?? '—';
+  }
+
+  String _priceLabel(Map<String, dynamic>? plan) {
+    if (plan == null) return '—';
+    final amount = plan['price_monthly'] as num?;
+    final currency =
+        plan['currency'] as String? ?? _s('billing_currency');
+    if (amount == null) return _s('billing_free');
+    return '$amount $currency / ${_s('billing_month')}';
+  }
+
+  num _priceAmount(Map<String, dynamic>? plan) {
+    return plan?['price_monthly'] as num? ?? 0;
+  }
+
+  // ─── Coupon ─────────────────────────────────────────────────────────────────
+
+  Widget _couponSection(BillingState billing) {
+    final coupon = billing.couponResult;
+    final isValidating = billing.isValidatingCoupon;
+    final discountPct = coupon?['discount_pct'] as num?;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _s('billing_coupon_label'),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _couponCtrl,
+                textCapitalization: TextCapitalization.characters,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: _s('billing_coupon_hint'),
+                  hintStyle: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    fontSize: 13,
+                  ),
+                  filled: true,
+                  fillColor: Colors.white.withValues(alpha: 0.06),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: coupon != null
+                          ? const Color(0xFF4CAF50)
+                          : Colors.white.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: _gold, width: 1.5),
+                  ),
+                  suffixIcon: coupon != null
+                      ? GestureDetector(
+                          onTap: () {
+                            _couponCtrl.clear();
+                            ref.read(billingProvider.notifier).clearCoupon();
+                          },
+                          child: const Icon(
+                            Icons.close_rounded,
+                            color: Color(0xFF4CAF50),
+                            size: 18,
+                          ),
+                        )
+                      : null,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: isValidating
+                  ? null
+                  : () async {
+                      final code = _couponCtrl.text.trim();
+                      if (code.isEmpty) return;
+                      final ok = await ref
+                          .read(billingProvider.notifier)
+                          .validateCoupon(
+                            code,
+                            _priceAmount(_resolvePlan(billing)).toDouble(),
+                          );
+                      if (!ok && mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(_s('billing_coupon_invalid')),
+                            backgroundColor: const Color(0xFFEF5350),
+                          ),
+                        );
+                      }
+                    },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: 48,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: isValidating
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : _gold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isValidating
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : _gold.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: isValidating
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: _gold,
+                        ),
+                      )
+                    : Text(
+                        _s('billing_coupon_apply'),
+                        style: const TextStyle(
+                          color: _gold,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+              ),
+            ),
+          ],
+        ),
+        if (coupon != null) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(
+                Icons.check_circle_rounded,
+                color: Color(0xFF4CAF50),
+                size: 16,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                discountPct != null
+                    ? '${_s('billing_coupon_valid')} (-$discountPct%)'
+                    : _s('billing_coupon_valid'),
+                style: const TextStyle(
+                  color: Color(0xFF4CAF50),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final billing = ref.watch(billingProvider);
+    final plan = _resolvePlan(billing);
+
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
@@ -50,40 +264,44 @@ class _CheckoutPageState extends State<CheckoutPage> {
             size: 20,
           ),
         ),
-        title: const Text(
-          "To'lov",
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          _s('billing_checkout_title'),
+          style: const TextStyle(color: Colors.white),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _planSummaryCard(),
-            const SizedBox(height: 24),
-            const Text(
-              "To'lov usuli",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
+      body: billing.isLoading
+          ? const Center(child: CircularProgressIndicator(color: _gold))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _planSummaryCard(plan),
+                  const SizedBox(height: 20),
+                  _couponSection(billing),
+                  const SizedBox(height: 24),
+                  Text(
+                    _s('billing_payment_method_label'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ...List.generate(4, _paymentCard),
+                  const SizedBox(height: 24),
+                  _payButton(context, plan),
+                  const SizedBox(height: 16),
+                  _securityBadges(),
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            ...List.generate(_methods.length, _paymentCard),
-            const SizedBox(height: 24),
-            _payButton(context),
-            const SizedBox(height: 16),
-            _securityBadges(),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _planSummaryCard() {
+  Widget _planSummaryCard(Map<String, dynamic>? plan) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -109,9 +327,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Explorer ⭐',
-                  style: TextStyle(
+                Text(
+                  _displayName(plan),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -119,7 +337,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "29,900 so'm / oy",
+                  _priceLabel(plan),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.6),
                     fontSize: 13,
@@ -128,9 +346,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ],
             ),
           ),
-          const Text(
-            '29,900',
-            style: TextStyle(
+          Text(
+            '${_priceAmount(plan)}',
+            style: const TextStyle(
               color: _gold,
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -143,9 +361,22 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   Widget _paymentCard(int index) {
     final selected = _paymentMethod == index;
-    final (icon, name, sub) = _methods[index];
-    final isExternal = index == 1 || index == 2;
-    final isPayPal = index == 3;
+    final labels = [
+      (Icons.credit_card, _s('billing_method_card'), 'Visa / Mastercard'),
+      (
+        Icons.account_balance_wallet,
+        'Payme',
+        _s('billing_method_payme_sub'),
+      ),
+      (
+        Icons.payments_outlined,
+        'Click',
+        _s('billing_method_click_sub'),
+      ),
+      (Icons.language, 'PayPal', _s('billing_method_paypal_sub')),
+    ];
+    final (icon, name, sub) = labels[index];
+    final isExternal = index == 1 || index == 2 || index == 3;
 
     return GestureDetector(
       onTap: () => setState(() => _paymentMethod = index),
@@ -230,12 +461,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 ),
               ],
             ),
-            // Card fields for Karta
+            // Card fields for card payment
             if (selected && index == 0) ...[
               const SizedBox(height: 16),
               _cardField(
                 controller: _cardNumberCtrl,
-                label: 'Karta raqami',
+                label: _s('billing_card_number'),
                 hint: '0000 0000 0000 0000',
                 keyboardType: TextInputType.number,
                 inputFormatters: [
@@ -249,7 +480,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   Expanded(
                     child: _cardField(
                       controller: _expiryCtrl,
-                      label: 'Muddat',
+                      label: _s('billing_card_expiry'),
                       hint: 'MM/YY',
                       keyboardType: TextInputType.number,
                       inputFormatters: [
@@ -277,13 +508,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
               const SizedBox(height: 10),
               _cardField(
                 controller: _cardHolderCtrl,
-                label: 'Karta egasi',
-                hint: 'ISM FAMILIYA',
+                label: _s('billing_card_holder'),
+                hint: _s('billing_card_holder_hint'),
                 textCapitalization: TextCapitalization.characters,
               ),
             ],
-            // External redirect note
-            if (selected && (isExternal || isPayPal)) ...[
+            // External redirect note for wallets
+            if (selected && isExternal) ...[
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -306,7 +537,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      "Tashqi sahifaga yo'naltiriladi",
+                      _s('billing_external_redirect'),
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.5),
                         fontSize: 12,
@@ -358,8 +589,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
             ),
             filled: true,
             fillColor: Colors.white.withValues(alpha: 0.06),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(
@@ -382,9 +615,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
-  Widget _payButton(BuildContext context) {
+  Widget _payButton(BuildContext context, Map<String, dynamic>? plan) {
     return GestureDetector(
-      onTap: () => context.go('/billing/manage'),
+      onTap: () => _showComingSoon(context),
       child: Container(
         height: 54,
         width: double.infinity,
@@ -401,10 +634,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
             ),
           ],
         ),
-        child: const Center(
+        child: Center(
           child: Text(
-            "To'lash",
-            style: TextStyle(
+            _s('billing_pay_btn'),
+            style: const TextStyle(
               color: Color(0xFF1A1200),
               fontSize: 16,
               fontWeight: FontWeight.w800,
@@ -415,11 +648,49 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
+  void _showComingSoon(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F2A3D),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          _s('billing_payment_soon_title'),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          _s('billing_payment_soon_body'),
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.6),
+            fontSize: 13,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              _s('billing_ok'),
+              style: const TextStyle(
+                color: _gold,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _securityBadges() {
     final badges = [
-      (Icons.lock_rounded, 'SSL Himoyalangan'),
-      (Icons.verified_user_rounded, '3D Secure'),
-      (Icons.shield_rounded, 'PCI DSS'),
+      (Icons.lock_rounded, _s('billing_badge_ssl')),
+      (Icons.verified_user_rounded, _s('billing_badge_3ds')),
+      (Icons.shield_rounded, _s('billing_badge_pci')),
     ];
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -460,9 +731,7 @@ class _CardNumberFormatter extends TextInputFormatter {
     TextEditingValue newValue,
   ) {
     final digits = newValue.text.replaceAll(' ', '');
-    if (digits.length > 16) {
-      return oldValue;
-    }
+    if (digits.length > 16) return oldValue;
     final buffer = StringBuffer();
     for (var i = 0; i < digits.length; i++) {
       if (i > 0 && i % 4 == 0) buffer.write(' ');
