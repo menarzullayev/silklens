@@ -152,8 +152,17 @@ class Settings(BaseSettings):
     # --- Email (Resend.com) ---
     # Leave resend_api_key empty in dev to fall back to StubEmailClient.
     # Sign up at resend.com — free tier: 3 000 emails/month, 100/day.
+    #
+    # Sender address rules:
+    #   • No custom domain yet  → use "SilkLens <onboarding@resend.dev>"
+    #     (Resend shared domain; SPF/DKIM pre-configured; works for all recipients)
+    #   • After silklens.app is verified on Resend (SILK-0010) →
+    #     switch to "SilkLens <no-reply@silklens.app>"
+    #
+    # Default is the shared-domain address so the app works out-of-the-box
+    # with only SILKLENS_RESEND_API_KEY set.  Override via env var in prod.
     resend_api_key: SecretStr = SecretStr("")
-    email_from: str = "SilkLens <no-reply@silklens.app>"
+    email_from: str = "SilkLens <onboarding@resend.dev>"
     email_otp_ttl_seconds: int = 600  # 10 minutes
 
     # --- AI ---
