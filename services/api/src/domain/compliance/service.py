@@ -8,9 +8,10 @@ through the repository so downstream subscribers can react.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Callable, Protocol
+from typing import Protocol
 from uuid import UUID
 
 from src.domain.compliance.entities import (

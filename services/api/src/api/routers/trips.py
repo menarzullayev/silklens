@@ -57,11 +57,11 @@ class TripOut(BaseModel):
     end_date: str | None
     budget_usd: float | None
     created_at: str
-    ai_plan: dict | None = None
+    ai_plan: dict[str, Any] | None = None
 
 
 class TripListOut(BaseModel):
-    items: list[dict]
+    items: list[dict[str, Any]]
     total: int
 
 
@@ -74,9 +74,9 @@ class TripDetailOut(BaseModel):
     end_date: str | None
     budget_usd: float | None
     interests: list[str]
-    ai_plan_json: dict | None
+    ai_plan_json: dict[str, Any] | None
     created_at: str
-    stops: list[dict]
+    stops: list[dict[str, Any]]
 
 
 class QuickPlanRequest(BaseModel):
@@ -90,7 +90,7 @@ class QuickPlanRequest(BaseModel):
 
 class QuickPlanOut(BaseModel):
     available_hours: float
-    recommended_stops: list[dict]
+    recommended_stops: list[dict[str, Any]]
     total_time_min: int
     total_stops: int
     city: str | None
@@ -105,8 +105,8 @@ async def _generate_ai_itinerary(
     budget_usd: float | None,
     interests: list[str],
     language: str,
-    heritage_list: list[dict],
-) -> dict:
+    heritage_list: list[dict[str, Any]],
+) -> dict[str, Any]:
     """Call LLM to generate a structured itinerary JSON."""
     settings = get_settings()
 
@@ -183,7 +183,7 @@ Return only valid JSON, no markdown."""
         block = response.content[0]
         if not hasattr(block, "text"):
             return _stub_itinerary(cities, days or len(cities))
-        raw: str = block.text.strip()  # type: ignore[union-attr]
+        raw: str = block.text.strip()
         # Strip markdown code fences if the model wrapped the JSON
         if raw.startswith("```"):
             raw = raw.split("```")[1]
@@ -194,7 +194,7 @@ Return only valid JSON, no markdown."""
         return _stub_itinerary(cities, days or len(cities))
 
 
-def _stub_itinerary(cities: list[str], days: int) -> dict:
+def _stub_itinerary(cities: list[str], days: int) -> dict[str, Any]:
     """Deterministic stub itinerary returned in dev / when ai_use_mock_providers=true.
 
     Tips are English-only; the real LLM path honours the language parameter.
@@ -261,7 +261,7 @@ async def create_trip(
     lang = body.language.split("-")[0].lower()
 
     # Fetch relevant heritage sites for the requested cities
-    heritage_list: list[dict] = []
+    heritage_list: list[dict[str, Any]] = []
     for city in body.cities[:5]:
         city_pat = f"%{city.lower()}%"
         rows = await db.execute(
@@ -558,7 +558,7 @@ async def quick_plan(
     nearby = [dict(r) for r in rows.mappings().fetchall()]
 
     total_time = 0
-    stops: list[dict] = []
+    stops: list[dict[str, Any]] = []
     for site in nearby[:available_stops]:
         duration = 90 if "museum" in (site.get("kind_slug") or "") else 60
         travel = 15  # conservative travel estimate
