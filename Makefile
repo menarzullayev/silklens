@@ -1,7 +1,7 @@
 # SilkLens — top-level Makefile.
 # Aggregates per-service tasks so contributors only need one entry point.
 
-.PHONY: help dev down logs ps api-install api-run api-test api-test-random api-test-parallel api-test-cov api-lint api-format api-mypy api-mypy-strict api-bandit api-bandit-all api-migrate api-revision api-shell admin-knip mobile-analyze clean install-hooks
+.PHONY: help dev down logs ps api-install api-run api-test api-test-random api-test-parallel api-test-cov api-lint api-format api-mypy api-mypy-strict api-bandit api-bandit-all api-migrate api-revision api-shell admin-test admin-knip mobile-analyze clean install-hooks
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -57,6 +57,9 @@ api-bandit: ## Security lint the API with bandit (HIGH+ severity blocks; same as
 
 api-bandit-all: ## Run bandit at LOW severity / LOW confidence (every finding) — local audit only
 	cd services/api && .venv/bin/bandit -r src -c pyproject.toml -l -i
+
+admin-test: ## Run admin unit tests (Vitest — pure logic, no browser)
+	cd apps/admin && pnpm test
 
 admin-knip: ## Detect dead code / unused exports / orphan files in admin
 	cd apps/admin && pnpm knip
