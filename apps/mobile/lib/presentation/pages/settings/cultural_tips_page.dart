@@ -95,7 +95,9 @@ class CulturalTipsPage extends HookConsumerWidget {
               separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (_, i) {
                 final ctx = _contextKeys[i];
-                final label = ctx == null ? _s('ctips_filter_all') : _s('ctips_filter_$ctx');
+                final label = ctx == null
+                    ? _s('ctips_filter_all')
+                    : _s('ctips_filter_$ctx');
                 final isSelected = selectedCtx.value == ctx;
                 return ChoiceChip(
                   label: Text(label),
@@ -108,7 +110,8 @@ class CulturalTipsPage extends HookConsumerWidget {
                     fontSize: 13,
                   ),
                   side: BorderSide(
-                    color: isSelected ? const Color(0xFFB78628) : Colors.white24,
+                    color:
+                        isSelected ? const Color(0xFFB78628) : Colors.white24,
                   ),
                 );
               },

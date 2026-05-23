@@ -251,7 +251,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           Expanded(
                             flex: _currentPage > 0 ? 2 : 1,
                             child: _GoldNextButton(
-                              label: _currentPage == 2 ? _s('onb_get_started') : _s('onb_next'),
+                              label: _currentPage == 2
+                                  ? _s('onb_get_started')
+                                  : _s('onb_next'),
                               onTap: _next,
                             ),
                           ),

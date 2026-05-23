@@ -12,7 +12,8 @@ class AuthChoicePage extends StatefulWidget {
   State<AuthChoicePage> createState() => _AuthChoicePageState();
 }
 
-class _AuthChoicePageState extends State<AuthChoicePage> with SingleTickerProviderStateMixin {
+class _AuthChoicePageState extends State<AuthChoicePage>
+    with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<double> _fade;
 
@@ -184,7 +185,8 @@ class _AuthChoicePageState extends State<AuthChoicePage> with SingleTickerProvid
                                 borderRadius: BorderRadius.circular(14),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFFB78628).withValues(alpha: 0.35),
+                                    color: const Color(0xFFB78628)
+                                        .withValues(alpha: 0.35),
                                     blurRadius: 16,
                                     offset: const Offset(0, 4),
                                   ),

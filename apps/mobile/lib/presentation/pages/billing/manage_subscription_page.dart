@@ -182,7 +182,9 @@ class ManageSubscriptionPage extends ConsumerWidget {
                       ? _s(locale, 'billing_status_active')
                       : _s(locale, 'billing_status_inactive'),
                   style: TextStyle(
-                    color: isActive ? const Color(0xFF1A1200) : Colors.white.withValues(alpha: 0.5),
+                    color: isActive
+                        ? const Color(0xFF1A1200)
+                        : Colors.white.withValues(alpha: 0.5),
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
@@ -289,8 +291,10 @@ class ManageSubscriptionPage extends ConsumerWidget {
       ),
       itemBuilder: (_, i) {
         final (icon, labelKey, unitKey, used, limit, isUnlimited) = stats[i];
-        final pct = (isUnlimited || limit == 0) ? 0.0 : (used / limit).clamp(0.0, 1.0);
-        final limitLabel = isUnlimited ? _s(locale, 'billing_unlimited') : limit.toString();
+        final pct =
+            (isUnlimited || limit == 0) ? 0.0 : (used / limit).clamp(0.0, 1.0);
+        final limitLabel =
+            isUnlimited ? _s(locale, 'billing_unlimited') : limit.toString();
         final unit = _s(locale, unitKey);
 
         return Container(
@@ -468,7 +472,9 @@ class ManageSubscriptionPage extends ConsumerWidget {
             onTap: billing.isCancelling
                 ? null
                 : () async {
-                    final ok = await ref.read(billingProvider.notifier).resumeSubscription();
+                    final ok = await ref
+                        .read(billingProvider.notifier)
+                        .resumeSubscription();
                     if (!ok && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -596,7 +602,8 @@ class ManageSubscriptionPage extends ConsumerWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              final ok = await ref.read(billingProvider.notifier).cancelSubscription();
+              final ok =
+                  await ref.read(billingProvider.notifier).cancelSubscription();
               if (!ok && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

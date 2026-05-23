@@ -47,7 +47,8 @@ class IdentityRepositoryImpl implements IdentityRepository {
 
 // ── Riverpod provider ─────────────────────────────────────────────────────────
 
-final Provider<IdentityRepository> identityRepositoryProvider = Provider<IdentityRepository>(
+final Provider<IdentityRepository> identityRepositoryProvider =
+    Provider<IdentityRepository>(
   (Ref ref) => IdentityRepositoryImpl(
     ref.watch(authRepositoryProvider),
   ),

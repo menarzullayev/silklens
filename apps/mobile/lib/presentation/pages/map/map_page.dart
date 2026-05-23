@@ -30,7 +30,8 @@ class _MapPageState extends ConsumerState<MapPage> {
     final heritageState = ref.watch(heritageListProvider);
     final lang = ref.watch(activeLocaleProvider).languageCode;
 
-    final geoItems = heritageState.items.where((h) => h.hasGeolocation).toList();
+    final geoItems =
+        heritageState.items.where((h) => h.hasGeolocation).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D2337),

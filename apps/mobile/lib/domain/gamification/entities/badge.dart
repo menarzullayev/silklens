@@ -15,7 +15,9 @@ class Badge {
         name: j['name'] as String,
         description: j['description'] as String,
         iconUrl: j['icon_url'] as String?,
-        earnedAt: j['earned_at'] != null ? DateTime.parse(j['earned_at'] as String) : null,
+        earnedAt: j['earned_at'] != null
+            ? DateTime.parse(j['earned_at'] as String)
+            : null,
         category: j['category'] as String? ?? '',
         stepsRemaining: j['steps_remaining'] as int?,
         accentHex: j['accent_hex'] as String?,

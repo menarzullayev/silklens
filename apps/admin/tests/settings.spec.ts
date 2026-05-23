@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { API_BASE, FAKE_SYSTEM_SETTINGS, mockBackend, signInAsAdmin } from './fixtures';
+import { API_BASE, FAKE_SYSTEM_SETTINGS, signInAsAdmin } from './fixtures';
 
 test.describe('system settings', () => {
   test('renders settings list', async ({ page }) => {

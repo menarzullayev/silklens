@@ -67,7 +67,8 @@ class SearchPage extends HookConsumerWidget {
       errorMsg.value = null;
       try {
         final client = ref.read(silkLensApiClientProvider);
-        final country = activeCountry.value >= 0 ? countries[activeCountry.value].$1 : null;
+        final country =
+            activeCountry.value >= 0 ? countries[activeCountry.value].$1 : null;
         final kind = activeType.value >= 0 ? types[activeType.value].$1 : null;
         await client.searchHeritage(
           query: trimmed,
@@ -145,7 +146,8 @@ class SearchPage extends HookConsumerWidget {
                                   size: 18,
                                 ),
                           border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 14),
                         ),
                       ),
                     ),
@@ -160,7 +162,8 @@ class SearchPage extends HookConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 child: Text(
                   errorMsg.value!,
-                  style: const TextStyle(color: Color(0xFFE57373), fontSize: 12),
+                  style:
+                      const TextStyle(color: Color(0xFFE57373), fontSize: 12),
                 ),
               ),
 
@@ -180,7 +183,8 @@ class SearchPage extends HookConsumerWidget {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () => ref.read(recentSearchesProvider.notifier).clear(),
+                      onTap: () =>
+                          ref.read(recentSearchesProvider.notifier).clear(),
                       child: Text(
                         s('search_recent_clear'),
                         style: const TextStyle(
@@ -266,7 +270,8 @@ class SearchPage extends HookConsumerWidget {
                 itemCount: countries.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemBuilder: (_, i) => GestureDetector(
-                  onTap: () => activeCountry.value = activeCountry.value == i ? -1 : i,
+                  onTap: () =>
+                      activeCountry.value = activeCountry.value == i ? -1 : i,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -286,7 +291,9 @@ class SearchPage extends HookConsumerWidget {
                     child: Text(
                       countries[i].$2,
                       style: TextStyle(
-                        color: activeCountry.value == i ? const Color(0xFF1A1200) : Colors.white,
+                        color: activeCountry.value == i
+                            ? const Color(0xFF1A1200)
+                            : Colors.white,
                         fontSize: 12,
                       ),
                     ),
@@ -313,7 +320,8 @@ class SearchPage extends HookConsumerWidget {
               children: List.generate(
                 types.length,
                 (i) => GestureDetector(
-                  onTap: () => activeType.value = activeType.value == i ? -1 : i,
+                  onTap: () =>
+                      activeType.value = activeType.value == i ? -1 : i,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
@@ -334,7 +342,9 @@ class SearchPage extends HookConsumerWidget {
                     child: Text(
                       types[i].$2,
                       style: TextStyle(
-                        color: activeType.value == i ? const Color(0xFF1A1200) : Colors.white,
+                        color: activeType.value == i
+                            ? const Color(0xFF1A1200)
+                            : Colors.white,
                         fontSize: 12,
                       ),
                     ),

@@ -14,7 +14,8 @@ class Branding {
 
   factory Branding.fromJson(Map<String, dynamic> j) => Branding(
         tenantSlug: j['tenant_slug'] as String? ?? 'silklens',
-        appName: (j['app_name'] as Map?)?.cast<String, String>() ?? {'en': 'SilkLens'},
+        appName: (j['app_name'] as Map?)?.cast<String, String>() ??
+            {'en': 'SilkLens'},
         logoUrl: j['logo_url'] as String?,
         logoDarkUrl: j['logo_dark_url'] as String?,
         primaryColor: j['primary_color'] as String? ?? '#1A3A5C',
@@ -38,13 +39,21 @@ class Branding {
 
   static const Branding defaults = Branding(
     tenantSlug: 'silklens',
-    appName: {'en': 'SilkLens', 'uz': 'SilkLens', 'ru': 'SilkLens', 'zh': 'SilkLens'},
+    appName: {
+      'en': 'SilkLens',
+      'uz': 'SilkLens',
+      'ru': 'SilkLens',
+      'zh': 'SilkLens'
+    },
   );
 
   String get primaryColorHex => primaryColor;
   String get accentColorHex => accentColor ?? primaryColor;
   String localizedAppName(String languageCode) {
     if (appName.isEmpty) return 'SilkLens';
-    return appName[languageCode] ?? appName['en'] ?? appName['uz'] ?? appName.values.first;
+    return appName[languageCode] ??
+        appName['en'] ??
+        appName['uz'] ??
+        appName.values.first;
   }
 }

@@ -88,7 +88,8 @@ class AudioGuidePage extends HookConsumerWidget {
           text: text,
           language: lang,
         );
-        final url = ttsResponse['signed_url'] as String? ?? ttsResponse['url'] as String?;
+        final url = ttsResponse['signed_url'] as String? ??
+            ttsResponse['url'] as String?;
         if (url != null && url.isNotEmpty) {
           await player.setUrl(url);
         }
@@ -264,7 +265,8 @@ class AudioGuidePage extends HookConsumerWidget {
                         SliderTheme(
                           data: SliderThemeData(
                             activeTrackColor: _gold,
-                            inactiveTrackColor: Colors.white.withValues(alpha: 0.2),
+                            inactiveTrackColor:
+                                Colors.white.withValues(alpha: 0.2),
                             thumbColor: _gold,
                             overlayColor: _gold.withValues(alpha: 0.2),
                             trackHeight: 3,
@@ -272,7 +274,8 @@ class AudioGuidePage extends HookConsumerWidget {
                           child: Slider(
                             value: progress,
                             onChanged: (v) {
-                              final seekMs = (v * duration.value.inMilliseconds).toInt();
+                              final seekMs =
+                                  (v * duration.value.inMilliseconds).toInt();
                               player.seek(Duration(milliseconds: seekMs));
                             },
                           ),
@@ -312,7 +315,9 @@ class AudioGuidePage extends HookConsumerWidget {
                               Icons.skip_previous_rounded,
                               color: Colors.white,
                             ),
-                            onPressed: isLoading.value ? null : () => player.seek(Duration.zero),
+                            onPressed: isLoading.value
+                                ? null
+                                : () => player.seek(Duration.zero),
                           ),
                           IconButton(
                             icon: const Icon(
@@ -361,7 +366,9 @@ class AudioGuidePage extends HookConsumerWidget {
                                 ],
                               ),
                               child: Icon(
-                                isPlaying.value ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                                isPlaying.value
+                                    ? Icons.pause_rounded
+                                    : Icons.play_arrow_rounded,
                                 color: const Color(0xFF1A1200),
                                 size: 36,
                               ),
@@ -390,7 +397,9 @@ class AudioGuidePage extends HookConsumerWidget {
                               Icons.skip_next_rounded,
                               color: Colors.white,
                             ),
-                            onPressed: isLoading.value ? null : () => player.seek(duration.value),
+                            onPressed: isLoading.value
+                                ? null
+                                : () => player.seek(duration.value),
                           ),
                         ],
                       ),

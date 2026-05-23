@@ -147,7 +147,8 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
         actions: [
           if (unreadCount > 0)
             TextButton(
-              onPressed: () => ref.read(notificationsProvider.notifier).markAllRead(),
+              onPressed: () =>
+                  ref.read(notificationsProvider.notifier).markAllRead(),
               child: Text(
                 _s('notif_mark_all_read'),
                 style: const TextStyle(color: _gold, fontSize: 12),
@@ -174,16 +175,22 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: _activeFilter == i ? _gold : Colors.white.withValues(alpha: 0.07),
+                    color: _activeFilter == i
+                        ? _gold
+                        : Colors.white.withValues(alpha: 0.07),
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(
-                      color: _activeFilter == i ? _gold : Colors.white.withValues(alpha: 0.15),
+                      color: _activeFilter == i
+                          ? _gold
+                          : Colors.white.withValues(alpha: 0.15),
                     ),
                   ),
                   child: Text(
                     _filters[i],
                     style: TextStyle(
-                      color: _activeFilter == i ? const Color(0xFF1A1200) : Colors.white,
+                      color: _activeFilter == i
+                          ? const Color(0xFF1A1200)
+                          : Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -205,7 +212,8 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                 : s.error != null
                     ? _ErrorRetry(
                         message: s.error!,
-                        onRetry: () => ref.read(notificationsProvider.notifier).refresh(),
+                        onRetry: () =>
+                            ref.read(notificationsProvider.notifier).refresh(),
                       )
                     : filtered.isEmpty
                         ? Center(
@@ -223,7 +231,8 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                               vertical: 8,
                             ),
                             itemCount: filtered.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 8),
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 8),
                             itemBuilder: (_, i) {
                               final n = filtered[i];
                               return _NotifCard(
@@ -234,7 +243,9 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                                 isRead: n.isRead,
                                 onTap: n.isRead
                                     ? null
-                                    : () => ref.read(notificationsProvider.notifier).markRead(n.id),
+                                    : () => ref
+                                        .read(notificationsProvider.notifier)
+                                        .markRead(n.id),
                               );
                             },
                           ),
@@ -381,7 +392,8 @@ class _NotifCard extends StatelessWidget {
                     Text(
                       title,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: isRead ? 0.65 : 1.0),
+                        color:
+                            Colors.white.withValues(alpha: isRead ? 0.65 : 1.0),
                         fontSize: 13,
                         fontWeight: isRead ? FontWeight.w400 : FontWeight.w600,
                       ),

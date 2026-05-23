@@ -217,7 +217,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           // We surface the underlying message via the URL so the form can
           // render it.
           if (process.env.NODE_ENV !== 'production') {
-            // eslint-disable-next-line no-console
             console.error('[auth] login failed:', cause);
           }
           return null;

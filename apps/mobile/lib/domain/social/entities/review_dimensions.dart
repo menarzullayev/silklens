@@ -1,11 +1,12 @@
 class ReviewDimensions {
-  const ReviewDimensions(
-      {this.history = 0,
-      this.photos = 0,
-      this.access = 0,
-      this.value = 0,
-      this.atmosphere = 0,
-      this.familyFriendly = 0,});
+  const ReviewDimensions({
+    this.history = 0,
+    this.photos = 0,
+    this.access = 0,
+    this.value = 0,
+    this.atmosphere = 0,
+    this.familyFriendly = 0,
+  });
   final double history;
   final double photos;
   final double access;

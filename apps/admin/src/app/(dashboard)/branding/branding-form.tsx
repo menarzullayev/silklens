@@ -245,7 +245,8 @@ export function BrandingForm({
               style={{ backgroundColor: primary }}
             >
               {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
+                // Using <img> intentionally — this is a preview thumbnail,
+                // not an optimised page image; Next.js Image is not needed here.
                 <img
                   src={logoUrl}
                   alt=""

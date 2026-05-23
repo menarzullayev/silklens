@@ -1,6 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:silklens/core/error/failures.dart';
-import 'package:silklens/data/repositories/auth_repository_impl.dart' as auth_impl;
+import 'package:silklens/data/repositories/auth_repository_impl.dart'
+    as auth_impl;
 import 'package:silklens/domain/identity/entities/auth_session.dart';
 import 'package:silklens/domain/identity/entities/auth_user.dart';
 import 'package:silklens/domain/identity/repositories/auth_repository.dart';
@@ -66,7 +67,9 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> _init() async {
     final session = await _repo.currentSession();
-    state = session != null ? AuthAuthenticated(session) : const AuthUnauthenticated();
+    state = session != null
+        ? AuthAuthenticated(session)
+        : const AuthUnauthenticated();
   }
 
   // -------------------------------------------------------------------------
@@ -206,7 +209,9 @@ class AuthNotifier extends Notifier<AuthState> {
 
   String _failureMessage(Failure failure) {
     if (failure is AuthFailure) {
-      return failure.message.isNotEmpty ? failure.message : "Email yoki parol noto'g'ri";
+      return failure.message.isNotEmpty
+          ? failure.message
+          : "Email yoki parol noto'g'ri";
     }
     if (failure is ValidationFailure) {
       final fields = failure.fieldErrors;
@@ -235,7 +240,8 @@ class AuthNotifier extends Notifier<AuthState> {
 // Providers
 // ---------------------------------------------------------------------------
 
-final authProvider = NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
+final authProvider =
+    NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
 
 /// Convenience alias used by route guards and legacy call-sites.
 final authNotifierProvider = authProvider;

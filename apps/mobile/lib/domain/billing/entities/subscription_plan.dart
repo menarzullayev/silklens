@@ -24,7 +24,9 @@ class SubscriptionPlan {
           final amount = priceMap?['amount'];
           return amount != null ? double.tryParse(amount.toString()) : null;
         }(),
-        currency: (j['price'] as Map<String, dynamic>?)?['currency'] as String? ?? 'USD',
+        currency:
+            (j['price'] as Map<String, dynamic>?)?['currency'] as String? ??
+                'USD',
       );
   final String id;
   final String slug;
@@ -40,5 +42,6 @@ class SubscriptionPlan {
   String get interval => billingPeriod;
   bool get isFree => price == null || (price ?? 0) == 0;
 
-  String get amountMajor => price != null ? '${price!.toStringAsFixed(2)} $currency' : 'Free';
+  String get amountMajor =>
+      price != null ? '${price!.toStringAsFixed(2)} $currency' : 'Free';
 }

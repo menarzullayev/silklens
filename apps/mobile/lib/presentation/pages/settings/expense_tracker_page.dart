@@ -86,7 +86,8 @@ class ExpenseTrackerPage extends HookConsumerWidget {
           : hasError.value || summary.value == null
               ? _NoBudgetView(
                   s: _s,
-                  onCreateBudget: () => _showCreateBudgetSheet(context, ref, reload),
+                  onCreateBudget: () =>
+                      _showCreateBudgetSheet(context, ref, reload),
                 )
               : _SummaryView(summary: summary.value!, s: _s),
     );
@@ -129,7 +130,8 @@ class ExpenseTrackerPage extends HookConsumerWidget {
             const SizedBox(height: 16),
             TextField(
               controller: amountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: _s('expense_amount_label'),
@@ -217,7 +219,8 @@ class ExpenseTrackerPage extends HookConsumerWidget {
             const SizedBox(height: 16),
             TextField(
               controller: amountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: _s('expense_amount_label'),

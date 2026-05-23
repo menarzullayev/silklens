@@ -11,11 +11,21 @@ Widget _wrapWithRouter(Widget page) {
   final router = GoRouter(
     routes: [
       GoRoute(path: '/', builder: (_, __) => page),
-      GoRoute(path: '/home', builder: (_, __) => const Scaffold(body: Text('home'))),
-      GoRoute(path: '/auth/sign-up', builder: (_, __) => const Scaffold(body: Text('sign-up'))),
-      GoRoute(path: '/auth/sign-in', builder: (_, __) => const Scaffold(body: Text('sign-in'))),
-      GoRoute(path: '/auth/forgot-password', builder: (_, __) => const Scaffold(body: Text('forgot'))),
-      GoRoute(path: '/onboarding', builder: (_, __) => const Scaffold(body: Text('onboarding'))),
+      GoRoute(
+          path: '/home',
+          builder: (_, __) => const Scaffold(body: Text('home'))),
+      GoRoute(
+          path: '/auth/sign-up',
+          builder: (_, __) => const Scaffold(body: Text('sign-up'))),
+      GoRoute(
+          path: '/auth/sign-in',
+          builder: (_, __) => const Scaffold(body: Text('sign-in'))),
+      GoRoute(
+          path: '/auth/forgot-password',
+          builder: (_, __) => const Scaffold(body: Text('forgot'))),
+      GoRoute(
+          path: '/onboarding',
+          builder: (_, __) => const Scaffold(body: Text('onboarding'))),
     ],
   );
   return ProviderScope(

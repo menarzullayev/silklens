@@ -317,14 +317,16 @@ class SilkLensApiClient {
   Future<Map<String, dynamic>> getBillingPlans({String? pricingZone}) async {
     final r = await _dio.get<Map<String, dynamic>>(
       '/v1/billing/plans',
-      queryParameters: pricingZone != null ? {'pricing_zone': pricingZone} : null,
+      queryParameters:
+          pricingZone != null ? {'pricing_zone': pricingZone} : null,
     );
     return r.data!;
   }
 
   Future<Map<String, dynamic>?> getCurrentSubscription() async {
     try {
-      final r = await _dio.get<Map<String, dynamic>>('/v1/billing/me/subscription');
+      final r =
+          await _dio.get<Map<String, dynamic>>('/v1/billing/me/subscription');
       return r.data;
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return null;
@@ -341,7 +343,8 @@ class SilkLensApiClient {
   }
 
   Future<List<dynamic>> getEntitlements() async {
-    final r = await _dio.get<Map<String, dynamic>>('/v1/billing/me/entitlements');
+    final r =
+        await _dio.get<Map<String, dynamic>>('/v1/billing/me/entitlements');
     return (r.data!['items'] as List?) ?? [];
   }
 
@@ -969,7 +972,12 @@ class SilkLensApiClient {
   }) async {
     final r = await _dio.post<Map<String, dynamic>>(
       '/v1/ai/fair-price',
-      data: {'item': item, 'market': market, 'currency': currency, 'language': language},
+      data: {
+        'item': item,
+        'market': market,
+        'currency': currency,
+        'language': language
+      },
     );
     return r.data!;
   }
@@ -1000,7 +1008,12 @@ class SilkLensApiClient {
   }) async {
     final r = await _dio.get<Map<String, dynamic>>(
       '/v1/ai/lost-found',
-      queryParameters: {'item_type': itemType, 'lat': lat, 'lng': lng, 'language': language},
+      queryParameters: {
+        'item_type': itemType,
+        'lat': lat,
+        'lng': lng,
+        'language': language
+      },
     );
     return r.data!;
   }
@@ -1079,7 +1092,9 @@ class SilkLensApiClient {
         'limit': limit,
       },
     );
-    return (r.data ?? []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    return (r.data ?? [])
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
   }
 
   // --- Health Tips (SILK-0129) -----------------------------------------------
@@ -1104,7 +1119,9 @@ class SilkLensApiClient {
 
   Future<List<Map<String, dynamic>>> listBudgets() async {
     final r = await _dio.get<List<dynamic>>('/v1/me/budget');
-    return (r.data ?? []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    return (r.data ?? [])
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
   }
 
   // --- Listings search (SILK-0133) ------------------------------------------

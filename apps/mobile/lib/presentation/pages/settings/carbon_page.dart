@@ -209,7 +209,9 @@ class CarbonPage extends HookConsumerWidget {
                           : Colors.white.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isSelected ? const Color(0xFFB78628) : Colors.white12,
+                        color: isSelected
+                            ? const Color(0xFFB78628)
+                            : Colors.white12,
                       ),
                     ),
                     child: Row(
@@ -226,7 +228,9 @@ class CarbonPage extends HookConsumerWidget {
                           style: TextStyle(
                             color: isSelected ? Colors.white : Colors.white60,
                             fontSize: 12,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         ),
                       ],
@@ -243,7 +247,8 @@ class CarbonPage extends HookConsumerWidget {
               Expanded(
                 child: TextField(
                   controller: distCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     hintText: _s('carbon_distance_hint'),
@@ -308,7 +313,8 @@ class CarbonPage extends HookConsumerWidget {
               final dist = leg['distance_km'];
               final transportEntry = _transports.firstWhere(
                 (t) => t.$1 == transportId,
-                orElse: () => ('', 'carbon_transport_car', Icons.directions_car),
+                orElse: () =>
+                    ('', 'carbon_transport_car', Icons.directions_car),
               );
               return Container(
                 margin: const EdgeInsets.only(bottom: 6),

@@ -87,7 +87,9 @@ class SearchResultsPage extends HookConsumerWidget {
           if (!isLoading.value && results.value.isNotEmpty)
             IconButton(
               icon: Icon(
-                gridView.value ? Icons.view_list_rounded : Icons.grid_view_rounded,
+                gridView.value
+                    ? Icons.view_list_rounded
+                    : Icons.grid_view_rounded,
                 color: Colors.white,
               ),
               onPressed: () => gridView.value = !gridView.value,
@@ -211,14 +213,16 @@ class _ResultCard extends StatelessWidget {
   String get _name {
     final nameMap = hit['name'];
     if (nameMap is Map) {
-      return (nameMap[locale] ?? nameMap['en'] ?? nameMap.values.firstOrNull)?.toString() ??
+      return (nameMap[locale] ?? nameMap['en'] ?? nameMap.values.firstOrNull)
+              ?.toString() ??
           hit['pub_id']?.toString() ??
           '';
     }
     return hit['name']?.toString() ?? hit['pub_id']?.toString() ?? '';
   }
 
-  String get _pubId => hit['heritage_pub_id']?.toString() ?? hit['pub_id']?.toString() ?? '';
+  String get _pubId =>
+      hit['heritage_pub_id']?.toString() ?? hit['pub_id']?.toString() ?? '';
 
   String get _kindSlug => hit['kind_slug']?.toString() ?? '';
 

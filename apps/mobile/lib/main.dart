@@ -77,7 +77,8 @@ Future<void> main() async {
           stackTrace: details.stack,
         );
         if (env.sentryDsn.isNotEmpty) {
-          unawaited(Sentry.captureException(details.exception, stackTrace: details.stack));
+          unawaited(Sentry.captureException(details.exception,
+              stackTrace: details.stack));
         }
       };
 
@@ -102,7 +103,8 @@ Future<void> main() async {
       }
     },
     (Object error, StackTrace stackTrace) {
-      AppLogger.instance.e('Uncaught zone error', error: error, stackTrace: stackTrace);
+      AppLogger.instance
+          .e('Uncaught zone error', error: error, stackTrace: stackTrace);
       unawaited(Sentry.captureException(error, stackTrace: stackTrace));
     },
   );

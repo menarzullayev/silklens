@@ -6,7 +6,7 @@ import { AccessDenied } from '@/components/rbac/access-denied';
 import { PERMISSIONS } from '@/lib/rbac/permissions';
 import { auth } from '@/lib/auth/auth';
 import { tenantsApi } from '@/lib/api';
-import { ApiError } from '@/lib/api/errors';
+import type { ApiError } from '@/lib/api/errors';
 import { ErrorState } from '@/components/ui/empty-state';
 import { BrandingForm } from './branding-form';
 import type { BrandingOut } from '@/types/api';

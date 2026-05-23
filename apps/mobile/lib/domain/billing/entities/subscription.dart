@@ -1,4 +1,12 @@
-enum SubscriptionStatus { none, active, trialing, pastDue, canceled, expired, paused }
+enum SubscriptionStatus {
+  none,
+  active,
+  trialing,
+  pastDue,
+  canceled,
+  expired,
+  paused
+}
 
 class Subscription {
   const Subscription({
@@ -20,10 +28,13 @@ class Subscription {
         planName: j['plan_slug'] as String? ?? '',
         status: j['status'] as String,
         currentPeriodEnd: DateTime.parse(j['current_period_end'] as String),
-        trialEndsAt:
-            j['trial_ends_at'] != null ? DateTime.parse(j['trial_ends_at'] as String) : null,
+        trialEndsAt: j['trial_ends_at'] != null
+            ? DateTime.parse(j['trial_ends_at'] as String)
+            : null,
         cancelAtPeriodEnd: j['cancel_at_period_end'] as bool? ?? false,
-        canceledAt: j['canceled_at'] != null ? DateTime.parse(j['canceled_at'] as String) : null,
+        canceledAt: j['canceled_at'] != null
+            ? DateTime.parse(j['canceled_at'] as String)
+            : null,
       );
   final String id;
   final String planId;

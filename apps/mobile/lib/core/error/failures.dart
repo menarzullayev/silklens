@@ -54,7 +54,8 @@ class CacheFailure extends Failure {
 }
 
 class ValidationFailure extends Failure {
-  const ValidationFailure(super.message, {this.fieldErrors = const <String, String>{}});
+  const ValidationFailure(super.message,
+      {this.fieldErrors = const <String, String>{}});
 
   final Map<String, String> fieldErrors;
 

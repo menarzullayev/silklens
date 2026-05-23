@@ -60,7 +60,8 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage>
       ),
     );
 
-    final systemCode = PlatformDispatcher.instance.locale.languageCode.toLowerCase();
+    final systemCode =
+        PlatformDispatcher.instance.locale.languageCode.toLowerCase();
     _selected = _languages.any((l) => l.code == systemCode) ? systemCode : 'uz';
 
     _controller = AnimationController(

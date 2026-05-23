@@ -60,7 +60,8 @@ class _PhotoGuidePageState extends ConsumerState<PhotoGuidePage>
         systemNavigationBarIconBrightness: Brightness.light,
       ),
     );
-    _tabController = TabController(length: 3, vsync: this)..addListener(_onTabChanged);
+    _tabController = TabController(length: 3, vsync: this)
+      ..addListener(_onTabChanged);
     _loadAngle();
   }
 
@@ -271,7 +272,8 @@ class _AngleTab extends StatelessWidget {
     }
 
     final azimuth = (data!['suggested_azimuth_deg'] as num? ?? 315).toDouble();
-    final elevation = (data!['suggested_elevation_deg'] as num? ?? 10).toDouble();
+    final elevation =
+        (data!['suggested_elevation_deg'] as num? ?? 10).toDouble();
     final tip = data!['tip'] as String? ?? '';
     final bestTime = data!['best_time'] as String? ?? '07:00–09:00';
     final direction = data!['compass_direction'] as String? ?? 'NW';
@@ -446,7 +448,8 @@ class _OverlayTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(16)),
                   child: histPhoto['url'] != null
                       ? Image.network(
                           histPhoto['url'] as String,

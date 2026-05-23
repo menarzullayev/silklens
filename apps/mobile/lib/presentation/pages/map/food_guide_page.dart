@@ -52,11 +52,14 @@ class FoodGuidePage extends HookConsumerWidget {
           dietaryPreferences: selectedDietary.value,
         );
         aiReply.value = result['reply'] as String?;
-        restaurants.value = ((result['restaurant_recommendations'] as List?) ?? [])
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
-        mustTry.value = ((result['must_try_dishes'] as List?) ?? []).cast<String>();
-        dietaryTips.value = ((result['dietary_tips'] as List?) ?? []).cast<String>();
+        restaurants.value =
+            ((result['restaurant_recommendations'] as List?) ?? [])
+                .map((e) => Map<String, dynamic>.from(e as Map))
+                .toList();
+        mustTry.value =
+            ((result['must_try_dishes'] as List?) ?? []).cast<String>();
+        dietaryTips.value =
+            ((result['dietary_tips'] as List?) ?? []).cast<String>();
       } catch (_) {}
       isLoading.value = false;
     }
@@ -154,7 +157,8 @@ class FoodGuidePage extends HookConsumerWidget {
                                 fontSize: 12,
                               ),
                             ),
-                            backgroundColor: const Color(0xFF1F3A93).withValues(alpha: 0.5),
+                            backgroundColor:
+                                const Color(0xFF1F3A93).withValues(alpha: 0.5),
                             side: BorderSide.none,
                           ),
                         )

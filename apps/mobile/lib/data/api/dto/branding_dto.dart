@@ -8,7 +8,8 @@ class BrandingDto {
   });
   factory BrandingDto.fromJson(Map<String, dynamic> j) => BrandingDto(
         tenantSlug: j['tenant_slug'] as String? ?? 'silklens',
-        appName: (j['app_name'] as Map?)?.cast<String, String>() ?? {'en': 'SilkLens'},
+        appName: (j['app_name'] as Map?)?.cast<String, String>() ??
+            {'en': 'SilkLens'},
         logoUrl: j['logo_url'] as String?,
         primaryColor: j['primary_color'] as String? ?? '#1A3A5C',
         themeModeDefault: j['theme_mode_default'] as String? ?? 'system',

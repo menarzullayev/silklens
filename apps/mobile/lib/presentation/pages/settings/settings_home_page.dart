@@ -14,11 +14,13 @@ class SettingsHomePage extends StatelessWidget {
         backgroundColor: const Color(0xFF0D2337),
         leading: GestureDetector(
           onTap: () => context.pop(),
-          child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          child: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.white, size: 20),
         ),
         title: const Text(
           'Sozlamalar',
-          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+          style: TextStyle(
+              color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
         ),
       ),
       body: SingleChildScrollView(
@@ -49,7 +51,10 @@ class SettingsHomePage extends StatelessWidget {
                       child: Text(
                         'A',
                         style: TextStyle(
-                            color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700,),
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
@@ -61,12 +66,16 @@ class SettingsHomePage extends StatelessWidget {
                         const Text(
                           'Aziz Karimov',
                           style: TextStyle(
-                              color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600,),
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         Text(
                           'aziz@email.com',
-                          style:
-                              TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                          style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.5),
+                              fontSize: 12),
                         ),
                       ],
                     ),
@@ -196,7 +205,8 @@ class SettingsHomePage extends StatelessWidget {
             Center(
               child: Text(
                 'SilkLens v0.3.0-beta',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12),
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.3), fontSize: 12),
               ),
             ),
             const SizedBox(height: 32),
@@ -259,15 +269,22 @@ class _SettingsRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: iconColor ?? Colors.white.withValues(alpha: 0.7), size: 20),
+            Icon(icon,
+                color: iconColor ?? Colors.white.withValues(alpha: 0.7),
+                size: 20),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(label, style: TextStyle(color: labelColor ?? Colors.white, fontSize: 14)),
+              child: Text(label,
+                  style: TextStyle(
+                      color: labelColor ?? Colors.white, fontSize: 14)),
             ),
             if (subtitle != null)
-              Text(subtitle!, style: const TextStyle(color: Color(0xFFB78628), fontSize: 12)),
+              Text(subtitle!,
+                  style:
+                      const TextStyle(color: Color(0xFFB78628), fontSize: 12)),
             const SizedBox(width: 4),
-            Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.3), size: 18),
+            Icon(Icons.chevron_right,
+                color: Colors.white.withValues(alpha: 0.3), size: 18),
           ],
         ),
       ),

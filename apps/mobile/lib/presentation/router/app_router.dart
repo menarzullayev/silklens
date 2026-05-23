@@ -89,7 +89,8 @@ CustomTransitionPage<void> _fadePage(
       key: state.pageKey,
       child: child,
       transitionDuration: duration,
-      transitionsBuilder: (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
+      transitionsBuilder: (_, anim, __, child) =>
+          FadeTransition(opacity: anim, child: child),
     );
 
 CustomTransitionPage<void> _slideUpPage(
@@ -203,11 +204,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/',
-        pageBuilder: (ctx, state) => _noTransitionPage(ctx, state, const SplashPage()),
+        pageBuilder: (ctx, state) =>
+            _noTransitionPage(ctx, state, const SplashPage()),
       ),
       GoRoute(
         path: '/language',
-        pageBuilder: (ctx, state) => _fadePage(ctx, state, const LanguageSelectionPage()),
+        pageBuilder: (ctx, state) =>
+            _fadePage(ctx, state, const LanguageSelectionPage()),
       ),
       GoRoute(
         path: '/onboarding',
@@ -220,51 +223,63 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/auth/choice',
-        pageBuilder: (ctx, state) => _slideUpPage(ctx, state, const AuthChoicePage()),
+        pageBuilder: (ctx, state) =>
+            _slideUpPage(ctx, state, const AuthChoicePage()),
       ),
       GoRoute(
         path: '/auth/sign-in',
-        pageBuilder: (ctx, state) => _slideUpPage(ctx, state, const SignInPage()),
+        pageBuilder: (ctx, state) =>
+            _slideUpPage(ctx, state, const SignInPage()),
       ),
       GoRoute(
         path: '/auth/sign-up',
-        pageBuilder: (ctx, state) => _slideUpPage(ctx, state, const SignUpPage()),
+        pageBuilder: (ctx, state) =>
+            _slideUpPage(ctx, state, const SignUpPage()),
       ),
       GoRoute(
         path: '/auth/forgot-password',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const ForgotPasswordPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const ForgotPasswordPage()),
       ),
       GoRoute(
         path: '/settings',
-        pageBuilder: (ctx, state) => _fadePage(ctx, state, const SettingsHomePage()),
+        pageBuilder: (ctx, state) =>
+            _fadePage(ctx, state, const SettingsHomePage()),
       ),
       GoRoute(
         path: '/settings/notifications',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const NotificationPrefsPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const NotificationPrefsPage()),
       ),
       GoRoute(
         path: '/settings/privacy',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const PrivacyGDPRPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const PrivacyGDPRPage()),
       ),
       GoRoute(
         path: '/settings/about',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const AboutPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const AboutPage()),
       ),
       GoRoute(
         path: '/settings/delete-account',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const DeleteAccountPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const DeleteAccountPage()),
       ),
       GoRoute(
         path: '/settings/language',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const LanguageSettingsPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const LanguageSettingsPage()),
       ),
       GoRoute(
         path: '/social/feed',
-        pageBuilder: (ctx, state) => _fadePage(ctx, state, const ActivityFeedPage()),
+        pageBuilder: (ctx, state) =>
+            _fadePage(ctx, state, const ActivityFeedPage()),
       ),
       GoRoute(
         path: '/social/notifications',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const NotificationsPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const NotificationsPage()),
       ),
       GoRoute(
         path: '/auth/email-verify',
@@ -278,7 +293,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/home',
-        pageBuilder: (ctx, state) => _fadeScalePage(ctx, state, const HeritageListPage()),
+        pageBuilder: (ctx, state) =>
+            _fadeScalePage(ctx, state, const HeritageListPage()),
         routes: [
           GoRoute(
             path: 'heritage/:pubId',
@@ -292,15 +308,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/map',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const MapPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const MapPage()),
       ),
       GoRoute(
         path: '/camera',
-        pageBuilder: (ctx, state) => _slideUpPage(ctx, state, const CameraPage()),
+        pageBuilder: (ctx, state) =>
+            _slideUpPage(ctx, state, const CameraPage()),
       ),
       GoRoute(
         path: '/voice-assistant',
-        pageBuilder: (ctx, state) => _slideUpPage(ctx, state, const VoiceAssistantPage()),
+        pageBuilder: (ctx, state) =>
+            _slideUpPage(ctx, state, const VoiceAssistantPage()),
       ),
       // SILK-0100 — AI Photo Guide (angle suggestions + historical overlays)
       GoRoute(
@@ -316,7 +335,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/search',
-        pageBuilder: (ctx, state) => _slideUpPage(ctx, state, const SearchPage()),
+        pageBuilder: (ctx, state) =>
+            _slideUpPage(ctx, state, const SearchPage()),
       ),
       GoRoute(
         path: '/search/results',
@@ -328,7 +348,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/offline',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const OfflineModePage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const OfflineModePage()),
       ),
       GoRoute(
         path: '/audio-guide',
@@ -357,93 +378,115 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/billing/invoices',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const InvoicesPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const InvoicesPage()),
       ),
       GoRoute(
         path: '/billing/manage',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const ManageSubscriptionPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const ManageSubscriptionPage()),
       ),
       GoRoute(
         path: '/billing/tickets',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const TicketsPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const TicketsPage()),
       ),
       GoRoute(
         path: '/emergency',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const EmergencyPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const EmergencyPage()),
       ),
       GoRoute(
         path: '/weather',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const WeatherGuidePage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const WeatherGuidePage()),
       ),
       GoRoute(
         path: '/social/profile',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const UserProfilePage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const UserProfilePage()),
       ),
       GoRoute(
         path: '/social/following',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const FollowingListPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const FollowingListPage()),
       ),
       GoRoute(
         path: '/social/invite',
-        pageBuilder: (ctx, state) => _slideUpPage(ctx, state, const FriendInvitePage()),
+        pageBuilder: (ctx, state) =>
+            _slideUpPage(ctx, state, const FriendInvitePage()),
       ),
       GoRoute(
         path: '/gamification/xp',
-        pageBuilder: (ctx, state) => _fadeScalePage(ctx, state, const XPDashboardPage()),
+        pageBuilder: (ctx, state) =>
+            _fadeScalePage(ctx, state, const XPDashboardPage()),
       ),
       GoRoute(
         path: '/gamification/badges',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const BadgesPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const BadgesPage()),
       ),
       GoRoute(
         path: '/gamification/leaderboard',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const LeaderboardPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const LeaderboardPage()),
       ),
       GoRoute(
         path: '/gamification/streak',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const StreakPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const StreakPage()),
       ),
       GoRoute(
         path: '/gamification/missions',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const MissionsPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const MissionsPage()),
       ),
       // ── New feature pages (SILK-0103, 0130, 0131, 0133, 0134) ─────────────
       GoRoute(
         path: '/trips',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const TripPlannerPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const TripPlannerPage()),
       ),
       GoRoute(
         path: '/expenses',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const ExpenseTrackerPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const ExpenseTrackerPage()),
       ),
       GoRoute(
         path: '/mood',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const MoodTravelPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const MoodTravelPage()),
       ),
       GoRoute(
         path: '/food-guide',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const FoodGuidePage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const FoodGuidePage()),
       ),
       GoRoute(
         path: '/carbon',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const CarbonPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const CarbonPage()),
       ),
       // ── SILK-0128 / SILK-0132 / SILK-0135 / SILK-0137 ──────────────────────
       GoRoute(
         path: '/cultural-tips',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const CulturalTipsPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const CulturalTipsPage()),
       ),
       GoRoute(
         path: '/memory-book',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const MemoryBookPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const MemoryBookPage()),
       ),
       GoRoute(
         path: '/government',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const GovernmentPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const GovernmentPage()),
       ),
       GoRoute(
         path: '/ai-utilities',
-        pageBuilder: (ctx, state) => _slideRightPage(ctx, state, const AIUtilitiesPage()),
+        pageBuilder: (ctx, state) =>
+            _slideRightPage(ctx, state, const AIUtilitiesPage()),
       ),
     ],
   );

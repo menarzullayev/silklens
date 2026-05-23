@@ -30,9 +30,9 @@ function groupByPrefix(
 ): ReadonlyMap<string, readonly SystemSettingOut[]> {
   const map = new Map<string, SystemSettingOut[]>();
   for (const s of settings) {
-    const prefix = s.key.includes('.') ? s.key.split('.')[0]! : 'other';
+    const prefix = s.key.split('.')[0] ?? 'other';
     if (!map.has(prefix)) map.set(prefix, []);
-    map.get(prefix)!.push(s);
+    (map.get(prefix) as SystemSettingOut[]).push(s);
   }
   return map;
 }

@@ -185,9 +185,12 @@ class TripPlannerPage extends HookConsumerWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
-                disabledBackgroundColor: const Color(0xFFB78628).withValues(alpha: 0.4),
+                disabledBackgroundColor:
+                    const Color(0xFFB78628).withValues(alpha: 0.4),
               ),
-              onPressed: (isLoading.value || selectedCities.value.isEmpty) ? null : submit,
+              onPressed: (isLoading.value || selectedCities.value.isEmpty)
+                  ? null
+                  : submit,
               child: isLoading.value
                   ? const SizedBox(
                       height: 20,

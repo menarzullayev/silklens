@@ -156,7 +156,8 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFB78628).withValues(alpha: 0.5),
+                                  color: const Color(0xFFB78628)
+                                      .withValues(alpha: 0.5),
                                   blurRadius: 20,
                                   spreadRadius: 2,
                                 ),
@@ -179,7 +180,9 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            _sent ? _s('auth_forgot_sent_sub') : _s('auth_forgot_sub'),
+                            _sent
+                                ? _s('auth_forgot_sent_sub')
+                                : _s('auth_forgot_sub'),
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.6),
@@ -197,7 +200,8 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                           color: Colors.white.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: const Color(0xFF4CAF50).withValues(alpha: 0.6),
+                            color:
+                                const Color(0xFF4CAF50).withValues(alpha: 0.6),
                           ),
                         ),
                         child: Row(
@@ -324,7 +328,8 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                               borderRadius: BorderRadius.circular(14),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFB78628).withValues(alpha: 0.35),
+                                  color: const Color(0xFFB78628)
+                                      .withValues(alpha: 0.35),
                                   blurRadius: 16,
                                   offset: const Offset(0, 4),
                                 ),
@@ -337,7 +342,8 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                                       height: 22,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
                                           Color(0xFF1A1200),
                                         ),
                                       ),

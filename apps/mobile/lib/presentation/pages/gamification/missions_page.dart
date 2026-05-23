@@ -131,7 +131,8 @@ class _MissionsPageState extends ConsumerState<MissionsPage> {
                                   ? const Color(0xFF1A1200)
                                   : Colors.white.withValues(alpha: 0.6),
                               fontSize: 13,
-                              fontWeight: active ? FontWeight.w700 : FontWeight.w400,
+                              fontWeight:
+                                  active ? FontWeight.w700 : FontWeight.w400,
                             ),
                           ),
                         ),
@@ -263,7 +264,8 @@ class _MissionCard extends StatelessWidget {
                   ),
                   child: Icon(
                     completed ? Icons.check_circle_rounded : mission.icon,
-                    color: completed ? Colors.white.withValues(alpha: 0.4) : _gold,
+                    color:
+                        completed ? Colors.white.withValues(alpha: 0.4) : _gold,
                     size: 22,
                   ),
                 ),
@@ -275,7 +277,9 @@ class _MissionCard extends StatelessWidget {
                       Text(
                         mission.title,
                         style: TextStyle(
-                          color: completed ? Colors.white.withValues(alpha: 0.5) : Colors.white,
+                          color: completed
+                              ? Colors.white.withValues(alpha: 0.5)
+                              : Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
@@ -303,14 +307,16 @@ class _MissionCard extends StatelessWidget {
                         : const LinearGradient(
                             colors: [_gold, _goldLight],
                           ),
-                    color: completed ? Colors.white.withValues(alpha: 0.08) : null,
+                    color:
+                        completed ? Colors.white.withValues(alpha: 0.08) : null,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     '+${mission.xp} XP',
                     style: TextStyle(
-                      color:
-                          completed ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF1A1200),
+                      color: completed
+                          ? Colors.white.withValues(alpha: 0.4)
+                          : const Color(0xFF1A1200),
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
                     ),

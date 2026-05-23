@@ -53,7 +53,8 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
       final items = await ref.read(silkLensApiClientProvider).getMyTickets();
       if (!mounted) return;
       setState(() {
-        _tickets = items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        _tickets =
+            items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -73,11 +74,13 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
         backgroundColor: _bg,
         leading: GestureDetector(
           onTap: () => context.pop(),
-          child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          child: const Icon(Icons.arrow_back_ios_new,
+              color: Colors.white, size: 20),
         ),
         title: Text(
           _s('tickets_title'),
-          style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+          style: const TextStyle(
+              color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
         ),
         actions: [
           IconButton(
@@ -128,7 +131,8 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
               ),
               child: Text(
                 _s('tickets_retry'),
-                style: const TextStyle(color: _gold, fontWeight: FontWeight.w700),
+                style:
+                    const TextStyle(color: _gold, fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -144,12 +148,15 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.confirmation_number_outlined, size: 64, color: Colors.white24),
+            const Icon(Icons.confirmation_number_outlined,
+                size: 64, color: Colors.white24),
             const SizedBox(height: 16),
             Text(
               _s('tickets_empty_title'),
-              style:
-                  const TextStyle(color: Colors.white70, fontSize: 18, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
@@ -161,7 +168,8 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
             GestureDetector(
               onTap: () => context.go('/home'),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFB78628), Color(0xFFE5C97A)],
@@ -177,7 +185,8 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
                 ),
                 child: Text(
                   _s('tickets_browse_heritage'),
-                  style: const TextStyle(color: Color(0xFF1A1200), fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                      color: Color(0xFF1A1200), fontWeight: FontWeight.w700),
                 ),
               ),
             ),
@@ -208,10 +217,14 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
         color: Colors.white.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isValid ? _gold.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.1),
+          color: isValid
+              ? _gold.withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.1),
           width: isValid ? 1.5 : 1,
         ),
-        boxShadow: isValid ? [BoxShadow(color: _gold.withValues(alpha: 0.08), blurRadius: 16)] : [],
+        boxShadow: isValid
+            ? [BoxShadow(color: _gold.withValues(alpha: 0.08), blurRadius: 16)]
+            : [],
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
@@ -252,19 +265,28 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
                       const SizedBox(height: 2),
                       Text(
                         heritageName,
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            fontSize: 12),
                       ),
                     ],
                     if (visitDate.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.calendar_today_rounded,
-                              size: 11, color: Colors.white.withValues(alpha: 0.4),),
+                          Icon(
+                            Icons.calendar_today_rounded,
+                            size: 11,
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
                           const SizedBox(width: 4),
-                          Text(visitDate,
-                              style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.5), fontSize: 12,),),
+                          Text(
+                            visitDate,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.5),
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -276,15 +298,18 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       statusLabel,
-                      style:
-                          TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                          color: statusColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700),
                     ),
                   ),
                   if (isValid) ...[
@@ -322,8 +347,10 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
             children: [
               Text(
                 name,
-                style:
-                    const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
@@ -341,7 +368,9 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
               ),
               if (visitDate.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Text(visitDate, style: const TextStyle(color: Colors.white60, fontSize: 13)),
+                Text(visitDate,
+                    style:
+                        const TextStyle(color: Colors.white60, fontSize: 13)),
               ],
               const SizedBox(height: 20),
               GestureDetector(
@@ -355,7 +384,8 @@ class _TicketsPageState extends ConsumerState<TicketsPage> {
                   child: Center(
                     child: Text(
                       _s('tickets_close'),
-                      style: const TextStyle(color: _gold, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                          color: _gold, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),

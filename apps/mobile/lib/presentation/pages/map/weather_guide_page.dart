@@ -44,11 +44,12 @@ class WeatherGuidePage extends HookConsumerWidget {
         hasError.value = false;
         Future(() async {
           try {
-            guide.value = await ref.read(silkLensApiClientProvider).getWeatherGuide(
-                  lat: _defaultLat,
-                  lng: _defaultLng,
-                  language: locale.languageCode,
-                );
+            guide.value =
+                await ref.read(silkLensApiClientProvider).getWeatherGuide(
+                      lat: _defaultLat,
+                      lng: _defaultLng,
+                      language: locale.languageCode,
+                    );
           } catch (_) {
             hasError.value = true;
           }

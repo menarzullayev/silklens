@@ -123,6 +123,7 @@ class HeritageListNotifier extends Notifier<HeritageListState> {
   }
 }
 
-final heritageListProvider = NotifierProvider<HeritageListNotifier, HeritageListState>(
+final heritageListProvider =
+    NotifierProvider<HeritageListNotifier, HeritageListState>(
   HeritageListNotifier.new,
 );

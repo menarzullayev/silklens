@@ -22,7 +22,8 @@ class HeritageDto {
         kindSlug: j['kind_slug'] as String,
         name: (j['name'] as Map?)?.cast<String, String>() ?? {},
         summaryMd: (j['summary_md'] as Map?)?.cast<String, String>() ?? {},
-        descriptionMd: (j['description_md'] as Map?)?.cast<String, String>() ?? {},
+        descriptionMd:
+            (j['description_md'] as Map?)?.cast<String, String>() ?? {},
         tags: (j['tags'] as List?)?.cast<String>() ?? [],
         status: j['status'] as String? ?? 'published',
         countryCode: j['country_code'] as String?,

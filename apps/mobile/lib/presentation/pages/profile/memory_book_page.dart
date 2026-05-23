@@ -193,7 +193,8 @@ class _MemoryBookPageState extends ConsumerState<MemoryBookPage> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton.icon(
-                onPressed: totalVisits == 0 || _isGenerating ? null : _generateBook,
+                onPressed:
+                    totalVisits == 0 || _isGenerating ? null : _generateBook,
                 icon: _isGenerating
                     ? const SizedBox(
                         width: 20,
@@ -205,12 +206,15 @@ class _MemoryBookPageState extends ConsumerState<MemoryBookPage> {
                       )
                     : const Icon(Icons.auto_awesome),
                 label: Text(
-                  _isGenerating ? _s('membook_generating') : _s('membook_generate_btn'),
+                  _isGenerating
+                      ? _s('membook_generating')
+                      : _s('membook_generate_btn'),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFB78628),
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor: const Color(0xFFB78628).withValues(alpha: 0.4),
+                  disabledBackgroundColor:
+                      const Color(0xFFB78628).withValues(alpha: 0.4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -281,8 +285,9 @@ class _MemoryBookPageState extends ConsumerState<MemoryBookPage> {
             ...recentVisits.take(5).map((v) {
               final visit = v as Map<String, dynamic>;
               final dateRaw = visit['checked_in_at'] as String?;
-              final dateStr =
-                  dateRaw != null && dateRaw.length >= 10 ? dateRaw.substring(0, 10) : '';
+              final dateStr = dateRaw != null && dateRaw.length >= 10
+                  ? dateRaw.substring(0, 10)
+                  : '';
               return ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Container(

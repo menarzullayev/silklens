@@ -188,7 +188,9 @@ class _InvoicesPageState extends ConsumerState<InvoicesPage> {
 
   Widget _invoiceRow(Map<String, dynamic> inv) {
     final date = inv['created_at'] as String? ?? '';
-    final planName = inv['plan_display_name'] as String? ?? inv['plan_slug'] as String? ?? '—';
+    final planName = inv['plan_display_name'] as String? ??
+        inv['plan_slug'] as String? ??
+        '—';
     final amount = inv['amount_due'] as num? ?? 0;
     final currency = inv['currency'] as String? ?? '';
     final status = inv['status'] as String? ?? 'unknown';

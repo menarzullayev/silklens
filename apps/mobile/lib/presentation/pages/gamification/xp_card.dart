@@ -144,7 +144,8 @@ class XPDashboardPage extends ConsumerWidget {
                                   borderRadius: BorderRadius.circular(5),
                                 ),
                                 child: FractionallySizedBox(
-                                  widthFactor: state.progressPct.clamp(0.0, 1.0),
+                                  widthFactor:
+                                      state.progressPct.clamp(0.0, 1.0),
                                   alignment: Alignment.centerLeft,
                                   child: Container(
                                     decoration: BoxDecoration(

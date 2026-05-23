@@ -10,7 +10,8 @@ class NotificationPrefsPage extends ConsumerStatefulWidget {
   const NotificationPrefsPage({super.key});
 
   @override
-  ConsumerState<NotificationPrefsPage> createState() => _NotificationPrefsPageState();
+  ConsumerState<NotificationPrefsPage> createState() =>
+      _NotificationPrefsPageState();
 }
 
 class _NotificationPrefsPageState extends ConsumerState<NotificationPrefsPage> {
@@ -60,9 +61,11 @@ class _NotificationPrefsPageState extends ConsumerState<NotificationPrefsPage> {
       if (!mounted) return;
       // Map API response to local toggles; fall through to defaults on
       // any shape mismatch — the UI still works offline.
-      final items = prefs['items'] as List? ?? prefs['preferences'] as List? ?? [];
+      final items =
+          prefs['items'] as List? ?? prefs['preferences'] as List? ?? [];
       for (final rawItem in items) {
-        final item = rawItem is Map<String, dynamic> ? rawItem : <String, dynamic>{};
+        final item =
+            rawItem is Map<String, dynamic> ? rawItem : <String, dynamic>{};
         final slug = item['category_slug'] as String? ?? '';
         final channel = item['channel'] as String? ?? '';
         final enabled = (item['enabled'] as bool?) ?? true;

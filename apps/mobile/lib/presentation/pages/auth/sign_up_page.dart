@@ -199,7 +199,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                       obscureText: _obscurePass,
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _submit(),
-                      onChanged: (v) => setState(() => _passwordStrength = _calcStrength(v)),
+                      onChanged: (v) =>
+                          setState(() => _passwordStrength = _calcStrength(v)),
                       style: const TextStyle(color: Colors.white),
                       decoration: _inputDecoration(
                         _s('auth_password_8'),
@@ -212,7 +213,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                             color: Colors.white.withValues(alpha: 0.5),
                             size: 20,
                           ),
-                          onPressed: () => setState(() => _obscurePass = !_obscurePass),
+                          onPressed: () =>
+                              setState(() => _obscurePass = !_obscurePass),
                         ),
                       ),
                       validator: (v) {
@@ -241,7 +243,9 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                             child: Container(
                               margin: EdgeInsets.only(right: i < 3 ? 3 : 0),
                               decoration: BoxDecoration(
-                                color: filled ? color : Colors.white.withValues(alpha: 0.12),
+                                color: filled
+                                    ? color
+                                    : Colors.white.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
@@ -310,7 +314,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                       children: [
                         Checkbox(
                           value: _tosAccepted,
-                          onChanged: (v) => setState(() => _tosAccepted = v ?? false),
+                          onChanged: (v) =>
+                              setState(() => _tosAccepted = v ?? false),
                           checkColor: const Color(0xFF1A3A5C),
                           fillColor: WidgetStateProperty.resolveWith(
                             (states) => states.contains(WidgetState.selected)
@@ -350,7 +355,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFB78628).withValues(alpha: 0.35),
+                                color: const Color(0xFFB78628)
+                                    .withValues(alpha: 0.35),
                                 blurRadius: 16,
                                 offset: const Offset(0, 4),
                               ),

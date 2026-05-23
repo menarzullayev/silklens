@@ -8,8 +8,12 @@
  * Playwright handles E2E; this layer covers the business-logic core
  * (utils, error hierarchy, RBAC, tenant helpers, i18n config).
  */
+import { fileURLToPath } from 'url';
 import path from 'path';
 import { defineConfig } from 'vitest/config';
+
+// ESM-compatible __dirname substitute (vitest.config.ts is an ES module).
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   test: {

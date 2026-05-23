@@ -13,7 +13,8 @@ import 'package:silklens/l10n/app_localizations.dart';
 import 'package:silklens/presentation/pages/splash_page.dart';
 
 void main() {
-  testWidgets('SplashPage renders the localized app name', (WidgetTester tester) async {
+  testWidgets('SplashPage renders the localized app name',
+      (WidgetTester tester) async {
     await tester.pumpWidget(
       const ProviderScope(
         child: MaterialApp(
@@ -36,7 +37,8 @@ void main() {
     expect(find.byKey(const Key('splash.logo')), findsOneWidget);
     expect(find.byKey(const Key('splash.app_name')), findsOneWidget);
 
-    final BuildContext context = tester.element(find.byKey(const Key('splash.app_name')));
+    final BuildContext context =
+        tester.element(find.byKey(const Key('splash.app_name')));
     final expected = AppLocalizations.of(context).appName;
     expect(find.text(expected), findsOneWidget);
   });

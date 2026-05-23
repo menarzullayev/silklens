@@ -55,7 +55,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     }
     // Default: first non-free plan
     try {
-      return billing.plans.firstWhere((p) => (p['slug'] as String? ?? '') != 'free');
+      return billing.plans
+          .firstWhere((p) => (p['slug'] as String? ?? '') != 'free');
     } catch (_) {
       return billing.plans.first;
     }
@@ -66,7 +67,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     final raw = plan['display_name'];
     if (raw is Map) {
       final locale = LocaleService.instance.locale;
-      return (raw[locale] as String?) ?? (raw['en'] as String?) ?? plan['slug'] as String? ?? '—';
+      return (raw[locale] as String?) ??
+          (raw['en'] as String?) ??
+          plan['slug'] as String? ??
+          '—';
     }
     return raw as String? ?? plan['slug'] as String? ?? '—';
   }
@@ -162,7 +166,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   : () async {
                       final code = _couponCtrl.text.trim();
                       if (code.isEmpty) return;
-                      final ok = await ref.read(billingProvider.notifier).validateCoupon(
+                      final ok = await ref
+                          .read(billingProvider.notifier)
+                          .validateCoupon(
                             code,
                             _priceAmount(_resolvePlan(billing)).toDouble(),
                           );
@@ -399,7 +405,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   ),
                   child: Icon(
                     icon,
-                    color: selected ? _gold : Colors.white.withValues(alpha: 0.5),
+                    color:
+                        selected ? _gold : Colors.white.withValues(alpha: 0.5),
                     size: 22,
                   ),
                 ),
@@ -433,7 +440,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: selected ? _gold : Colors.white.withValues(alpha: 0.3),
+                      color: selected
+                          ? _gold
+                          : Colors.white.withValues(alpha: 0.3),
                       width: 2,
                     ),
                     color: selected ? _gold : Colors.transparent,

@@ -8,6 +8,6 @@ class SilkLensLogo extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) =>
-      Icon(Icons.travel_explore, size: size, color: Theme.of(context).colorScheme.primary);
+  Widget build(BuildContext context) => Icon(Icons.travel_explore,
+      size: size, color: Theme.of(context).colorScheme.primary);
 }

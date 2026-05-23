@@ -18,7 +18,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingTitle => 'Discover heritage with your camera';
 
   @override
-  String get onboardingSubtitle => 'Point at any monument to instantly learn its story.';
+  String get onboardingSubtitle =>
+      'Point at any monument to instantly learn its story.';
 
   @override
   String get onboardingCta => 'Start exploring';
@@ -72,13 +73,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cameraPlaceholderTitle => 'Camera';
 
   @override
-  String get cameraPlaceholderBody => 'Vision pipeline ships in FAZA 2 — Hafta 3.';
+  String get cameraPlaceholderBody =>
+      'Vision pipeline ships in FAZA 2 — Hafta 3.';
 
   @override
   String get mapPlaceholderTitle => 'Map';
 
   @override
-  String get mapPlaceholderBody => 'Mapbox / OSM integration ships in FAZA 2 — Hafta 3.';
+  String get mapPlaceholderBody =>
+      'Mapbox / OSM integration ships in FAZA 2 — Hafta 3.';
 
   @override
   String get profileTitle => 'Profile';
@@ -96,7 +99,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileGuestTitle => 'Guest';
 
   @override
-  String get profileGuestBody => 'Sign in to sync your saved heritage across devices.';
+  String get profileGuestBody =>
+      'Sign in to sync your saved heritage across devices.';
 
   @override
   String get authEmailLabel => 'Email';
@@ -123,7 +127,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authSignUpTitle => 'Create your account';
 
   @override
-  String get authSignUpSubtitle => 'Save heritage, share reviews, unlock badges.';
+  String get authSignUpSubtitle =>
+      'Save heritage, share reviews, unlock badges.';
 
   @override
   String get authSignUpCta => 'Create account';
@@ -166,7 +171,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authErrorInvalidEmail => 'Enter a valid email address.';
 
   @override
-  String get authErrorPasswordTooShort => 'Password must be at least 12 characters.';
+  String get authErrorPasswordTooShort =>
+      'Password must be at least 12 characters.';
 
   @override
   String get authErrorPasswordWeak =>
@@ -182,7 +188,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authErrorInvalidCredentials => 'Email or password is incorrect.';
 
   @override
-  String get authErrorRateLimited => 'Too many attempts. Please try again later.';
+  String get authErrorRateLimited =>
+      'Too many attempts. Please try again later.';
 
   @override
   String get authErrorEmailTaken => 'That email is already registered.';
@@ -215,7 +222,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get heritageSearchEmptyTitle => 'Nothing here yet';
 
   @override
-  String get heritageSearchEmptyBody => 'Try a different keyword or browse all heritage.';
+  String get heritageSearchEmptyBody =>
+      'Try a different keyword or browse all heritage.';
 
   @override
   String get heritageRecentSearches => 'Recent searches';
@@ -260,7 +268,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get heritageSavedTitle => 'Saved';
 
   @override
-  String get heritageSavedEmpty => 'Nothing saved yet. Tap save on any heritage detail page.';
+  String get heritageSavedEmpty =>
+      'Nothing saved yet. Tap save on any heritage detail page.';
 
   @override
   String get heritageLoadMoreError => 'Couldn’t load more — tap to retry.';
@@ -491,7 +500,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get billingCheckoutTitle => 'Checkout';
 
   @override
-  String get billingCheckoutSubtitle => 'Enter your payment method to subscribe';
+  String get billingCheckoutSubtitle =>
+      'Enter your payment method to subscribe';
 
   @override
   String get billingCheckoutToken => 'Payment token';
@@ -536,7 +546,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emailVerifyInvalidCode => 'Code is incorrect or expired.';
 
   @override
-  String get emailVerifyResendError => 'Failed to send email. Please try again.';
+  String get emailVerifyResendError =>
+      'Failed to send email. Please try again.';
 
   @override
   String get emailVerifyResending => 'Sending...';

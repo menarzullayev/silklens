@@ -59,8 +59,10 @@ final Provider<ThemePack> activeThemePackProvider = Provider<ThemePack>(
     final tokens = ref.watch(themeTokensProvider);
     final branding = ref.watch(brandingValueProvider);
 
-    final light = _buildTheme(tokens, brightness: Brightness.light, highContrast: false);
-    final dark = _buildTheme(tokens, brightness: Brightness.dark, highContrast: false);
+    final light =
+        _buildTheme(tokens, brightness: Brightness.light, highContrast: false);
+    final dark =
+        _buildTheme(tokens, brightness: Brightness.dark, highContrast: false);
 
     final mode = switch (variant) {
       ThemeVariant.light => ThemeMode.light,
@@ -71,7 +73,8 @@ final Provider<ThemePack> activeThemePackProvider = Provider<ThemePack>(
     };
 
     if (variant == ThemeVariant.highContrast) {
-      final hc = _buildTheme(tokens, brightness: Brightness.light, highContrast: true);
+      final hc =
+          _buildTheme(tokens, brightness: Brightness.light, highContrast: true);
       return ThemePack(light: hc, dark: hc, mode: ThemeMode.light);
     }
 
@@ -114,19 +117,28 @@ ThemeData _buildTheme(
     onError: Colors.white,
     errorContainer: const Color(0xFF93000A),
     onErrorContainer: const Color(0xFFFFDAD6),
-    surface: brightness == Brightness.dark ? const Color(0xFF0D2337) : const Color(0xFFF5F0E8),
+    surface: brightness == Brightness.dark
+        ? const Color(0xFF0D2337)
+        : const Color(0xFFF5F0E8),
     onSurface: brightness == Brightness.dark ? Colors.white : Colors.black87,
-    surfaceContainerHighest:
-        brightness == Brightness.dark ? const Color(0xFF14213D) : const Color(0xFFEDE8DF),
-    onSurfaceVariant: brightness == Brightness.dark ? Colors.white70 : Colors.black54,
-    outline: brightness == Brightness.dark ? const Color(0x33FFFFFF) : const Color(0x33000000),
-    outlineVariant:
-        brightness == Brightness.dark ? const Color(0x1AFFFFFF) : const Color(0x1A000000),
+    surfaceContainerHighest: brightness == Brightness.dark
+        ? const Color(0xFF14213D)
+        : const Color(0xFFEDE8DF),
+    onSurfaceVariant:
+        brightness == Brightness.dark ? Colors.white70 : Colors.black54,
+    outline: brightness == Brightness.dark
+        ? const Color(0x33FFFFFF)
+        : const Color(0x33000000),
+    outlineVariant: brightness == Brightness.dark
+        ? const Color(0x1AFFFFFF)
+        : const Color(0x1A000000),
     shadow: Colors.black,
     scrim: Colors.black,
-    inverseSurface:
-        brightness == Brightness.dark ? const Color(0xFFF5F0E8) : const Color(0xFF0D2337),
-    onInverseSurface: brightness == Brightness.dark ? Colors.black87 : Colors.white,
+    inverseSurface: brightness == Brightness.dark
+        ? const Color(0xFFF5F0E8)
+        : const Color(0xFF0D2337),
+    onInverseSurface:
+        brightness == Brightness.dark ? Colors.black87 : Colors.white,
     inversePrimary: tokens.primary,
   );
 
@@ -152,6 +164,7 @@ ThemeData _buildTheme(
       primary: Colors.black,
       onPrimary: Colors.white,
     ),
-    textTheme: base.textTheme.apply(bodyColor: Colors.black, displayColor: Colors.black),
+    textTheme: base.textTheme
+        .apply(bodyColor: Colors.black, displayColor: Colors.black),
   );
 }

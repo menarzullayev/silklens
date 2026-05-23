@@ -142,16 +142,22 @@ class _FollowingListPageState extends ConsumerState<FollowingListPage> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: _activeFilter == i ? _gold : Colors.white.withValues(alpha: 0.07),
+                    color: _activeFilter == i
+                        ? _gold
+                        : Colors.white.withValues(alpha: 0.07),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: _activeFilter == i ? _gold : Colors.white.withValues(alpha: 0.15),
+                      color: _activeFilter == i
+                          ? _gold
+                          : Colors.white.withValues(alpha: 0.15),
                     ),
                   ),
                   child: Text(
                     _filters[i],
                     style: TextStyle(
-                      color: _activeFilter == i ? const Color(0xFF1A1200) : Colors.white,
+                      color: _activeFilter == i
+                          ? const Color(0xFF1A1200)
+                          : Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -191,13 +197,16 @@ class _FollowingListPageState extends ConsumerState<FollowingListPage> {
                               vertical: 8,
                             ),
                             itemCount: displayed.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 8),
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 8),
                             itemBuilder: (_, i) {
                               final user = displayed[i];
                               final levelNum = user.levelNumber ?? 1;
-                              final levelLabel = user.levelName ?? 'Level $levelNum';
+                              final levelLabel =
+                                  user.levelName ?? 'Level $levelNum';
                               final handle = user.username ?? user.pubId;
-                              final name = user.displayName ?? user.username ?? '?';
+                              final name =
+                                  user.displayName ?? user.username ?? '?';
                               return _UserRow(
                                 pubId: user.pubId,
                                 name: name,
@@ -428,7 +437,8 @@ class _UserRowState extends State<_UserRow> {
                 vertical: 7,
               ),
               decoration: BoxDecoration(
-                color: _following ? Colors.white.withValues(alpha: 0.08) : _gold,
+                color:
+                    _following ? Colors.white.withValues(alpha: 0.08) : _gold,
                 borderRadius: BorderRadius.circular(10),
                 border: _following
                     ? Border.all(

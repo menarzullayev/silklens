@@ -26,7 +26,8 @@ class Heritage {
         kindSlug: j['kind_slug'] as String,
         name: (j['name'] as Map?)?.cast<String, String>() ?? {},
         summaryMd: (j['summary_md'] as Map?)?.cast<String, String>() ?? {},
-        descriptionMd: (j['description_md'] as Map?)?.cast<String, String>() ?? {},
+        descriptionMd:
+            (j['description_md'] as Map?)?.cast<String, String>() ?? {},
         tags: (j['tags'] as List?)?.cast<String>() ?? [],
         status: j['status'] as String? ?? 'published',
         countryCode: j['country_code'] as String?,
@@ -60,13 +61,20 @@ class Heritage {
   final bool isSaved;
 
   String localizedName(String lang) =>
-      name[lang] ?? name['en'] ?? name['uz'] ?? name.values.firstOrNull ?? pubId;
+      name[lang] ??
+      name['en'] ??
+      name['uz'] ??
+      name.values.firstOrNull ??
+      pubId;
 
   String localizedSummary(String lang) =>
       summaryMd[lang] ?? summaryMd['en'] ?? summaryMd.values.firstOrNull ?? '';
 
   String localizedDescription(String lang) =>
-      descriptionMd[lang] ?? descriptionMd['en'] ?? descriptionMd.values.firstOrNull ?? '';
+      descriptionMd[lang] ??
+      descriptionMd['en'] ??
+      descriptionMd.values.firstOrNull ??
+      '';
   String? get heroMediaUrl => null; // resolved by media service in FAZA 2+
   bool get hasGeolocation => latitude != null && longitude != null;
   String get periodLabel {
@@ -77,7 +85,8 @@ class Heritage {
 
   bool get isUnescoListed => false; // from heritage_facts in FAZA 2+
   int? get unescoInscriptionYear => null;
-  String get description => descriptionMd['en'] ?? descriptionMd.values.firstOrNull ?? '';
+  String get description =>
+      descriptionMd['en'] ?? descriptionMd.values.firstOrNull ?? '';
   Heritage copyWith({bool? isSaved}) => Heritage(
         id: id,
         pubId: pubId,

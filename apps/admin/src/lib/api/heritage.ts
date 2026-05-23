@@ -60,7 +60,9 @@ export function patchHeritage(
 }
 
 export function deleteHeritage(pubId: string): Promise<void> {
-  return apiFetch<void>({
+  // DELETE returns 204 No Content; apiFetch<undefined> avoids the void-in-generic
+  // restriction while remaining assignable to Promise<void>.
+  return apiFetch<undefined>({
     path: `/v1/heritage/${encodeURIComponent(pubId)}`,
     method: 'DELETE',
   });

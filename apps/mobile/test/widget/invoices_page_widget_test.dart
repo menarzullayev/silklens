@@ -11,7 +11,8 @@ void main() {
       wrapForWidgetTest(
         const InvoicesPage(),
         overrides: [
-          invoicesProvider.overrideWith((ref) async => <Map<String, dynamic>>[]),
+          invoicesProvider
+              .overrideWith((ref) async => <Map<String, dynamic>>[]),
         ],
       ),
     );

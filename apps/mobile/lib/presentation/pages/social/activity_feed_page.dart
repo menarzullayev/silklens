@@ -60,7 +60,9 @@ class ActivityFeedPage extends ConsumerWidget {
                                   Color(0xFF1F3A93),
                                 ],
                               ),
-                        color: i == 0 ? Colors.white.withValues(alpha: 0.12) : null,
+                        color: i == 0
+                            ? Colors.white.withValues(alpha: 0.12)
+                            : null,
                         border: Border.all(
                           color: i == 0
                               ? Colors.white.withValues(alpha: 0.3)
@@ -180,10 +182,12 @@ class _FeedCard extends StatefulWidget {
       'follow' => AppStrings.get(locale, 'social_verb_follow'),
       _ => verb,
     };
-    final targetName = item['target_name'] as String? ?? item['target_kind'] as String? ?? '';
+    final targetName =
+        item['target_name'] as String? ?? item['target_kind'] as String? ?? '';
     final action = targetName.isNotEmpty ? '$verbLabel $targetName' : verbLabel;
-    final actorName =
-        item['actor_display_name'] as String? ?? item['actor_pub_id'] as String? ?? '?';
+    final actorName = item['actor_display_name'] as String? ??
+        item['actor_pub_id'] as String? ??
+        '?';
     final createdAt = item['created_at'] as String? ?? '';
     final likeCount = (item['like_count'] as num?)?.toInt() ?? 0;
     final commentCount = (item['comment_count'] as num?)?.toInt() ?? 0;
@@ -240,7 +244,9 @@ class _FeedCardState extends State<_FeedCard> {
                 ),
                 child: Center(
                   child: Text(
-                    widget.author.isNotEmpty ? widget.author[0].toUpperCase() : '?',
+                    widget.author.isNotEmpty
+                        ? widget.author[0].toUpperCase()
+                        : '?',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
@@ -301,8 +307,12 @@ class _FeedCardState extends State<_FeedCard> {
                 child: Row(
                   children: [
                     Icon(
-                      _liked ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
-                      color: _liked ? Colors.red : Colors.white.withValues(alpha: 0.5),
+                      _liked
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_outline_rounded,
+                      color: _liked
+                          ? Colors.red
+                          : Colors.white.withValues(alpha: 0.5),
                       size: 20,
                     ),
                     const SizedBox(width: 4),
@@ -397,7 +407,8 @@ class _FeedSkeleton extends StatelessWidget {
       height: h,
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: circular ? BorderRadius.circular(h / 2) : BorderRadius.circular(6),
+        borderRadius:
+            circular ? BorderRadius.circular(h / 2) : BorderRadius.circular(6),
       ),
     );
   }

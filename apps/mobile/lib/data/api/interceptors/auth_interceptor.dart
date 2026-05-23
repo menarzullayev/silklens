@@ -62,7 +62,8 @@ class AuthInterceptor extends Interceptor {
     }
     final code = _extractErrorCode(response?.data);
     final isExpired = code == 'identity.token_expired';
-    final isInvalid = code == 'identity.token_invalid' || code == 'identity.session_revoked';
+    final isInvalid =
+        code == 'identity.token_invalid' || code == 'identity.session_revoked';
 
     // Don't try to refresh the refresh endpoint itself.
     if (err.requestOptions.path.contains('/auth/refresh') ||

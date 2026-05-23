@@ -306,22 +306,30 @@ class _FriendInvitePageState extends ConsumerState<FriendInvitePage> {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: _copied ? Colors.green.withValues(alpha: 0.2) : _gold,
+                          color: _copied
+                              ? Colors.green.withValues(alpha: 0.2)
+                              : _gold,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              _copied ? Icons.check_rounded : Icons.copy_rounded,
-                              color: _copied ? Colors.green : const Color(0xFF1A1200),
+                              _copied
+                                  ? Icons.check_rounded
+                                  : Icons.copy_rounded,
+                              color: _copied
+                                  ? Colors.green
+                                  : const Color(0xFF1A1200),
                               size: 16,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               _copied ? _s('invite_copied') : _s('invite_copy'),
                               style: TextStyle(
-                                color: _copied ? Colors.green : const Color(0xFF1A1200),
+                                color: _copied
+                                    ? Colors.green
+                                    : const Color(0xFF1A1200),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                               ),

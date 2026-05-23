@@ -438,6 +438,14 @@ jobs:
         if: steps.probe.outputs.present == 'true'
         run: flutter pub get
 
+      - name: Create stub assets/.env
+        # pubspec.yaml declares assets/.env as a bundled asset so the app can
+        # read env vars at runtime.  The file is git-ignored (contains secrets).
+        # Flutter's test runner still needs the file to exist to build the
+        # asset bundle — create an empty stub for CI.
+        if: steps.probe.outputs.present == 'true'
+        run: touch assets/.env
+
       - name: flutter test
         if: steps.probe.outputs.present == 'true'
         run: flutter test --reporter compact

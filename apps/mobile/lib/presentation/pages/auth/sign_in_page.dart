@@ -49,8 +49,9 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _loading = true);
 
-    final success =
-        await ref.read(authNotifierProvider.notifier).login(_emailCtrl.text.trim(), _passCtrl.text);
+    final success = await ref
+        .read(authNotifierProvider.notifier)
+        .login(_emailCtrl.text.trim(), _passCtrl.text);
 
     if (!mounted) return;
     setState(() => _loading = false);
@@ -93,7 +94,9 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         }
         return;
       }
-      final success = await ref.read(authNotifierProvider.notifier).loginWithGoogle(accessToken);
+      final success = await ref
+          .read(authNotifierProvider.notifier)
+          .loginWithGoogle(accessToken);
       if (!mounted) return;
       setState(() => _loading = false);
       if (success) {
@@ -134,7 +137,11 @@ class _SignInPageState extends ConsumerState<SignInPage> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFF0D2337), Color(0xFF1A3A5C), Color(0xFF0D2337)],
+                colors: [
+                  Color(0xFF0D2337),
+                  Color(0xFF1A3A5C),
+                  Color(0xFF0D2337)
+                ],
                 stops: [0.0, 0.5, 1.0],
               ),
             ),
@@ -145,7 +152,10 @@ class _SignInPageState extends ConsumerState<SignInPage> {
               gradient: RadialGradient(
                 center: const Alignment(-0.4, -0.4),
                 radius: 1.3,
-                colors: [const Color(0xFF1F3A93).withValues(alpha: 0.6), Colors.transparent],
+                colors: [
+                  const Color(0xFF1F3A93).withValues(alpha: 0.6),
+                  Colors.transparent
+                ],
               ),
             ),
           ),
@@ -155,7 +165,10 @@ class _SignInPageState extends ConsumerState<SignInPage> {
               gradient: RadialGradient(
                 center: const Alignment(0.7, 0.2),
                 radius: 1,
-                colors: [const Color(0xFFC2501F).withValues(alpha: 0.4), Colors.transparent],
+                colors: [
+                  const Color(0xFFC2501F).withValues(alpha: 0.4),
+                  Colors.transparent
+                ],
               ),
             ),
           ),
@@ -267,7 +280,8 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                               color: Colors.white.withValues(alpha: 0.5),
                               size: 20,
                             ),
-                            onPressed: () => setState(() => _obscurePass = !_obscurePass),
+                            onPressed: () =>
+                                setState(() => _obscurePass = !_obscurePass),
                           ),
                         ),
                         validator: (v) {
@@ -379,7 +393,8 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                               borderRadius: BorderRadius.circular(14),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFB78628).withValues(alpha: 0.35),
+                                  color: const Color(0xFFB78628)
+                                      .withValues(alpha: 0.35),
                                   blurRadius: 16,
                                   offset: const Offset(0, 4),
                                 ),
@@ -392,7 +407,8 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                       height: 22,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation(Color(0xFF1A1200)),
+                                        valueColor: AlwaysStoppedAnimation(
+                                            Color(0xFF1A1200)),
                                       ),
                                     )
                                   : Text(

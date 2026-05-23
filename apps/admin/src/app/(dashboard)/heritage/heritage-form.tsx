@@ -148,7 +148,7 @@ export function HeritageForm({
       const result =
         mode === 'create'
           ? await createHeritageAction(payload)
-          : await patchHeritageAction(initial!.pub_id, payload);
+          : await patchHeritageAction((initial as NonNullable<typeof initial>).pub_id, payload);
       if (!result.ok) toast.error(result.message ?? 'Save failed');
       else toast.success('Saved');
     });

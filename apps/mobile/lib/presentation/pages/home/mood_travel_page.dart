@@ -48,16 +48,18 @@ class MoodTravelPage extends HookConsumerWidget {
       isLoading.value = true;
       result.value = null;
       try {
-        result.value = await ref.read(silkLensApiClientProvider).getMoodRecommendations(
-              mood: mood,
-              availableHours: 3,
-              language: locale.languageCode,
-            );
+        result.value =
+            await ref.read(silkLensApiClientProvider).getMoodRecommendations(
+                  mood: mood,
+                  availableHours: 3,
+                  language: locale.languageCode,
+                );
       } catch (_) {}
       isLoading.value = false;
     }
 
-    final recommendations = (result.value?['recommended_heritage'] as List?) ?? [];
+    final recommendations =
+        (result.value?['recommended_heritage'] as List?) ?? [];
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D2337),
@@ -109,11 +111,13 @@ class MoodTravelPage extends HookConsumerWidget {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color:
-                        isSelected ? const Color(0xFFB78628) : Colors.white.withValues(alpha: 0.08),
+                    color: isSelected
+                        ? const Color(0xFFB78628)
+                        : Colors.white.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isSelected ? const Color(0xFFB78628) : Colors.white12,
+                      color:
+                          isSelected ? const Color(0xFFB78628) : Colors.white12,
                     ),
                   ),
                   child: Row(
@@ -125,7 +129,8 @@ class MoodTravelPage extends HookConsumerWidget {
                         _s(labelKey),
                         style: TextStyle(
                           color: isSelected ? Colors.white : Colors.white70,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
                     ],
@@ -203,7 +208,9 @@ class MoodTravelPage extends HookConsumerWidget {
                       Icons.chevron_right,
                       color: Colors.white38,
                     ),
-                    onTap: pubId != null ? () => context.push('/home/heritage/$pubId') : null,
+                    onTap: pubId != null
+                        ? () => context.push('/home/heritage/$pubId')
+                        : null,
                   ),
                 );
               }),

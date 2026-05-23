@@ -26,7 +26,8 @@ class CameraPage extends ConsumerStatefulWidget {
   ConsumerState<CameraPage> createState() => _CameraPageState();
 }
 
-class _CameraPageState extends ConsumerState<CameraPage> with WidgetsBindingObserver {
+class _CameraPageState extends ConsumerState<CameraPage>
+    with WidgetsBindingObserver {
   // ---- state ----
   List<CameraDescription> _cameras = [];
   CameraController? _ctrl;
@@ -123,7 +124,8 @@ class _CameraPageState extends ConsumerState<CameraPage> with WidgetsBindingObse
   Future<void> _pickFromGallery() async {
     if (_busy) return;
     final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
+    final image =
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
     if (image == null) return;
 
     setState(() => _busy = true);
@@ -170,7 +172,8 @@ class _CameraPageState extends ConsumerState<CameraPage> with WidgetsBindingObse
             right: 0,
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   children: [
                     _iconBtn(
@@ -403,7 +406,9 @@ class _CameraPageState extends ConsumerState<CameraPage> with WidgetsBindingObse
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        result.topLabel.isNotEmpty ? result.topLabel : _s('camera_unknown'),
+                        result.topLabel.isNotEmpty
+                            ? result.topLabel
+                            : _s('camera_unknown'),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,

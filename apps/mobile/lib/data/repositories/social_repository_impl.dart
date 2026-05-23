@@ -171,18 +171,24 @@ class SocialNotificationItem {
     this.actionUrl,
   });
 
-  factory SocialNotificationItem.fromJson(Map<String, dynamic> j) => SocialNotificationItem(
+  factory SocialNotificationItem.fromJson(Map<String, dynamic> j) =>
+      SocialNotificationItem(
         id: j['id'] as String? ?? '',
         // Backend uses category_slug; fallback to kind for legacy shape
-        category: j['category_slug'] as String? ?? j['kind'] as String? ?? 'system',
+        category:
+            j['category_slug'] as String? ?? j['kind'] as String? ?? 'system',
         // Backend uses title; fallback to text/body for legacy shape
-        title: j['title'] as String? ?? j['text'] as String? ?? j['body'] as String? ?? '',
+        title: j['title'] as String? ??
+            j['text'] as String? ??
+            j['body'] as String? ??
+            '',
         body: j['body'] as String? ?? j['text'] as String? ?? '',
         iconUrl: j['icon_url'] as String?,
         actionUrl: j['action_url'] as String?,
         // read_at present → read; fallback to is_read bool for legacy shape
         isRead: j['read_at'] != null || (j['is_read'] as bool? ?? false),
-        createdAt: j['created_at'] as String? ?? j['timestamp'] as String? ?? '',
+        createdAt:
+            j['created_at'] as String? ?? j['timestamp'] as String? ?? '',
       );
 
   Map<String, dynamic> toPageMap() => {
@@ -246,7 +252,9 @@ class SocialRepositoryImpl {
     final data = await _client.getSocialFeed(limit: limit, before: before);
     final items = (data['items'] as List?) ?? [];
     return SocialFeedPage(
-      items: items.map((e) => SocialFeedItem.fromJson(e as Map<String, dynamic>)).toList(),
+      items: items
+          .map((e) => SocialFeedItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
       nextCursor: data['next_cursor'] as String?,
     );
   }
@@ -258,9 +266,12 @@ class SocialRepositoryImpl {
     int limit = 50,
     int offset = 0,
   }) async {
-    final data = await _client.getFollowing(pubId, limit: limit, offset: offset);
+    final data =
+        await _client.getFollowing(pubId, limit: limit, offset: offset);
     final items = (data['items'] as List?) ?? [];
-    return items.map((e) => UserRef.fromJson(e as Map<String, dynamic>)).toList();
+    return items
+        .map((e) => UserRef.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<List<UserRef>> getFollowers(
@@ -268,14 +279,18 @@ class SocialRepositoryImpl {
     int limit = 50,
     int offset = 0,
   }) async {
-    final data = await _client.getFollowers(pubId, limit: limit, offset: offset);
+    final data =
+        await _client.getFollowers(pubId, limit: limit, offset: offset);
     final items = (data['items'] as List?) ?? [];
-    return items.map((e) => UserRef.fromJson(e as Map<String, dynamic>)).toList();
+    return items
+        .map((e) => UserRef.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<void> follow(String pubId) => _client.followUser(pubId);
   Future<void> unfollow(String pubId) => _client.unfollowUser(pubId);
-  Future<void> block(String pubId, {String? reason}) => _client.blockUser(pubId, reason: reason);
+  Future<void> block(String pubId, {String? reason}) =>
+      _client.blockUser(pubId, reason: reason);
   Future<void> unblock(String pubId) => _client.unblockUser(pubId);
 
   // Friend Invitations

@@ -54,7 +54,7 @@ function statusVariant(
   }
 }
 
-function formatDate(iso: string | null | undefined): string {
+function _formatDate(iso: string | null | undefined): string {
   if (!iso) return '—';
   try {
     return new Date(iso).toLocaleDateString('en-GB', {

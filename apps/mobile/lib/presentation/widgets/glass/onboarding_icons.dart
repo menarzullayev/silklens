@@ -40,7 +40,8 @@ class _CompassRosePainter extends CustomPainter {
     );
 
     // Dashed inner ring
-    _drawDashedCircle(canvas, cx, cy, r * 0.72, 24, const Color(0x66B78628), 1.5 * s);
+    _drawDashedCircle(
+        canvas, cx, cy, r * 0.72, 24, const Color(0x66B78628), 1.5 * s);
 
     // N needle (white, large)
     final nLen = r * 0.62;

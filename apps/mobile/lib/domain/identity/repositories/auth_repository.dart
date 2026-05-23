@@ -52,7 +52,8 @@ abstract interface class AuthRepository {
   Future<Result<AuthSession>> signInWithInstagram(String accessToken);
 
   /// Verify the 6-digit OTP sent to [email] after registration.
-  Future<Result<bool>> verifyEmail({required String email, required String code});
+  Future<Result<bool>> verifyEmail(
+      {required String email, required String code});
 
   /// Request a fresh OTP for [email] (authenticated user only).
   Future<Result<bool>> resendVerification({

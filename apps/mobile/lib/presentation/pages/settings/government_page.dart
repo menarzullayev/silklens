@@ -207,7 +207,9 @@ class _GovernmentPageState extends ConsumerState<GovernmentPage> {
                                       const SizedBox(width: 6),
                                     ],
                                     Text(
-                                      kindIdx >= 0 ? _kindNames[kindIdx] : kindStr,
+                                      kindIdx >= 0
+                                          ? _kindNames[kindIdx]
+                                          : kindStr,
                                       style: const TextStyle(
                                         color: Color(0xFFB78628),
                                         fontSize: 12,

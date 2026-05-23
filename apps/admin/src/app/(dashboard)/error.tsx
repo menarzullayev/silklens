@@ -14,7 +14,7 @@ interface ErrorBoundaryProps {
 export default function DashboardError({ error, reset }: ErrorBoundaryProps): JSX.Element {
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production') {
-      // eslint-disable-next-line no-console
+       
       console.error('[dashboard] uncaught:', error);
     }
   }, [error]);

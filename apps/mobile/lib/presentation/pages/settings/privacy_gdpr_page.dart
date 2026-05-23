@@ -40,7 +40,8 @@ class _PrivacyGDPRPageState extends ConsumerState<PrivacyGDPRPage> {
       final client = ref.read(silkLensApiClientProvider);
       final result = await client.requestDataExport();
       if (!mounted) return;
-      final requestId = result['request_id'] as String? ?? result['id'] as String? ?? '';
+      final requestId =
+          result['request_id'] as String? ?? result['id'] as String? ?? '';
       _showExportDialog(requestId);
     } catch (_) {
       if (!mounted) return;
@@ -340,7 +341,9 @@ class _ActionRow extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isGold ? const Color(0xFFB78628) : Colors.white.withValues(alpha: 0.7),
+              color: isGold
+                  ? const Color(0xFFB78628)
+                  : Colors.white.withValues(alpha: 0.7),
               size: 20,
             ),
             const SizedBox(width: 12),
