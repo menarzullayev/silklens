@@ -269,7 +269,9 @@ def test_factory_brevo_api_key_returns_brevo_api_client(monkeypatch: pytest.Monk
     assert isinstance(client, email_client.BrevoApiEmailClient)
 
 
-def test_factory_brevo_smtp_fallback_returns_brevo_smtp_client(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_factory_brevo_smtp_fallback_returns_brevo_smtp_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """When no API key set, falls back to SMTP relay client."""
     monkeypatch.setattr(
         email_client,
