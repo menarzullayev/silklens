@@ -7,7 +7,7 @@ Hand-written SQL again (per the identity infrastructure rationale): migration
 from __future__ import annotations
 
 import json
-from typing import Final
+from typing import Any, Final
 from uuid import UUID
 
 from sqlalchemy import text
@@ -40,7 +40,7 @@ _SELECT_COLUMNS: Final = """
 """
 
 
-def _row_to_entity(row: object) -> HeritageObject:
+def _row_to_entity(row: Any) -> HeritageObject:
     m = row._mapping
     return HeritageObject(
         id=m["id"],
@@ -71,7 +71,7 @@ def _row_to_entity(row: object) -> HeritageObject:
     )
 
 
-def _row_to_revision(row: object) -> HeritageRevision:
+def _row_to_revision(row: Any) -> HeritageRevision:
     m = row._mapping
     return HeritageRevision(
         id=m["id"],

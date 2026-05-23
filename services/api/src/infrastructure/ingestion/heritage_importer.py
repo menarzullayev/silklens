@@ -182,7 +182,7 @@ class WikidataHeritageImporter:
             raise RuntimeError(
                 "wikidata heritage_provenance row missing — migration 0011 seed not applied"
             )
-        return row[0]
+        return UUID(str(row[0]))
 
     async def _insert_heritage(
         self,
@@ -236,7 +236,7 @@ class WikidataHeritageImporter:
                         },
                     )
                 ).one()
-                return row[0]
+                return UUID(str(row[0]))
             except Exception as exc:  # pragma: no cover - extremely rare
                 if "pub_id" in str(exc).lower():
                     pub_id = _generate_pub_id()
@@ -411,7 +411,7 @@ class WikidataHeritageImporter:
                 {"hid": heritage_id},
             )
         ).one()
-        return row[0]
+        return str(row[0])
 
     async def _refresh_facts(self, *, heritage_id: UUID, item: WikidataHeritage) -> int:
         provenance_id = await self._wikidata_provenance_id()

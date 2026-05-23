@@ -84,7 +84,7 @@ def _hotp(secret: bytes, counter: int, *, digits: int = 6) -> int:
         | (h[offset + 2] & 0xFF) << 8
         | (h[offset + 3] & 0xFF)
     )
-    return binary % (10**digits)
+    return int(binary % (10**digits))
 
 
 def current_totp(secret_base32: str) -> str:

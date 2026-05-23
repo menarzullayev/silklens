@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, time
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import text
@@ -32,7 +33,7 @@ _NOTIFICATION_COLS = """
 """
 
 
-def _row_to_notification(row: object) -> Notification:
+def _row_to_notification(row: Any) -> Notification:
     m = row._mapping
     return Notification(
         id=m["id"],

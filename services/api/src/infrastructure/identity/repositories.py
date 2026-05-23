@@ -62,7 +62,7 @@ def _user_from_row(row: Row[tuple[object, ...]]) -> User:
     )
 
 
-def _email_from_row(row: object) -> UserEmail:
+def _email_from_row(row: Row[tuple[object, ...]]) -> UserEmail:
     r = row._mapping
     return UserEmail(
         id=r["id"],

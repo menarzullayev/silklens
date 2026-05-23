@@ -241,7 +241,7 @@ class StripeProvider:
         # SDK-supplied serializer to get a plain dict so callers don't need to
         # import the SDK to inspect fields.
         if hasattr(event, "to_dict_recursive"):
-            return event.to_dict_recursive()
+            return dict(event.to_dict_recursive())  # type: ignore[arg-type]
         if hasattr(event, "to_dict"):
-            return event.to_dict()
+            return dict(event.to_dict())  # type: ignore[arg-type]
         return {k: event[k] for k in event.keys()}  # noqa: SIM118

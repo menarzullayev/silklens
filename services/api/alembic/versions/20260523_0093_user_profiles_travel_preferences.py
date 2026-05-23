@@ -13,7 +13,10 @@ from __future__ import annotations
 from alembic import op
 
 revision = "0093"
-down_revision = "0092_investor_dataroom"
+# Chain after the AR gamification mergepoint to avoid multiple heads.
+# 0088_ar_gamification already merges 0085/0086/0090/0091/0092, so attaching
+# the SILK-0093+ branch here keeps the migration graph linear.
+down_revision = "0088_ar_gamification"
 branch_labels = None
 depends_on = None
 

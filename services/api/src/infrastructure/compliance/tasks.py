@@ -84,11 +84,11 @@ async def export_user_data(
 
             client = get_minio_client()
             object_key = f"gdpr-exports/{user_id}/{request_id}.json"
-            client.put_object(
-                bucket="silklens-compliance",
-                key=object_key,
-                body=json.dumps(manifest, default=str).encode("utf-8"),
-                content_type="application/json",
+            client.upload(
+                "silklens-compliance",
+                object_key,
+                json.dumps(manifest, default=str).encode("utf-8"),
+                "application/json",
             )
             payload_url = f"s3://silklens-compliance/{object_key}"
         except Exception as exc:  # pragma: no cover - dev/test fallback

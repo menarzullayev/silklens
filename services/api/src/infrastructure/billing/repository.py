@@ -726,7 +726,7 @@ class SqlPaymentRepository:
                     ).scalar_one()
                 )
             )
-        return UUID(str(row._mapping["id"]))  # type: ignore[attr-defined]
+        return UUID(str(row._mapping["id"]))
 
     async def webhook_event_exists(self, provider: str, provider_event_id: str) -> bool:
         row = (
@@ -783,7 +783,7 @@ class SqlPaymentRepository:
                     ).scalar_one()
                 )
             )
-        return UUID(str(row._mapping["id"]))  # type: ignore[attr-defined]
+        return UUID(str(row._mapping["id"]))
 
 
 # ----------------------------------------------------------------------

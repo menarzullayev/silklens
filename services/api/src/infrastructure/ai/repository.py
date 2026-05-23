@@ -17,17 +17,18 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.ai.entities import AiTaskType
+from src.domain.ai.repository import TranslationMemoryRow, VectorHitRow
 from src.infrastructure._events import jdump
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class _TmRow:
     target_text: str
     confidence: int
     model_slug: str
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class _VectorHitRow:
     heritage_id: UUID
     heritage_pub_id: str
@@ -61,8 +62,8 @@ class SqlAiRepository:
             )
         ).scalar_one_or_none()
         if row is not None:
-            return row
-        return (
+            return UUID(str(row))
+        val = (
             await self._session.execute(
                 text(
                     """
@@ -77,6 +78,7 @@ class SqlAiRepository:
                 {"slug": model_slug},
             )
         ).scalar_one_or_none()
+        return UUID(str(val)) if val is not None else None
 
     async def resolve_model_id(self, model_slug: str) -> UUID | None:
         return (
@@ -277,7 +279,7 @@ class SqlAiRepository:
         source_hash: bytes,
         source_lang: str,
         target_lang: str,
-    ) -> _TmRow | None:
+    ) -> TranslationMemoryRow | None:
         row = (
             await self._session.execute(
                 text(
@@ -396,7 +398,7 @@ class SqlAiRepository:
         limit: int,
         kind_slug: str | None,
         country_code: str | None,
-    ) -> list[_VectorHitRow]:
+    ) -> list[VectorHitRow]:
         clauses: list[str] = []
         params: dict[str, object] = {"limit": limit, "lang": language, "vec": vector_literal}
         if kind_slug is not None:
@@ -432,7 +434,7 @@ class SqlAiRepository:
                 params,
             )
         ).all()
-        out: list[_VectorHitRow] = []
+        out: list[VectorHitRow] = []
         for r in rows:
             m = r._mapping
             out.append(

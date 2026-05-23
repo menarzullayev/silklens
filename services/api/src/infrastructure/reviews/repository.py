@@ -572,4 +572,4 @@ class SqlReviewRepository:
                 "details": details,
             },
         )
-        return row.scalar_one()
+        return UUID(str(row.scalar_one()))

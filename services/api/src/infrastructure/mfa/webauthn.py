@@ -213,10 +213,20 @@ def _options_to_dict(opts: object) -> dict[str, object]:
     # control in our hands.
     try:
         import json
+        from typing import cast as _cast
 
         from webauthn.helpers import options_to_json
+        from webauthn.helpers.structs import (  # type: ignore[import-untyped]
+            PublicKeyCredentialCreationOptions,
+            PublicKeyCredentialRequestOptions,
+        )
 
-        return json.loads(options_to_json(opts))
+        typed_opts = _cast(
+            "PublicKeyCredentialCreationOptions | PublicKeyCredentialRequestOptions",
+            opts,
+        )
+        parsed: dict[str, object] = json.loads(options_to_json(typed_opts))
+        return parsed
     except Exception:  # noqa: S110 — fall back to dataclass dump
         pass
     if hasattr(opts, "__dataclass_fields__"):

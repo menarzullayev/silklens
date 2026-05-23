@@ -61,4 +61,5 @@ def configure_logging() -> None:
 
 
 def get_logger(name: str | None = None, **initial_context: Any) -> structlog.stdlib.BoundLogger:
-    return structlog.get_logger(name).bind(**initial_context)
+    logger: structlog.stdlib.BoundLogger = structlog.get_logger(name).bind(**initial_context)  # type: ignore[assignment]
+    return logger

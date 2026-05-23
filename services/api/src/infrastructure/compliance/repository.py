@@ -443,7 +443,7 @@ class SqlComplianceRepository:
                 params,
             )
             return _row_to_request(row.one())
-        result = await self._s.execute(
+        update_result = await self._s.execute(
             text(
                 f"""
                 UPDATE gdpr_requests
@@ -454,9 +454,9 @@ class SqlComplianceRepository:
             ),
             params,
         )
-        row = result.one()
+        updated_row = update_result.one()
         await self._s.commit()
-        return _row_to_request(row)
+        return _row_to_request(updated_row)
 
     async def find_pending_delete_request(
         self,
@@ -556,7 +556,7 @@ class SqlComplianceRepository:
                 params,
             )
             return _row_to_job(row.one())
-        result = await self._s.execute(
+        update_result = await self._s.execute(
             text(
                 f"""
                 UPDATE anonymization_jobs
@@ -567,9 +567,9 @@ class SqlComplianceRepository:
             ),
             params,
         )
-        row = result.one()
+        updated_row = update_result.one()
         await self._s.commit()
-        return _row_to_job(row)
+        return _row_to_job(updated_row)
 
     async def cancel_anonymization_for_request(
         self,
@@ -590,7 +590,7 @@ class SqlComplianceRepository:
             {"req": gdpr_request_id, "region": residency_region},
         )
         await self._s.commit()
-        return result.rowcount or 0
+        return result.rowcount or 0  # type: ignore[attr-defined]
 
     async def run_anonymize_sql(
         self,

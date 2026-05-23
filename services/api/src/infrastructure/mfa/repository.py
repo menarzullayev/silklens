@@ -8,7 +8,7 @@ truth at this stage.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Final
+from typing import Any, Final
 from uuid import UUID, uuid4
 
 from sqlalchemy import text
@@ -31,7 +31,7 @@ _METHOD_COLUMNS: Final = (
 )
 
 
-def _method_from_row(row: object) -> MfaMethod:
+def _method_from_row(row: Any) -> MfaMethod:
     m = row._mapping
     metadata = m["metadata"] or {}
     if isinstance(metadata, str):

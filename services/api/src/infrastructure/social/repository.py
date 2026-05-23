@@ -477,7 +477,7 @@ class SqlActivityFeedRepository:
                 "payload": jdump(payload or {}),
             },
         )
-        return row.scalar_one()
+        return UUID(str(row.scalar_one()))
 
     async def fanout_to_followers(self, *, event_id: UUID) -> int:
         """Push the event into ``activity_fanout`` for every follower of the actor.
@@ -517,7 +517,7 @@ class SqlActivityFeedRepository:
         if whale.one_or_none() is not None:
             return 0
 
-        result = await self._session.execute(
+        _raw = await self._session.execute(
             text(
                 """
                 INSERT INTO activity_fanout (
@@ -538,7 +538,7 @@ class SqlActivityFeedRepository:
                 "verb": verb,
             },
         )
-        return result.rowcount or 0
+        return _raw.rowcount or 0  # type: ignore[attr-defined]
 
     async def feed(
         self,
