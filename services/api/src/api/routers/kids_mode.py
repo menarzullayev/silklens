@@ -140,7 +140,11 @@ async def heritage_kids_story(
     # 1. Check for pre-generated kids story in heritage_facts
     stored = await session.execute(
         text("""
-            SELECT COALESCE(hf.value_jsonb->>:lang, hf.value_jsonb->>'en', hf.value_text) AS story
+            SELECT COALESCE(
+                hf.object_value->>:lang,
+                hf.object_value->>'en',
+                hf.object_text
+            ) AS story
             FROM heritage_facts hf
             JOIN heritage_objects ho ON ho.id = hf.heritage_id
             WHERE ho.pub_id = :pub_id

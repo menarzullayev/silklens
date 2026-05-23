@@ -107,17 +107,17 @@ async def list_heritage_stories(
                 hf.predicate                            AS kind,
                 hf.confidence,
                 COALESCE(
-                    hf.value_jsonb->>:lang,
-                    hf.value_jsonb->>'en',
-                    hf.value_text
+                    hf.object_value->>:lang,
+                    hf.object_value->>'en',
+                    hf.object_text
                 )                                       AS story_text,
-                hf.created_at
+                hf.asserted_at
             FROM heritage_facts  hf
             JOIN heritage_objects ho ON ho.id = hf.heritage_id
             WHERE ho.pub_id      = :pub_id
               AND ho.deleted_at  IS NULL
               {predicate_clause}
-            ORDER BY hf.confidence DESC NULLS LAST, hf.created_at DESC
+            ORDER BY hf.confidence DESC NULLS LAST, hf.asserted_at DESC
             LIMIT 20
             """  # noqa: S608 — predicate_clause is built from a closed set above
         ),
@@ -160,9 +160,9 @@ async def random_story(
                 COALESCE(ho.name->>:lang, ho.name->>'en')          AS heritage_name,
                 hf.predicate                                        AS kind,
                 COALESCE(
-                    hf.value_jsonb->>:lang,
-                    hf.value_jsonb->>'en',
-                    hf.value_text
+                    hf.object_value->>:lang,
+                    hf.object_value->>'en',
+                    hf.object_text
                 )                                                   AS story_text,
                 hf.confidence
             FROM heritage_facts  hf

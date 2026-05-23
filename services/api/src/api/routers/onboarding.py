@@ -276,7 +276,7 @@ async def get_plans_overview(
             LEFT JOIN LATERAL (
                 SELECT jsonb_agg(feature_key ORDER BY sort_order) AS feature_list
                 FROM plan_features
-                WHERE plan_id = pp.id AND is_included = true
+                WHERE plan_id = pp.id AND enabled = true
             ) f ON true
             WHERE pp.is_active = true
             ORDER BY pp.sort_order

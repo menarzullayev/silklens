@@ -31,6 +31,11 @@ EXTENSIONS = (
     "btree_gist",
     "btree_gin",
     "vector",
+    # cube + earthdistance — required by listings/weather/mood/quick-plan
+    # queries that use the `point <@> point` great-circle distance operator.
+    # Order matters: earthdistance depends on cube.
+    "cube",
+    "earthdistance",
 )
 
 

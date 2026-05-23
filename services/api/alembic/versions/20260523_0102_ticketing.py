@@ -19,7 +19,7 @@ def upgrade() -> None:
     op.execute("""
         CREATE TABLE IF NOT EXISTS ticket_types (
             id              uuid         PRIMARY KEY DEFAULT gen_uuid_v7(),
-            heritage_pub_id uuid         NOT NULL,
+            heritage_pub_id text         NOT NULL,
             name            jsonb        NOT NULL DEFAULT '{}',
             kind            varchar(20)  NOT NULL DEFAULT 'standard',
             description_md  jsonb        NOT NULL DEFAULT '{}',

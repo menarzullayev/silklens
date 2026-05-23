@@ -93,3 +93,7 @@ android/local.properties
 design/
 finalDesign/
 .claude/worktrees/
+
+# Schemathesis test cache
+.schemathesis/
+logs/schemathesis-junit.xml

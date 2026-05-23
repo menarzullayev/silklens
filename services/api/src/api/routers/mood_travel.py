@@ -105,17 +105,18 @@ async def mood_recommendations(
             f"""
             SELECT pub_id,
                    COALESCE(name->>:lang, name->>'en') AS name,
-                   kind_slug, lat, lng,
+                   kind_slug, latitude AS lat, longitude AS lng,
                    round(
-                       (point(:lng_f, :lat_f) <@> point(lng::float8, lat::float8)
+                       (point(:lng_f, :lat_f)
+                        <@> point(longitude::float8, latitude::float8)
                        )::numeric * 1.60934, 1
                    ) AS distance_km
             FROM heritage_objects
             WHERE status = 'published'
               AND deleted_at IS NULL
               AND kind_slug IN ({kind_placeholders})
-              AND lat IS NOT NULL
-            ORDER BY (point(:lng_f, :lat_f) <@> point(lng::float8, lat::float8))
+              AND latitude IS NOT NULL
+            ORDER BY (point(:lng_f, :lat_f) <@> point(longitude::float8, latitude::float8))
             LIMIT :limit
         """  # noqa: S608 — kind_placeholders built from validated list, no user input
         ),

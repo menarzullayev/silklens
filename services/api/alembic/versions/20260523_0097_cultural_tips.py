@@ -37,7 +37,7 @@ def upgrade() -> None:
             title            jsonb        NOT NULL DEFAULT '{}',
             body_md          jsonb        NOT NULL DEFAULT '{}',
             severity         varchar(10)  NOT NULL DEFAULT 'info',
-            heritage_pub_id  uuid,
+            heritage_pub_id text,
             is_active        boolean      NOT NULL DEFAULT true,
             sort_order       int          NOT NULL DEFAULT 0,
             created_at       timestamptz  NOT NULL DEFAULT now(),
@@ -245,8 +245,8 @@ def _seed_uzbekistan_tips() -> None:
             (country_code, context, kind, title, body_md, severity)
         VALUES (
             :country, :context, :kind,
-            jsonb_build_object('en', :title_en, 'uz', :title_uz),
-            jsonb_build_object('en', :body_en,  'uz', :body_uz),
+            jsonb_build_object('en', cast(:title_en as text), 'uz', cast(:title_uz as text)),
+            jsonb_build_object('en', cast(:body_en as text),  'uz', cast(:body_uz as text)),
             :severity
         )
         """

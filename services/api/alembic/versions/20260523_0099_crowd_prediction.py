@@ -21,7 +21,7 @@ def upgrade() -> None:
         """
         CREATE TABLE IF NOT EXISTS heritage_check_ins (
             id              uuid         PRIMARY KEY DEFAULT gen_uuid_v7(),
-            heritage_pub_id uuid         NOT NULL,
+            heritage_pub_id text         NOT NULL,
             user_id         uuid,
             checked_in_at   timestamptz  NOT NULL DEFAULT now(),
             day_of_week     smallint     NOT NULL DEFAULT 0,
@@ -72,7 +72,7 @@ def upgrade() -> None:
     op.execute(
         """
         CREATE TABLE IF NOT EXISTS crowd_predictions (
-            heritage_pub_id uuid        NOT NULL,
+            heritage_pub_id text        NOT NULL,
             day_of_week     smallint    NOT NULL,
             hour_of_day     smallint    NOT NULL,
             month_of_year   smallint    NOT NULL,

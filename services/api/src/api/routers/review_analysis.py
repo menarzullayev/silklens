@@ -148,7 +148,7 @@ async def analyze_reviews(
     rows = await session.execute(
         text("""
             SELECT r.id, r.body_md, r.language_tag, r.created_at,
-                   AVG(rr.score) AS rating_avg
+                   AVG(rr.value) AS rating_avg
             FROM reviews r
             LEFT JOIN review_ratings rr ON rr.review_id = r.id
             WHERE r.heritage_id = (

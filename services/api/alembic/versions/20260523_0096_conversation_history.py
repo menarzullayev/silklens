@@ -40,7 +40,7 @@ def upgrade() -> None:
             tenant_id        uuid         NOT NULL,
             title            varchar(200),
             context_kind     varchar(30)  NOT NULL DEFAULT 'general',
-            heritage_pub_id  uuid,
+            heritage_pub_id  text,
             trip_id          uuid,
             language_tag     varchar(10)  NOT NULL DEFAULT 'en',
             message_count    int          NOT NULL DEFAULT 0,
@@ -112,11 +112,17 @@ def upgrade() -> None:
 
     # RLS
     op.execute("ALTER TABLE conversation_sessions ENABLE ROW LEVEL SECURITY")
+    # Tenant isolation policy — mirrors the pattern from migration 0054.
+    # Reads the tenant_id from the session-local GUC set by app.set_tenant_context(uuid);
+    # the migration runner and system_actor path bypass via app.bypass_rls='on'.
     op.execute(
         """
         CREATE POLICY conversation_sessions_tenant_isolation
             ON conversation_sessions
-            USING (tenant_id = app.current_tenant_id())
+            USING (
+                tenant_id = current_setting('app.tenant_id', true)::uuid
+                OR current_setting('app.bypass_rls', true) = 'on'
+            )
         """
     )
 

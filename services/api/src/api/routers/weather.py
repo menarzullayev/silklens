@@ -93,18 +93,19 @@ async def weather_guide(
     # Fetch nearby published heritage objects from DB, sorted by proximity
     rows = await db.execute(
         text("""
-            SELECT pub_id, name, kind_slug, lat, lng,
-                CASE WHEN lat IS NOT NULL AND lng IS NOT NULL THEN
+            SELECT pub_id, name, kind_slug, latitude AS lat, longitude AS lng,
+                CASE WHEN latitude IS NOT NULL AND longitude IS NOT NULL THEN
                     round(
-                        (point(:lng, :lat) <@> point(lng::float8, lat::float8))::numeric * 1.60934,
+                        (point(:lng, :lat)
+                         <@> point(longitude::float8, latitude::float8))::numeric * 1.60934,
                         1
                     )
                 ELSE NULL END AS distance_km
             FROM heritage_objects
             WHERE status = 'published'
-              AND lat IS NOT NULL
+              AND latitude IS NOT NULL
               AND deleted_at IS NULL
-            ORDER BY (point(:lng, :lat) <@> point(lng::float8, lat::float8))
+            ORDER BY (point(:lng, :lat) <@> point(longitude::float8, latitude::float8))
             LIMIT 5
         """),
         {"lat": lat, "lng": lng},

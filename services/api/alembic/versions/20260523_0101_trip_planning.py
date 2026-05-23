@@ -56,7 +56,7 @@ def upgrade() -> None:
             trip_id         uuid         NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
             day_number      int          NOT NULL,
             order_in_day    int          NOT NULL DEFAULT 0,
-            heritage_pub_id uuid,
+            heritage_pub_id text,
             listing_id      uuid,
             stop_name       varchar(200),
             stop_kind       varchar(30)  DEFAULT 'heritage',

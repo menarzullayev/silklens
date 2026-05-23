@@ -267,7 +267,8 @@ async def create_trip(
         city_pat = f"%{city.lower()}%"
         rows = await db.execute(
             text("""
-                SELECT pub_id, name, kind_slug, country_code, lat, lng
+                SELECT pub_id, name, kind_slug, country_code,
+                       latitude AS lat, longitude AS lng
                 FROM heritage_objects
                 WHERE status = 'published'
                   AND deleted_at IS NULL
@@ -528,7 +529,7 @@ async def quick_plan(
     default_lng = body.lng if body.lng is not None else 66.97
 
     if body.lat is not None and body.lng is not None:
-        order_clause = "(point(:lng_f, :lat_f) <@> point(lng::float8, lat::float8))"
+        order_clause = "(point(:lng_f, :lat_f) <@> point(longitude::float8, latitude::float8))"
     else:
         order_clause = "confidence_score DESC"
 
@@ -536,16 +537,17 @@ async def quick_plan(
         text(f"""
             SELECT pub_id,
                    COALESCE(name->>:lang, name->>'en') AS name,
-                   kind_slug, lat, lng,
-                   CASE WHEN lat IS NOT NULL THEN
+                   kind_slug, latitude AS lat, longitude AS lng,
+                   CASE WHEN latitude IS NOT NULL THEN
                        round(
-                           (point(:lng_f, :lat_f) <@> point(lng::float8, lat::float8)
+                           (point(:lng_f, :lat_f)
+                            <@> point(longitude::float8, latitude::float8)
                            )::numeric * 1.60934, 1)
                    ELSE NULL END AS distance_km
             FROM heritage_objects
             WHERE status = 'published'
               AND deleted_at IS NULL
-              AND lat IS NOT NULL
+              AND latitude IS NOT NULL
             ORDER BY {order_clause}
             LIMIT :limit
         """),  # noqa: S608 — order_clause is from a closed set above, not user input
