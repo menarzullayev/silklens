@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/core/l10n/app_strings.dart';
+import 'package:silklens/core/l10n/locale_service.dart';
+import 'package:silklens/data/api/clients/api_client_provider.dart';
 
-class NotificationPrefsPage extends StatefulWidget {
+class NotificationPrefsPage extends ConsumerStatefulWidget {
   const NotificationPrefsPage({super.key});
 
   @override
-  State<NotificationPrefsPage> createState() => _NotificationPrefsPageState();
+  ConsumerState<NotificationPrefsPage> createState() =>
+      _NotificationPrefsPageState();
 }
 
-class _NotificationPrefsPageState extends State<NotificationPrefsPage> {
+class _NotificationPrefsPageState
+    extends ConsumerState<NotificationPrefsPage> {
   // Quiet hours
   bool _quietHours = true;
 
@@ -31,6 +38,126 @@ class _NotificationPrefsPageState extends State<NotificationPrefsPage> {
   bool _push = true;
   bool _email = false;
   bool _sms = false;
+
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Color(0xFF0D2337),
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+    _loadPreferences();
+  }
+
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
+
+  Future<void> _loadPreferences() async {
+    final client = ref.read(silkLensApiClientProvider);
+    try {
+      final prefs = await client.getNotificationPreferences();
+      if (!mounted) return;
+      // Map API response to local toggles; fall through to defaults on
+      // any shape mismatch — the UI still works offline.
+      final items = prefs['items'] as List? ?? prefs['preferences'] as List? ?? [];
+      for (final item in items) {
+        final slug = item['category_slug'] as String? ?? '';
+        final channel = item['channel'] as String? ?? '';
+        final enabled = (item['enabled'] as bool?) ?? true;
+        setState(() {
+          _mapToggle(slug, channel, enabled);
+        });
+      }
+      // Quiet hours
+      final qh = prefs['quiet_hours'] as Map<String, dynamic>?;
+      if (qh != null) {
+        setState(() => _quietHours = (qh['enabled'] as bool?) ?? _quietHours);
+      }
+      // Channels
+      final channels = prefs['channels'] as Map<String, dynamic>?;
+      if (channels != null) {
+        setState(() {
+          _push = (channels['push'] as bool?) ?? _push;
+          _email = (channels['email'] as bool?) ?? _email;
+          _sms = (channels['sms'] as bool?) ?? _sms;
+        });
+      }
+    } catch (_) {
+      // Use defaults if API fails — page remains fully functional
+    }
+  }
+
+  void _mapToggle(String slug, String channel, bool enabled) {
+    if (channel.isNotEmpty) return; // channel-level prefs handled separately
+    switch (slug) {
+      case 'visit_checkin':
+        _visitCheckin = enabled;
+      case 'xp_gained':
+        _xpGained = enabled;
+      case 'level_up':
+        _levelUp = enabled;
+      case 'new_follower':
+        _newFollower = enabled;
+      case 'comment_reply':
+        _commentReply = enabled;
+      case 'friend_visit':
+        _friendVisit = enabled;
+      case 'new_heritage':
+        _newHeritage = enabled;
+      case 'weekly_digest':
+        _weeklyDigest = enabled;
+      case 'promotions':
+        _promotions = enabled;
+    }
+  }
+
+  Future<void> _savePreference(String categorySlug, bool enabled) async {
+    final client = ref.read(silkLensApiClientProvider);
+    try {
+      await client.updateNotificationPreferences([
+        {'category_slug': categorySlug, 'enabled': enabled},
+      ]);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_s('notif_prefs_save_error'))),
+      );
+    }
+  }
+
+  Future<void> _saveChannelPreference(String channel, bool enabled) async {
+    final client = ref.read(silkLensApiClientProvider);
+    try {
+      await client.updateNotificationPreferences([
+        {'channel': channel, 'enabled': enabled},
+      ]);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_s('notif_prefs_save_error'))),
+      );
+    }
+  }
+
+  Future<void> _saveQuietHours(bool enabled) async {
+    final client = ref.read(silkLensApiClientProvider);
+    try {
+      await client.updateQuietHours(
+        timezone: 'Asia/Tashkent',
+        startTime: '22:00',
+        endTime: '08:00',
+        weekdays: [1, 2, 3, 4, 5, 6, 7],
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_s('notif_quiet_hours_error'))),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +240,10 @@ class _NotificationPrefsPageState extends State<NotificationPrefsPage> {
                   ),
                   Switch(
                     value: _quietHours,
-                    onChanged: (v) => setState(() => _quietHours = v),
+                    onChanged: (v) {
+                      setState(() => _quietHours = v);
+                      _saveQuietHours(v);
+                    },
                     activeThumbColor: const Color(0xFFB78628),
                   ),
                 ],
@@ -127,19 +257,28 @@ class _NotificationPrefsPageState extends State<NotificationPrefsPage> {
               icon: Icons.place_outlined,
               label: 'Joy tashrif buyurish',
               value: _visitCheckin,
-              onChanged: (v) => setState(() => _visitCheckin = v),
+              onChanged: (v) {
+                setState(() => _visitCheckin = v);
+                _savePreference('visit_checkin', v);
+              },
             ),
             _ToggleRow(
               icon: Icons.star_outline_rounded,
               label: 'XP qozonish',
               value: _xpGained,
-              onChanged: (v) => setState(() => _xpGained = v),
+              onChanged: (v) {
+                setState(() => _xpGained = v);
+                _savePreference('xp_gained', v);
+              },
             ),
             _ToggleRow(
               icon: Icons.emoji_events_outlined,
               label: 'Daraja oshishi',
               value: _levelUp,
-              onChanged: (v) => setState(() => _levelUp = v),
+              onChanged: (v) {
+                setState(() => _levelUp = v);
+                _savePreference('level_up', v);
+              },
             ),
             const SizedBox(height: 16),
 
@@ -149,19 +288,28 @@ class _NotificationPrefsPageState extends State<NotificationPrefsPage> {
               icon: Icons.person_add_outlined,
               label: 'Yangi obunachilar',
               value: _newFollower,
-              onChanged: (v) => setState(() => _newFollower = v),
+              onChanged: (v) {
+                setState(() => _newFollower = v);
+                _savePreference('new_follower', v);
+              },
             ),
             _ToggleRow(
               icon: Icons.chat_bubble_outline_rounded,
               label: 'Izoh javoblari',
               value: _commentReply,
-              onChanged: (v) => setState(() => _commentReply = v),
+              onChanged: (v) {
+                setState(() => _commentReply = v);
+                _savePreference('comment_reply', v);
+              },
             ),
             _ToggleRow(
               icon: Icons.group_outlined,
               label: "Do'st tashrifi",
               value: _friendVisit,
-              onChanged: (v) => setState(() => _friendVisit = v),
+              onChanged: (v) {
+                setState(() => _friendVisit = v);
+                _savePreference('friend_visit', v);
+              },
             ),
             const SizedBox(height: 16),
 
@@ -171,19 +319,28 @@ class _NotificationPrefsPageState extends State<NotificationPrefsPage> {
               icon: Icons.new_releases_outlined,
               label: 'Yangi meros joylari',
               value: _newHeritage,
-              onChanged: (v) => setState(() => _newHeritage = v),
+              onChanged: (v) {
+                setState(() => _newHeritage = v);
+                _savePreference('new_heritage', v);
+              },
             ),
             _ToggleRow(
               icon: Icons.mail_outline_rounded,
               label: 'Haftalik xulosa',
               value: _weeklyDigest,
-              onChanged: (v) => setState(() => _weeklyDigest = v),
+              onChanged: (v) {
+                setState(() => _weeklyDigest = v);
+                _savePreference('weekly_digest', v);
+              },
             ),
             _ToggleRow(
               icon: Icons.local_offer_outlined,
               label: 'Aksiyalar',
               value: _promotions,
-              onChanged: (v) => setState(() => _promotions = v),
+              onChanged: (v) {
+                setState(() => _promotions = v);
+                _savePreference('promotions', v);
+              },
             ),
             const SizedBox(height: 24),
 
@@ -214,7 +371,10 @@ class _NotificationPrefsPageState extends State<NotificationPrefsPage> {
                     icon: Icons.notifications_outlined,
                     label: 'Push',
                     value: _push,
-                    onChanged: (v) => setState(() => _push = v),
+                    onChanged: (v) {
+                      setState(() => _push = v);
+                      _saveChannelPreference('push', v);
+                    },
                     isFirst: true,
                   ),
                   Divider(
@@ -226,7 +386,10 @@ class _NotificationPrefsPageState extends State<NotificationPrefsPage> {
                     icon: Icons.email_outlined,
                     label: 'Email',
                     value: _email,
-                    onChanged: (v) => setState(() => _email = v),
+                    onChanged: (v) {
+                      setState(() => _email = v);
+                      _saveChannelPreference('email', v);
+                    },
                   ),
                   Divider(
                     height: 1,
@@ -237,7 +400,10 @@ class _NotificationPrefsPageState extends State<NotificationPrefsPage> {
                     icon: Icons.sms_outlined,
                     label: 'SMS',
                     value: _sms,
-                    onChanged: (v) => setState(() => _sms = v),
+                    onChanged: (v) {
+                      setState(() => _sms = v);
+                      _saveChannelPreference('sms', v);
+                    },
                     isLast: true,
                   ),
                 ],

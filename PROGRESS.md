@@ -381,6 +381,10 @@ git push --no-verify  # emergency bypass
 - [✅] **SILK-0140** Add German (de) and Korean (ko) locale ARB files; register in `kSupportedLanguageCodes`, `AppLocalizations.supportedLocales`, and `LanguageSelectionPage`; `flutter gen-l10n` regenerated all 6 locale Dart files; 8 emailVerify keys × 6 locales
 - [✅] **SILK-0141** Fix hardcoded Uzbek strings in `EmailVerifyPage`; replace with `AppLocalizations.of(context)` calls using new `emailVerify*` keys (title, codeSentTo, confirm, invalidCode, resendError, resending, resendCountdown, resendNow); all 6 locales covered
 
+### Flutter Mobile — Settings + Profile + Auth Extension API Wiring (2026-05-23)
+
+- [✅] **SILK-0171** `NotificationPrefsPage` converted to `ConsumerStatefulWidget`; `initState` calls `_loadPreferences()` → `GET /v1/notifications/preferences`; maps `category_slug`/`channel`/`enabled` to 9 local toggles + 3 channel toggles + quiet-hours bool; each toggle change fires `PATCH /v1/notifications/preferences [{category_slug, enabled}]` or `updateNotificationPreferences([{channel, enabled}])`; quiet-hours toggle calls `updateQuietHours(timezone: Asia/Tashkent, startTime, endTime, weekdays)`; error SnackBar via `notif_prefs_save_error` + `notif_quiet_hours_error` i18n keys; `mounted` guards on all async paths; `SilkLensApiClient` extended with `registerPushDevice` + `getDataExportStatus`; `PrivacyGDPRPage` converted to `ConsumerStatefulWidget`; "Yuklab olish" button calls `POST /v1/me/data-export`, shows `AlertDialog` with `privacy_export_title/body/id` keys + request_id, loading spinner during request, error SnackBar via `privacy_export_error`; `_ActionRow` supports `loading` flag + nullable `onTap`; `DeleteAccountPage` converted to `ConsumerStatefulWidget`; delete button calls `SilkLensApiClient.requestAccountDeletion()`, shows `delete_account_scheduled` SnackBar, then calls `authNotifierProvider.logout()`, then `context.go('/')`; loading spinner replaces button text; fixed `_showEditNameDialog` in `UserProfilePage` to remove invalid re-login call after profile update; all 4 locales pre-existing
+
 ### Technical Debt
 
 - [ ] **TD-001** finetuning/errors.py FastAPI import fix

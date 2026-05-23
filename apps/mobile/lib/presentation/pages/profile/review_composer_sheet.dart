@@ -1,24 +1,94 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/core/l10n/app_strings.dart';
+import 'package:silklens/data/api/clients/api_client_provider.dart';
+import 'package:silklens/presentation/providers/locale_provider.dart';
 
-class ReviewComposerSheet extends StatefulWidget {
-  const ReviewComposerSheet({super.key});
+class ReviewComposerSheet extends ConsumerStatefulWidget {
+  const ReviewComposerSheet({
+    required this.heritagePubId,
+    super.key,
+  });
+
+  final String heritagePubId;
 
   @override
-  State<ReviewComposerSheet> createState() => _ReviewComposerSheetState();
+  ConsumerState<ReviewComposerSheet> createState() =>
+      _ReviewComposerSheetState();
 }
 
-class _ReviewComposerSheetState extends State<ReviewComposerSheet> {
+class _ReviewComposerSheetState extends ConsumerState<ReviewComposerSheet> {
   static const _gold = Color(0xFFB78628);
   static const _bg = Color(0xFF0D2337);
 
   int _starRating = 0;
   bool _hasPhoto = false;
+  bool _isSubmitting = false;
   final _textController = TextEditingController();
 
   @override
   void dispose() {
     _textController.dispose();
     super.dispose();
+  }
+
+  String _s(String key) {
+    final locale = ref.read(activeLocaleProvider).languageCode;
+    return AppStrings.get(locale, key);
+  }
+
+  String get _starLabel {
+    if (_starRating == 0) return _s('review_star_prompt');
+    return [
+      '',
+      _s('review_star_1'),
+      _s('review_star_2'),
+      _s('review_star_3'),
+      _s('review_star_4'),
+      _s('review_star_5'),
+    ][_starRating];
+  }
+
+  Future<void> _submitReview() async {
+    final text = _textController.text.trim();
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_s('review_error_empty'))),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final lang = ref.read(activeLocaleProvider).languageCode;
+      await ref.read(silkLensApiClientProvider).createReview(
+            heritagePubId: widget.heritagePubId,
+            bodyMd: text,
+            languageTag: lang,
+            ratings: _starRating > 0
+                ? [
+                    {
+                      'dimension_slug': 'overall',
+                      'score': _starRating.toDouble(),
+                    }
+                  ]
+                : null,
+          );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_s('review_success'))),
+      );
+      Navigator.pop(context, true);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_s('review_error_submit'))),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -51,9 +121,9 @@ class _ReviewComposerSheetState extends State<ReviewComposerSheet> {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Sharh yozing',
-            style: TextStyle(
+          Text(
+            _s('review_title'),
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -70,8 +140,12 @@ class _ReviewComposerSheetState extends State<ReviewComposerSheet> {
                 child: Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: Icon(
-                    filled ? Icons.star_rounded : Icons.star_outline_rounded,
-                    color: filled ? _gold : Colors.white.withValues(alpha: 0.3),
+                    filled
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
+                    color: filled
+                        ? _gold
+                        : Colors.white.withValues(alpha: 0.3),
                     size: 36,
                   ),
                 ),
@@ -80,9 +154,7 @@ class _ReviewComposerSheetState extends State<ReviewComposerSheet> {
           ),
           const SizedBox(height: 6),
           Text(
-            _starRating == 0
-                ? 'Yulduz tanlang'
-                : ['', 'Yomon', 'Qoniqarli', 'Yaxshi', 'Ajoyib', "Zo'r!"][_starRating],
+            _starLabel,
             style: TextStyle(
               color: _starRating == 0
                   ? Colors.white.withValues(alpha: 0.35)
@@ -98,15 +170,18 @@ class _ReviewComposerSheetState extends State<ReviewComposerSheet> {
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.12),
+              ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             child: TextField(
               controller: _textController,
               maxLines: 4,
               style: const TextStyle(color: Colors.white, fontSize: 14),
               decoration: InputDecoration(
-                hintText: "Taassurotlaringizni baham ko'ring...",
+                hintText: _s('review_text_hint'),
                 hintStyle: TextStyle(
                   color: Colors.white.withValues(alpha: 0.35),
                   fontSize: 14,
@@ -121,7 +196,10 @@ class _ReviewComposerSheetState extends State<ReviewComposerSheet> {
           GestureDetector(
             onTap: () => setState(() => _hasPhoto = !_hasPhoto),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(14),
@@ -131,58 +209,71 @@ class _ReviewComposerSheetState extends State<ReviewComposerSheet> {
                       : Colors.white.withValues(alpha: 0.12),
                 ),
               ),
-              child: Row(children: [
-                Icon(
-                  _hasPhoto
-                      ? Icons.check_circle_rounded
-                      : Icons.add_photo_alternate_outlined,
-                  color: _hasPhoto ? _gold : Colors.white.withValues(alpha: 0.5),
-                  size: 22,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  _hasPhoto ? "Foto qo'shildi" : "Foto qo'shish (ixtiyoriy)",
-                  style: TextStyle(
+              child: Row(
+                children: [
+                  Icon(
+                    _hasPhoto
+                        ? Icons.check_circle_rounded
+                        : Icons.add_photo_alternate_outlined,
                     color: _hasPhoto
                         ? _gold
-                        : Colors.white.withValues(alpha: 0.6),
-                    fontSize: 14,
+                        : Colors.white.withValues(alpha: 0.5),
+                    size: 22,
                   ),
-                ),
-              ],),
+                  const SizedBox(width: 10),
+                  Text(
+                    _hasPhoto
+                        ? _s('review_photo_added')
+                        : _s('review_photo_add'),
+                    style: TextStyle(
+                      color: _hasPhoto
+                          ? _gold
+                          : Colors.white.withValues(alpha: 0.6),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 20),
 
           // Submit button
           GestureDetector(
-            onTap: _starRating > 0 ? () => Navigator.pop(context) : null,
+            onTap: _isSubmitting ? null : _submitReview,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: double.infinity,
               height: 52,
               decoration: BoxDecoration(
-                gradient: _starRating > 0
+                gradient: (!_isSubmitting)
                     ? const LinearGradient(
                         colors: [Color(0xFFB78628), Color(0xFFE5C97A)],
                       )
                     : null,
-                color: _starRating == 0
+                color: _isSubmitting
                     ? Colors.white.withValues(alpha: 0.08)
                     : null,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Center(
-                child: Text(
-                  'Sharh yuborish',
-                  style: TextStyle(
-                    color: _starRating > 0
-                        ? const Color(0xFF1A1200)
-                        : Colors.white.withValues(alpha: 0.35),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        _s('review_submit'),
+                        style: const TextStyle(
+                          color: Color(0xFF1A1200),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
               ),
             ),
           ),

@@ -1,17 +1,116 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/core/l10n/app_strings.dart';
+import 'package:silklens/core/l10n/locale_service.dart';
+import 'package:silklens/data/api/clients/api_client_provider.dart';
 
-class PrivacyGDPRPage extends StatefulWidget {
+class PrivacyGDPRPage extends ConsumerStatefulWidget {
   const PrivacyGDPRPage({super.key});
 
   @override
-  State<PrivacyGDPRPage> createState() => _PrivacyGDPRPageState();
+  ConsumerState<PrivacyGDPRPage> createState() => _PrivacyGDPRPageState();
 }
 
-class _PrivacyGDPRPageState extends State<PrivacyGDPRPage> {
+class _PrivacyGDPRPageState extends ConsumerState<PrivacyGDPRPage> {
   bool _locationData = true;
   bool _analytics = false;
   bool _marketing = false;
+  bool _exportLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Color(0xFF0D2337),
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+  }
+
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
+
+  Future<void> _requestDataExport() async {
+    setState(() => _exportLoading = true);
+    try {
+      final client = ref.read(silkLensApiClientProvider);
+      final result = await client.requestDataExport();
+      if (!mounted) return;
+      final requestId = result['request_id'] as String? ??
+          result['id'] as String? ??
+          '';
+      _showExportDialog(requestId);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_s('privacy_export_error')),
+          backgroundColor: const Color(0xFFFF3B30),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _exportLoading = false);
+    }
+  }
+
+  void _showExportDialog(String requestId) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A3A5C),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Row(
+          children: [
+            const Icon(Icons.check_circle_outline,
+                color: Color(0xFFB78628), size: 22),
+            const SizedBox(width: 8),
+            Text(
+              _s('privacy_export_title'),
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _s('privacy_export_body'),
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.8),
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+            if (requestId.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                '${_s('privacy_export_id')}: $requestId',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: 11,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              _s('privacy_export_btn_close'),
+              style: const TextStyle(color: Color(0xFFB78628)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,15 +194,8 @@ class _PrivacyGDPRPageState extends State<PrivacyGDPRPage> {
               icon: Icons.download_outlined,
               label: "Ma'lumotlarni yuklab olish",
               isGold: true,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      "Ma'lumotlaringiz tayyorlanmoqda...",
-                    ),
-                  ),
-                );
-              },
+              loading: _exportLoading,
+              onTap: _exportLoading ? null : () => _requestDataExport(),
             ),
             _ActionRow(
               icon: Icons.edit_outlined,
@@ -216,12 +308,14 @@ class _ActionRow extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.isGold = false,
+    this.loading = false,
   });
 
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool isGold;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
@@ -261,11 +355,21 @@ class _ActionRow extends StatelessWidget {
                 ),
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              color: Colors.white.withValues(alpha: 0.3),
-              size: 18,
-            ),
+            if (loading)
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFB78628)),
+                ),
+              )
+            else
+              Icon(
+                Icons.chevron_right,
+                color: Colors.white.withValues(alpha: 0.3),
+                size: 18,
+              ),
           ],
         ),
       ),

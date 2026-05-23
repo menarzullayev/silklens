@@ -1,21 +1,75 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:silklens/core/l10n/app_strings.dart';
+import 'package:silklens/core/l10n/locale_service.dart';
+import 'package:silklens/data/api/clients/api_client_provider.dart';
+import 'package:silklens/presentation/providers/auth_provider.dart';
 
-class DeleteAccountPage extends StatefulWidget {
+class DeleteAccountPage extends ConsumerStatefulWidget {
   const DeleteAccountPage({super.key});
 
   @override
-  State<DeleteAccountPage> createState() => _DeleteAccountPageState();
+  ConsumerState<DeleteAccountPage> createState() => _DeleteAccountPageState();
 }
 
-class _DeleteAccountPageState extends State<DeleteAccountPage> {
+class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
   final _ctrl = TextEditingController();
+  bool _loading = false;
   bool get _canDelete => _ctrl.text.trim() == "O'CHIRISH";
+
+  String _s(String key) => AppStrings.get(LocaleService.instance.locale, key);
+
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Color(0xFF0D2337),
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+  }
 
   @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _deleteAccount() async {
+    if (!_canDelete || _loading) return;
+    setState(() => _loading = true);
+    try {
+      final client = ref.read(silkLensApiClientProvider);
+      await client.requestAccountDeletion();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_s('delete_account_scheduled')),
+          backgroundColor: const Color(0xFF1F3A93),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      await Future<void>.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+      await ref.read(authNotifierProvider.notifier).logout();
+      if (!mounted) return;
+      context.go('/');
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_s('delete_account_api_error')),
+          backgroundColor: const Color(0xFFFF3B30),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -167,7 +221,7 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: GestureDetector(
-                    onTap: _canDelete ? () => context.go('/') : null,
+                    onTap: (_canDelete && !_loading) ? _deleteAccount : null,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       height: 48,
@@ -178,15 +232,26 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
-                        child: Text(
-                          "O'chirish",
-                          style: TextStyle(
-                            color: _canDelete
-                                ? Colors.white
-                                : Colors.white.withValues(alpha: 0.4),
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                        child: _loading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                "O'chirish",
+                                style: TextStyle(
+                                  color: _canDelete
+                                      ? Colors.white
+                                      : Colors.white.withValues(alpha: 0.4),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                       ),
                     ),
                   ),
