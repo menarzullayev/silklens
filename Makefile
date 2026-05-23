@@ -1,7 +1,7 @@
 # SilkLens — top-level Makefile.
 # Aggregates per-service tasks so contributors only need one entry point.
 
-.PHONY: help dev down logs ps api-install api-run api-test api-lint api-format api-mypy api-migrate api-revision api-shell clean install-hooks
+.PHONY: help dev down logs ps api-install api-run api-test api-test-random api-test-parallel api-test-cov api-lint api-format api-mypy api-mypy-strict api-migrate api-revision api-shell clean install-hooks
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -28,8 +28,14 @@ api-install: ## Install API service deps into a local .venv (requires libmagic1 
 api-run: ## Run the API locally (foreground)
 	cd services/api && .venv/bin/python -m src
 
-api-test: ## Run API tests
+api-test: ## Run API tests (linear, randomized order via pytest-randomly)
 	cd services/api && .venv/bin/pytest -ra
+
+api-test-random: ## Re-run tests with the LAST failing random seed (debug order-dependency)
+	cd services/api && .venv/bin/pytest -ra --randomly-seed=last
+
+api-test-parallel: ## Run tests in parallel (pytest-xdist) + random order — finds parallel-safety bugs
+	cd services/api && .venv/bin/pytest -n auto -ra
 
 api-test-cov: ## Run API tests with coverage
 	cd services/api && .venv/bin/pytest --cov=src --cov-report=term-missing --cov-report=html
@@ -42,6 +48,9 @@ api-format: ## Auto-format the API
 
 api-mypy: ## Type-check the API
 	cd services/api && .venv/bin/mypy src
+
+api-mypy-strict: ## Type-check the API with --strict (no pyproject overrides) — finds hidden type bugs
+	cd services/api && .venv/bin/mypy src --strict --no-incremental --config-file=/dev/null
 
 install-hooks: ## Install pre-push + pre-commit git hooks (run once after clone)
 	bash scripts/install-hooks.sh
