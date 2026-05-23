@@ -489,7 +489,7 @@ class SqlReviewRepository:
         target_id: UUID,
         author_id: UUID,
         author_residency: str,
-        payload: dict,
+        payload: dict[str, Any],
         status: UgcStatus,
         trust_tier: str,
     ) -> UgcSubmission:

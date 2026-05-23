@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
@@ -76,13 +76,13 @@ async def food_assistant(
     body: FoodQuery,
     session: SessionDep,
     _rl: None = Depends(rate_limit("20/minute", per="ip", scope="food:assistant")),
-) -> dict:
+) -> dict[str, Any]:
     """AI food recommendation assistant. No auth required."""
     lang = body.language.split("-")[0].lower()
     settings = get_settings()
 
     # Find nearby restaurants from b2b_listings
-    params: dict = {
+    params: dict[str, Any] = {
         "lang": lang,
         "limit": 5,
         "lat_f": body.lat or 39.65,

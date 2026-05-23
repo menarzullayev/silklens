@@ -7,7 +7,7 @@ GET  /v1/ai/lost-found   — find nearest help centres for a lost item (public)
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
@@ -41,14 +41,14 @@ class FairPriceResponse(BaseModel):
     market: str
     currency: str
     typical_price_usd: float | None
-    price_range: dict | None
+    price_range: dict[str, Any] | None
     negotiation_tip: str
     recommended_offer_pct: int | None
     confidence: str
 
 
 # Approximate fair-price guide (USD) for common Uzbek bazaar items.
-_PRICE_GUIDE: dict[str, dict] = {
+_PRICE_GUIDE: dict[str, dict[str, Any]] = {
     "silk carpet": {
         "min": 50,
         "max": 500,
@@ -107,7 +107,7 @@ async def fair_price_check(
 ) -> FairPriceResponse:
     """Check if a price is fair for a market item. No auth required."""
     item_lower = body.item.lower()
-    price_info: dict | None = None
+    price_info: dict[str, Any] | None = None
     for key, prices in _PRICE_GUIDE.items():
         if key in item_lower or any(word in item_lower for word in key.split()):
             price_info = prices
@@ -156,7 +156,7 @@ class ScamCheckResponse(BaseModel):
     tourist_police: str
 
 
-_SCAM_SIGNALS: list[dict] = [
+_SCAM_SIGNALS: list[dict[str, Any]] = [
     {"pattern": "taxi airport", "flag": "airport_taxi_overcharge"},
     {"pattern": "carpet shop tour", "flag": "forced_carpet_tour"},
     {"pattern": "special price friend", "flag": "friendship_scam"},

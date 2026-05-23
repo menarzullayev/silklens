@@ -98,7 +98,7 @@ class StripeProvider:
         if not self._api_key:
             raise ProviderUnavailable("provider_unavailable")
         try:
-            import stripe  # type: ignore[import-not-found]
+            import stripe
         except ImportError as exc:  # pragma: no cover — covered by [billing] extra
             raise ProviderUnavailable("provider_unavailable") from exc
         # Stripe SDK stores api_key on the module — assign here so future
@@ -110,7 +110,7 @@ class StripeProvider:
     def _map_stripe_error(self, exc: Exception) -> BillingError:
         """Translate Stripe-typed errors to our typed BillingError hierarchy."""
         try:
-            import stripe  # type: ignore[import-not-found]
+            import stripe
         except ImportError:  # pragma: no cover
             return BillingError(str(exc))
 
@@ -223,7 +223,7 @@ class StripeProvider:
         if not self._webhook_secret:
             raise ProviderUnavailable("provider_unavailable")
         try:
-            import stripe  # type: ignore[import-not-found]
+            import stripe
         except ImportError as exc:  # pragma: no cover
             raise ProviderUnavailable("provider_unavailable") from exc
 

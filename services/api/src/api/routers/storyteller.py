@@ -16,7 +16,7 @@ Both endpoints are public (no bearer required) and rate-limited per IP.
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -94,7 +94,7 @@ async def list_heritage_stories(
 
     if kind is not None:
         predicate_clause = "AND hf.predicate = :kind"
-        params: dict = {"pub_id": pub_id, "lang": lang, "kind": kind}
+        params: dict[str, Any] = {"pub_id": pub_id, "lang": lang, "kind": kind}
     else:
         predicate_clause = f"AND hf.predicate IN ({_STORY_PREDICATE_LIST})"
         params = {"pub_id": pub_id, "lang": lang}

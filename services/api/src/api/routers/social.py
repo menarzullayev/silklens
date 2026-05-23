@@ -126,7 +126,7 @@ async def follow(
     pub_id: str,
     db: SessionDep,
     ctx: CurrentUserDep,
-) -> dict:
+) -> dict[str, Any]:
     try:
         target = await _service(db).follow(
             actor_id=ctx.user_id,
@@ -142,7 +142,7 @@ async def follow(
 
 
 @router.delete("/follow/{pub_id}", status_code=status.HTTP_200_OK)
-async def unfollow(pub_id: str, db: SessionDep, ctx: CurrentUserDep) -> dict:
+async def unfollow(pub_id: str, db: SessionDep, ctx: CurrentUserDep) -> dict[str, Any]:
     try:
         await _service(db).unfollow(actor_id=ctx.user_id, target_pub_id=pub_id)
         await db.commit()
@@ -250,7 +250,7 @@ async def block(
     db: SessionDep,
     ctx: CurrentUserDep,
     payload: BlockRequest | None = None,
-) -> dict:
+) -> dict[str, Any]:
     try:
         await _service(db).block_user(
             actor_id=ctx.user_id,
@@ -266,7 +266,7 @@ async def block(
 
 
 @router.delete("/block/{pub_id}")
-async def unblock(pub_id: str, db: SessionDep, ctx: CurrentUserDep) -> dict:
+async def unblock(pub_id: str, db: SessionDep, ctx: CurrentUserDep) -> dict[str, Any]:
     try:
         await _service(db).unblock_user(actor_id=ctx.user_id, target_pub_id=pub_id)
         await db.commit()
@@ -321,7 +321,7 @@ async def nearby_travelers(
     db: SessionDep,
     heritage_pub_id: Annotated[UUID, Query(...)],
     limit: Annotated[int, Query(ge=1, le=20)] = 10,
-) -> dict:
+) -> dict[str, Any]:
     """Find other discoverable travelers near a heritage site.
 
     Only returns users who have opted in (is_discoverable=true) and

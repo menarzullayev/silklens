@@ -18,7 +18,7 @@ Schema notes (from migration 0053 + 0100):
 from __future__ import annotations
 
 import math
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -153,7 +153,7 @@ async def search_listings(
         )
 
     lang = language.split("-")[0].lower()
-    params: dict = {"category": category, "lang": lang, "limit": limit, "offset": offset}
+    params: dict[str, Any] = {"category": category, "lang": lang, "limit": limit, "offset": offset}
 
     wheres: list[str] = ["bl.category_slug = :category", "bl.status = 'active'"]
 

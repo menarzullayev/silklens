@@ -69,7 +69,7 @@ class SqlMediaBridge:
         if self._client is not None:
             return self._client
         try:
-            from minio import Minio  # type: ignore[import-untyped]
+            from minio import Minio
         except ImportError as exc:  # pragma: no cover
             raise AiProviderUnavailable("media", "minio SDK not installed") from exc
         self._client = Minio(

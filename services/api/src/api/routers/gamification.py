@@ -40,8 +40,8 @@ class XpStatusOut(BaseModel):
     lifetime_xp: int
     weekly_xp: int
     monthly_xp: int
-    level: dict | None
-    next_level: dict | None
+    level: dict[str, Any] | None
+    next_level: dict[str, Any] | None
     xp_to_next_level: int | None
     progress_pct: float | None
 
@@ -49,11 +49,11 @@ class XpStatusOut(BaseModel):
 class BadgeOut(BaseModel):
     slug: str
     category: str
-    name: dict
-    description: dict
+    name: dict[str, Any]
+    description: dict[str, Any]
     rarity: str
     awarded_at: datetime
-    progress: dict
+    progress: dict[str, Any]
 
 
 class BadgesOut(BaseModel):
@@ -62,7 +62,7 @@ class BadgesOut(BaseModel):
 
 class LeaderboardSummary(BaseModel):
     slug: str
-    name: dict
+    name: dict[str, Any]
     scope: str
     period: str
     metric: str
@@ -80,7 +80,7 @@ class LeaderboardEntryOut(BaseModel):
 
 class LeaderboardPageOut(BaseModel):
     slug: str
-    name: dict
+    name: dict[str, Any]
     scope: str
     period: str
     entries: list[LeaderboardEntryOut]
@@ -122,7 +122,7 @@ async def me_xp(db: SessionDep, ctx: CurrentUserDep) -> XpStatusOut:
     )
 
 
-def _level_to_dict(level: Any) -> dict:
+def _level_to_dict(level: Any) -> dict[str, Any]:
     return {
         "number": level.number,
         "slug": level.slug,

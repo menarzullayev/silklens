@@ -19,6 +19,7 @@ Production extras:
 from __future__ import annotations
 
 import time
+from typing import Any
 
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -127,7 +128,7 @@ class DeepLTranslationProvider:
         # source_code = None → DeepL auto-detects, which is more accurate.
         source_code = _DEEPL_LANG_MAP.get(src_raw)
 
-        payload: dict = {
+        payload: dict[str, Any] = {
             "text": [req.text[:_MAX_CHARS]],
             "target_lang": target_code,
         }

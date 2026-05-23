@@ -62,7 +62,7 @@ async def emit_event_if_registered(
             "payload": json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
         },
     )
-    return row.scalar_one()
+    return UUID(str(row.scalar_one()))
 
 
 def jdump(payload: object) -> str:

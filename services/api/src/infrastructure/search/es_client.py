@@ -45,7 +45,7 @@ class ElasticsearchClient:
     async def _get(self) -> Any:
         if self._inner is None:
             try:
-                from elasticsearch import AsyncElasticsearch  # type: ignore[import-untyped]
+                from elasticsearch import AsyncElasticsearch
             except ImportError as exc:  # pragma: no cover - hard dep
                 raise ElasticsearchUnavailable("elasticsearch[async] not installed") from exc
             self._inner = AsyncElasticsearch(hosts=[self._url], request_timeout=10)

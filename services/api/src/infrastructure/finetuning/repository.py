@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import text
@@ -24,7 +25,7 @@ from src.domain.finetuning.entities import (
 )
 
 
-def _row_to_dataset(row: dict) -> FinetuningDataset:
+def _row_to_dataset(row: dict[str, Any]) -> FinetuningDataset:
     return FinetuningDataset(
         id=row["id"],
         tenant_id=row["tenant_id"],
@@ -41,7 +42,7 @@ def _row_to_dataset(row: dict) -> FinetuningDataset:
     )
 
 
-def _row_to_example(row: dict) -> FinetuningExample:
+def _row_to_example(row: dict[str, Any]) -> FinetuningExample:
     return FinetuningExample(
         id=row["id"],
         dataset_id=row["dataset_id"],
@@ -61,7 +62,7 @@ def _row_to_example(row: dict) -> FinetuningExample:
     )
 
 
-def _row_to_job(row: dict) -> FinetuningJob:
+def _row_to_job(row: dict[str, Any]) -> FinetuningJob:
     return FinetuningJob(
         id=row["id"],
         dataset_id=row["dataset_id"],
@@ -273,7 +274,7 @@ class SqlFinetuningRepository:
         provider: JobProvider,
         base_model_slug: str,
         job_kind: JobKind,
-        hyperparams: dict,
+        hyperparams: dict[str, Any],
     ) -> FinetuningJob:
         import json
 

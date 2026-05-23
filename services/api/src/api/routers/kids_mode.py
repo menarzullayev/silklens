@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, TypedDict
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -17,6 +17,16 @@ from src.middleware.ratelimit import rate_limit
 router = APIRouter(tags=["kids"])
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
+
+
+# --- Internal types --------------------------------------------------------
+
+
+class _QuizEntry(TypedDict):
+    question: dict[str, str]
+    options: dict[str, list[str]]
+    correct_index: int
+    fun_fact: dict[str, str]
 
 
 # --- Response models -------------------------------------------------------
@@ -197,12 +207,17 @@ async def heritage_kids_story(
                 f"- Max 150 words\n"
                 f"- Exciting and encouraging tone"
             )
+            from anthropic.types import TextBlock as _TextBlock
+
             resp = await client.messages.create(
                 model=settings.anthropic_model_default,
                 max_tokens=300,
                 messages=[{"role": "user", "content": prompt}],
             )
-            story = resp.content[0].text.strip()
+            text_blocks = [b for b in resp.content if isinstance(b, _TextBlock)]
+            if not text_blocks:
+                raise ValueError("no text block in response")
+            story = text_blocks[0].text.strip()
         except Exception:
             story = (
                 f"Welcome to {site_name}! This amazing place has a wonderful history "
@@ -237,7 +252,7 @@ async def kids_quiz(
 
     lang = language.split("-")[0].lower()
 
-    quiz_bank = [
+    quiz_bank: list[_QuizEntry] = [
         {
             "question": {
                 "en": "What does UNESCO stand for?",

@@ -7,7 +7,7 @@ bearer middleware decode + rejects anonymous). High-stakes routes layer the
 
 from __future__ import annotations
 
-from typing import Annotated, NoReturn
+from typing import Annotated, Any, NoReturn
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -115,12 +115,12 @@ class WebAuthnBeginRequest(BaseModel):
 
 class WebAuthnBeginResponse(BaseModel):
     challenge_id: UUID
-    options: dict
+    options: dict[str, Any]
 
 
 class WebAuthnFinishRequest(BaseModel):
     challenge_id: UUID
-    attestation: dict
+    attestation: dict[str, Any]
 
 
 class WebAuthnFinishResponse(BaseModel):
@@ -148,7 +148,7 @@ class VerifyRequest(BaseModel):
     challenge_id: UUID
     method: str = Field(pattern="^(totp|webauthn|backup_codes)$")
     code: str | None = None
-    assertion: dict | None = None
+    assertion: dict[str, Any] | None = None
 
 
 class UserOut(BaseModel):

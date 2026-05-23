@@ -40,7 +40,7 @@ class WebAuthnAdapterImpl:
         self._rp_name = rp_name
         self._origin = origin
         try:
-            import webauthn  # type: ignore[import-untyped]
+            import webauthn
 
             self._lib: object | None = webauthn
         except Exception:
@@ -203,9 +203,9 @@ class WebAuthnAdapterImpl:
 def _options_to_dict(opts: object) -> dict[str, object]:
     """Coerce the library options object into a plain JSON-ready dict."""
     if hasattr(opts, "model_dump"):
-        return opts.model_dump(by_alias=True)  # type: ignore[no-any-return,attr-defined]
+        return opts.model_dump(by_alias=True)  # type: ignore[no-any-return]
     if hasattr(opts, "to_dict"):
-        return opts.to_dict()  # type: ignore[no-any-return,attr-defined]
+        return opts.to_dict()  # type: ignore[no-any-return]
     if isinstance(opts, dict):
         return opts
     # py-webauthn ≥2 returns @dataclass; webauthn.helpers.options_to_json
@@ -214,7 +214,7 @@ def _options_to_dict(opts: object) -> dict[str, object]:
     try:
         import json
 
-        from webauthn.helpers import options_to_json  # type: ignore[import-untyped]
+        from webauthn.helpers import options_to_json
 
         return json.loads(options_to_json(opts))
     except Exception:  # noqa: S110 — fall back to dataclass dump
@@ -223,7 +223,7 @@ def _options_to_dict(opts: object) -> dict[str, object]:
         from dataclasses import asdict
 
         out: dict[str, object] = {}
-        for k, v in asdict(opts).items():  # type: ignore[arg-type]
+        for k, v in asdict(opts).items():  # type: ignore[call-overload]
             out[k] = _coerce_jsonable(v)
         return out
     return {"raw": str(opts)}

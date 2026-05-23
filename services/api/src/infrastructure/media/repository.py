@@ -298,6 +298,6 @@ class SqlMediaRepository:
                 "ip": client_ip,
             },
         )
-        grant_id = result.scalar_one()
+        grant_id = UUID(str(result.scalar_one()))
         await self._session.commit()
         return grant_id

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -31,7 +31,7 @@ async def validate_coupon(
     body: CouponValidateRequest,
     ctx: CurrentUserDep,
     session: SessionDep,
-) -> dict:
+) -> dict[str, Any]:
     """Validate a coupon code and return the discount amount.
 
     Checks:

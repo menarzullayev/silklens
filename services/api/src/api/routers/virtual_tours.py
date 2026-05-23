@@ -157,7 +157,7 @@ def _raise(exc: VirtualTourError) -> None:
     ) from exc
 
 
-def _tour_out(entity: object) -> VirtualTourOut:  # type: ignore[return]
+def _tour_out(entity: object) -> VirtualTourOut:
     from src.domain.virtual_tour.entities import VirtualTour  # local import fine
 
     t: VirtualTour = entity  # type: ignore[assignment]

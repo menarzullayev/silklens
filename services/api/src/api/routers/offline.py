@@ -11,7 +11,7 @@ POST /v1/offline/bundles/{bundle_id}/install-report — record device install (r
 from __future__ import annotations
 
 import hashlib
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -36,7 +36,7 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 class BundleItem(BaseModel):
     id: UUID
     slug: str
-    name: dict
+    name: dict[str, Any]
     bundle_kind: str
     language_set: list[str]
     version: int | None
@@ -72,7 +72,7 @@ class BundleManifestResponse(BaseModel):
     manifest_url: str | None
     manifest_sha256_hex: str | None
     published_at: str | None
-    signature: dict | None
+    signature: dict[str, Any] | None
     files: list[BundleContentFile]
     file_count: int
 
@@ -212,7 +212,7 @@ async def list_offline_bundles(
 
     if bundle_kind:
         sql = _SQL_BUNDLES_KIND
-        params: dict = {
+        params: dict[str, Any] = {
             "lang": lang,
             "limit": limit,
             "offset": offset,
@@ -262,7 +262,7 @@ async def get_bundle_manifest(
     download only new or changed entries (delta update). Public endpoint.
     """
     if version is not None:
-        params: dict = {"bundle_id": str(bundle_id), "version": version}
+        params: dict[str, Any] = {"bundle_id": str(bundle_id), "version": version}
         row = await db.execute(text(_SQL_MANIFEST_PINNED), params)
     else:
         params = {"bundle_id": str(bundle_id)}
@@ -315,7 +315,7 @@ async def get_bundle_manifest(
         )
 
     # Build signature block only when a row exists in offline_bundle_signatures.
-    signature_block: dict | None = None
+    signature_block: dict[str, Any] | None = None
     if data["sig_bytes"] is not None:
         raw_sig = data["sig_bytes"]
         sig_hex = bytes(raw_sig).hex() if isinstance(raw_sig, (bytes, memoryview)) else str(raw_sig)

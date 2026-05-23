@@ -12,7 +12,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import secrets
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -260,7 +260,7 @@ async def my_tickets(
     session: SessionDep,
     limit: int = Query(20, ge=1, le=50),
     offset: int = Query(0, ge=0),
-) -> dict:
+) -> dict[str, Any]:
     """Return a paginated list of tickets belonging to the authenticated user.
 
     Tickets are ordered newest-first.  The QR payload is NOT included here to

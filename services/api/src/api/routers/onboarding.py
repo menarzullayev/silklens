@@ -10,7 +10,7 @@ view the app walkthrough.
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
@@ -29,7 +29,7 @@ _SUPPORTED_LANGS = frozenset({"uz", "ru", "en", "zh", "de", "ko"})
 # rather than in the DB because they change only with app releases and do not
 # need admin-panel editing between releases. If that requirement changes, move
 # them to a controlled_vocabulary or content_blocks table.
-_TUTORIAL_STEPS: list[dict] = [
+_TUTORIAL_STEPS: list[dict[str, Any]] = [
     {
         "order": 1,
         "kind": "welcome",

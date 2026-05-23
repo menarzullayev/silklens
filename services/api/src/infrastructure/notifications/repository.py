@@ -33,7 +33,7 @@ _NOTIFICATION_COLS = """
 
 
 def _row_to_notification(row: object) -> Notification:
-    m = row._mapping  # type: ignore[attr-defined]
+    m = row._mapping
     return Notification(
         id=m["id"],
         recipient_user_id=m["recipient_user_id"],
@@ -183,7 +183,7 @@ class SqlNotificationRepository:
         ).one_or_none()
         if row is None:
             return None
-        m = row._mapping  # type: ignore[attr-defined]
+        m = row._mapping
         return NotificationTemplate(
             id=m["id"],
             slug=m["slug"],
@@ -213,7 +213,7 @@ class SqlNotificationRepository:
         ).one_or_none()
         if row is None:
             return None
-        m = row._mapping  # type: ignore[attr-defined]
+        m = row._mapping
         return NotificationTemplateVersion(
             template_id=m["template_id"],
             version=int(m["version"]),
@@ -251,7 +251,7 @@ class SqlNotificationRepository:
         )
         out: list[NotificationPreference] = []
         for r in result.all():
-            m = r._mapping  # type: ignore[attr-defined]
+            m = r._mapping
             out.append(
                 NotificationPreference(
                     user_id=m["user_id"],
@@ -331,7 +331,7 @@ class SqlNotificationRepository:
             },
         )
         await self._s.commit()
-        m = result.one()._mapping  # type: ignore[attr-defined]
+        m = result.one()._mapping
         return PushDevice(
             id=m["id"],
             user_id=m["user_id"],
@@ -377,7 +377,7 @@ class SqlNotificationRepository:
         )
         out: list[PushDevice] = []
         for r in result.all():
-            m = r._mapping  # type: ignore[attr-defined]
+            m = r._mapping
             out.append(
                 PushDevice(
                     id=m["id"],
@@ -409,7 +409,7 @@ class SqlNotificationRepository:
         ).one_or_none()
         if row is None:
             return None
-        m = row._mapping  # type: ignore[attr-defined]
+        m = row._mapping
         return QuietHours(
             user_id=m["user_id"],
             residency_region=m["residency_region"],
@@ -453,7 +453,7 @@ class SqlNotificationRepository:
             },
         )
         await self._s.commit()
-        m = result.one()._mapping  # type: ignore[attr-defined]
+        m = result.one()._mapping
         return QuietHours(
             user_id=m["user_id"],
             residency_region=m["residency_region"],
@@ -482,7 +482,7 @@ class SqlNotificationRepository:
             {"kind": kind, "payload": _json(payload)},
         )
         await self._s.commit()
-        return result.scalar_one()
+        return UUID(str(result.scalar_one()))
 
     async def record_delivery_log(
         self,

@@ -10,8 +10,8 @@ from __future__ import annotations
 import io
 from datetime import timedelta
 
-from minio import Minio  # type: ignore[import-untyped]
-from minio.error import S3Error  # type: ignore[import-untyped]
+from minio import Minio
+from minio.error import S3Error
 
 from src.core.logging import get_logger
 from src.core.settings import Settings, get_settings

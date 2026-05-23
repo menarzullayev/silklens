@@ -297,7 +297,7 @@ def _validate_mime(claimed: str, content: bytes) -> None:
         )
 
     try:  # pragma: no cover - libmagic absent is exceptional in production
-        import magic  # type: ignore[import-untyped]
+        import magic
     except ImportError as exc:
         raise MediaUnsupportedMime(
             claimed=claimed,

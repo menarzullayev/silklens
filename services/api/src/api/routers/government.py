@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import text
@@ -26,7 +26,7 @@ async def list_government_info(
         description="holiday|law|visa_info|emergency|announcement",
     ),
     _rl: None = Depends(rate_limit("60/minute", per="ip", scope="government:list")),
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """Official government information for travelers. No auth required."""
     country = country_code.upper()
     lang = language.split("-")[0].lower()

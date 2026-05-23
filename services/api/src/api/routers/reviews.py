@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -247,7 +247,7 @@ async def add_review_reaction(
 @router.delete("/v1/reviews/{review_id}/reactions/{reaction_slug}")
 async def remove_review_reaction(
     review_id: UUID, reaction_slug: str, db: SessionDep, ctx: CurrentUserDep
-) -> dict:
+) -> dict[str, Any]:
     removed = await _service(db).remove_reaction(
         reactor_id=ctx.user_id,
         target_kind=ReactionTargetKind.REVIEW,

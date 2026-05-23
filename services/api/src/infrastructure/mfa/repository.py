@@ -32,7 +32,7 @@ _METHOD_COLUMNS: Final = (
 
 
 def _method_from_row(row: object) -> MfaMethod:
-    m = row._mapping  # type: ignore[attr-defined]
+    m = row._mapping
     metadata = m["metadata"] or {}
     if isinstance(metadata, str):
         import json
@@ -318,7 +318,7 @@ class SqlMfaRepository:
         row = result.one_or_none()
         if row is None:
             return None
-        m = row._mapping  # type: ignore[attr-defined]
+        m = row._mapping
         return WebAuthnCredential(
             mfa_id=m["mfa_id"],
             residency_region=str(m["residency_region"]),
@@ -446,7 +446,7 @@ class SqlMfaRepository:
         )
         out: list[BackupCode] = []
         for row in result.all():
-            m = row._mapping  # type: ignore[attr-defined]
+            m = row._mapping
             out.append(
                 BackupCode(
                     id=m["id"],
@@ -506,7 +506,7 @@ class SqlMfaRepository:
         row = result.one_or_none()
         if row is None:
             return None
-        m = row._mapping  # type: ignore[attr-defined]
+        m = row._mapping
         metadata = m["metadata"] or {}
         if isinstance(metadata, str):
             import json

@@ -15,7 +15,7 @@ All endpoints require the ``ai:configure`` permission (admin-only).
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
@@ -69,7 +69,7 @@ class DatasetOut(BaseModel):
     id: UUID
     tenant_id: UUID
     slug: str
-    name: dict
+    name: dict[str, Any]
     description_md: str | None
     purpose: DatasetPurpose
     target_model_kind: TargetModelKind
@@ -99,10 +99,10 @@ class JobOut(BaseModel):
     base_model_slug: str
     job_kind: JobKind
     status: JobStatus
-    hyperparams: dict
+    hyperparams: dict[str, Any]
     provider_job_id: str | None
     output_model_slug: str | None
-    eval_metrics: dict
+    eval_metrics: dict[str, Any]
     cost_usd: Decimal | None
 
 
@@ -122,7 +122,7 @@ class CreateJobIn(BaseModel):
     provider: JobProvider
     base_model_slug: str = Field(min_length=1, max_length=256)
     job_kind: JobKind
-    hyperparams: dict = Field(default_factory=dict)
+    hyperparams: dict[str, Any] = Field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------

@@ -116,7 +116,7 @@ class SqlGamificationRepository:
         source_id: UUID | None,
         delta: int,
         idempotency_key: str,
-        context: dict,
+        context: dict[str, Any],
         tenant_id: UUID,
     ) -> tuple[XpEvent, bool]:
         # Idempotent insert in a *single* round-trip. The unique index on

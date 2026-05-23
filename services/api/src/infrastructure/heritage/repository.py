@@ -41,7 +41,7 @@ _SELECT_COLUMNS: Final = """
 
 
 def _row_to_entity(row: object) -> HeritageObject:
-    m = row._mapping  # type: ignore[attr-defined]
+    m = row._mapping
     return HeritageObject(
         id=m["id"],
         tenant_id=m["tenant_id"],
@@ -72,7 +72,7 @@ def _row_to_entity(row: object) -> HeritageObject:
 
 
 def _row_to_revision(row: object) -> HeritageRevision:
-    m = row._mapping  # type: ignore[attr-defined]
+    m = row._mapping
     return HeritageRevision(
         id=m["id"],
         heritage_id=m["heritage_id"],
@@ -484,7 +484,7 @@ class SqlHeritageRepository:
             # Defensive: the INSERT … RETURNING contract returns the row on
             # success, so reaching here means another writer raced us out.
             raise HeritageNotFound(f"heritage_id={heritage_id} not found")
-        row = raw._mapping  # type: ignore[attr-defined]
+        row = raw._mapping
         alias_entity = HeritageAlias(
             id=row["id"],
             heritage_id=row["heritage_id"],

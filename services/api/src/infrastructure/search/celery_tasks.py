@@ -24,7 +24,7 @@ def get_celery_app() -> Any:
     """Return (and cache) the shared Celery app."""
     global _celery_app
     if _celery_app is None:
-        from celery import Celery  # type: ignore[import-untyped]
+        from celery import Celery
 
         settings = get_settings()
         _celery_app = Celery(
@@ -100,15 +100,15 @@ def register_tasks(app: Any) -> None:
     etc. by name through ``app.tasks``.
     """
 
-    @app.task(name="silklens.search.index_heritage")
+    @app.task(name="silklens.search.index_heritage")  # type: ignore[untyped-decorator]
     def index_heritage(heritage_id: str) -> dict[str, int]:
         return asyncio.run(_run_index_heritage(UUID(heritage_id)))
 
-    @app.task(name="silklens.search.bulk_reindex_all")
+    @app.task(name="silklens.search.bulk_reindex_all")  # type: ignore[untyped-decorator]
     def bulk_reindex_all() -> dict[str, int]:
         return asyncio.run(_run_bulk_reindex_all())
 
-    @app.task(name="silklens.search.drain_outbox")
+    @app.task(name="silklens.search.drain_outbox")  # type: ignore[untyped-decorator]
     def drain_outbox() -> dict[str, int]:
         return asyncio.run(_run_drain_outbox())
 

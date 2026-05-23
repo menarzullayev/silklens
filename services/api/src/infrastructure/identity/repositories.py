@@ -14,6 +14,7 @@ from typing import Final
 from uuid import UUID, uuid4
 
 from sqlalchemy import text
+from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.identity.entities import (
@@ -35,9 +36,9 @@ _SELECT_USER_COLUMNS: Final = """
 """
 
 
-def _user_from_row(row: object) -> User:
+def _user_from_row(row: Row[tuple[object, ...]]) -> User:
     """Map a SQLAlchemy Row to the domain ``User`` entity."""
-    r = row._mapping  # type: ignore[attr-defined]
+    r = row._mapping
     return User(
         id=r["id"],
         tenant_id=r["tenant_id"],
@@ -62,7 +63,7 @@ def _user_from_row(row: object) -> User:
 
 
 def _email_from_row(row: object) -> UserEmail:
-    r = row._mapping  # type: ignore[attr-defined]
+    r = row._mapping
     return UserEmail(
         id=r["id"],
         user_id=r["user_id"],
@@ -148,7 +149,7 @@ class SqlUserRepository:
         row = result.one_or_none()
         if row is None:
             return None
-        m = row._mapping  # type: ignore[attr-defined]
+        m = row._mapping
         user = User(
             id=m["id"],
             tenant_id=m["tenant_id"],
@@ -374,7 +375,7 @@ class SqlUserRepository:
         row = result.one_or_none()
         if row is None:
             return None
-        m = row._mapping  # type: ignore[attr-defined]
+        m = row._mapping
         user = User(
             id=m["id"],
             tenant_id=m["tenant_id"],
@@ -783,7 +784,7 @@ class SqlSessionRepository:
         row = result.one_or_none()
         if row is None:
             return None
-        m = row._mapping  # type: ignore[attr-defined]
+        m = row._mapping
         return Session(
             id=m["id"],
             user_id=m["user_id"],
@@ -871,7 +872,7 @@ class SqlSessionRepository:
             if replay is None:
                 # Truly unknown token. Nothing to revoke.
                 return None
-            rm = replay._mapping  # type: ignore[attr-defined]
+            rm = replay._mapping
             await self._db.execute(
                 text(
                     """
@@ -896,7 +897,7 @@ class SqlSessionRepository:
             await self._db.commit()
             return None
 
-        m = row._mapping  # type: ignore[attr-defined]
+        m = row._mapping
         await self._db.execute(
             text(
                 """

@@ -169,6 +169,11 @@ async def create_budget(
     )
     await db.commit()
 
+    if row is None:
+        raise HTTPException(
+            status_code=500,
+            detail={"code": "expenses.insert_failed", "message": "budget insert returned no row"},
+        )
     return BudgetOut(
         id=row["id"],
         title=row["title"],
@@ -333,6 +338,11 @@ async def add_expense(
     )
     await db.commit()
 
+    if row is None:
+        raise HTTPException(
+            status_code=500,
+            detail={"code": "expenses.insert_failed", "message": "expense insert returned no row"},
+        )
     return ExpenseOut(
         id=row["id"],
         budget_id=row["budget_id"],

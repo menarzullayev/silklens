@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -16,7 +16,7 @@ router = APIRouter(tags=["recommendations"])
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
-_MOOD_PROFILES: dict[str, dict] = {
+_MOOD_PROFILES: dict[str, dict[str, Any]] = {
     "tired": {
         "venue_kinds": ["museum", "gallery", "tea_house", "restaurant"],
         "max_walk_km": 0.5,
@@ -77,7 +77,7 @@ async def mood_recommendations(
     body: MoodRequest,
     session: SessionDep,
     _rl: None = Depends(rate_limit("20/minute", per="ip", scope="mood:recommend")),
-) -> dict:
+) -> dict[str, Any]:
     """Mood-aware heritage + listing recommendations. No auth required."""
     if body.mood not in _VALID_MOODS:
         raise HTTPException(
@@ -94,7 +94,7 @@ async def mood_recommendations(
 
     # Fetch nearby heritage matching mood kind preferences
     kinds = profile["venue_kinds"]
-    params: dict = {"limit": 5, "lat_f": body.lat or 39.65, "lng_f": body.lng or 66.97}
+    params: dict[str, Any] = {"limit": 5, "lat_f": body.lat or 39.65, "lng_f": body.lng or 66.97}
 
     kind_placeholders = ", ".join(f":kind_{i}" for i in range(len(kinds)))
     for i, k in enumerate(kinds):

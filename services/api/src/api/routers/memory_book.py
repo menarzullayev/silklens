@@ -163,12 +163,17 @@ async def generate_memory_book(
                 "Write 3-4 paragraphs in first person, evoking the atmosphere and emotions. "
                 "Max 300 words."
             )
+            from anthropic.types import TextBlock as _TextBlock
+
             resp = await client.messages.create(
                 model=settings.anthropic_model_default,
                 max_tokens=500,
                 messages=[{"role": "user", "content": prompt}],
             )
-            narrative = resp.content[0].text.strip()
+            text_blocks = [b for b in resp.content if isinstance(b, _TextBlock)]
+            if not text_blocks:
+                raise ValueError("no text block in response")
+            narrative = text_blocks[0].text.strip()
         except Exception:
             narrative = _stub_narrative(visits, lang)
     else:

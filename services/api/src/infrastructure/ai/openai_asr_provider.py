@@ -18,6 +18,7 @@ from __future__ import annotations
 import re
 import time
 from dataclasses import dataclass, field
+from typing import Any
 
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -67,7 +68,7 @@ class AsrResult:
     detected_language: str
     confidence: float
     command_intent: str | None
-    command_params: dict = field(default_factory=dict)
+    command_params: dict[str, Any] = field(default_factory=dict)
 
 
 class OpenAiAsrProvider:

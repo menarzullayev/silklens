@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
@@ -52,7 +54,7 @@ class CarbonRequest(BaseModel):
 async def calculate_carbon(
     body: CarbonRequest,
     _rl: None = Depends(rate_limit("30/minute", per="ip", scope="carbon:calculate")),
-) -> dict:
+) -> dict[str, Any]:
     """Calculate carbon footprint for a journey. No auth required."""
     lang = body.language.split("-")[0].lower()
 
@@ -137,7 +139,7 @@ async def eco_alternatives(
     _from_city: str | None = None,
     _to_city: str | None = None,
     _rl: None = Depends(rate_limit("30/minute", per="ip", scope="carbon:eco")),
-) -> dict:
+) -> dict[str, Any]:
     """Get eco-friendly travel alternatives. No auth required."""
     lang = language.split("-")[0].lower()
     alt = _ECO_ALTERNATIVES.get(transport.lower())

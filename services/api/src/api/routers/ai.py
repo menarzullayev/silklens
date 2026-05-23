@@ -15,7 +15,7 @@ PATCH /v1/ai/models/{slug}                   — toggle is_enabled / sort_order 
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, status
@@ -164,7 +164,7 @@ class AsrOut(BaseModel):
     detected_language: str
     confidence: float
     command_intent: str | None
-    command_params: dict
+    command_params: dict[str, Any]
     stub: bool = False
 
 
@@ -195,7 +195,7 @@ class SearchOut(BaseModel):
 
 class ModelOut(BaseModel):
     slug: str
-    name: dict
+    name: dict[str, Any]
     task_type: str
     provider_slug: str
     is_enabled: bool
@@ -211,13 +211,13 @@ class ChainStepOut(BaseModel):
     step_order: int
     model_slug: str
     max_latency_ms: int | None
-    conditions: dict
+    conditions: dict[str, Any]
 
 
 class ChainOut(BaseModel):
     slug: str
     task_type: str
-    name: dict
+    name: dict[str, Any]
     is_active: bool
     steps: list[ChainStepOut]
 
@@ -683,7 +683,7 @@ async def delete_conversation(
     session_id: UUID,
     ctx: Annotated[AuthContext, Depends(require_user)],
     db: SessionDep,
-) -> dict:
+) -> dict[str, Any]:
     """Soft-delete a conversation session (sets is_active = false)."""
     result = await db.execute(
         text(
@@ -715,7 +715,7 @@ async def delete_conversation(
 
 
 @router.get("/models/public")
-async def list_public_models(db: SessionDep) -> list[dict]:
+async def list_public_models(db: SessionDep) -> list[dict[str, Any]]:
     """Public list of enabled AI models — no auth required. Used by mobile app."""
     rows = await db.execute(
         text("""

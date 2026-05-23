@@ -42,7 +42,7 @@ from src.domain.compliance.errors import ComplianceError
 from src.domain.compliance.service import ComplianceService
 from src.infrastructure.compliance.repository import SqlComplianceRepository
 from src.infrastructure.compliance.tasks import InMemoryTaskQueue
-from src.middleware.auth import CurrentUserDep, require_permission, require_recent_mfa
+from src.middleware.auth import AuthContext, CurrentUserDep, require_permission, require_recent_mfa
 
 router = APIRouter(tags=["compliance"])
 
@@ -244,7 +244,7 @@ async def publish_policy(
     kind: str,
     payload: PublishPolicyIn,
     db: SessionDep,
-    ctx: Annotated[object, Depends(require_permission("tenant:manage"))],
+    ctx: Annotated[AuthContext, Depends(require_permission("tenant:manage"))],
 ) -> LegalDocumentOut:
     parsed = _parse_kind(kind)
     tasks = get_task_queue()
@@ -490,7 +490,7 @@ async def admin_process_request(
     request_id: UUID,
     payload: AdminProcessIn,
     db: SessionDep,
-    ctx: Annotated[object, Depends(require_permission("gdpr:approve"))],
+    ctx: Annotated[AuthContext, Depends(require_permission("gdpr:approve"))],
 ) -> GdprRequestOut:
     tasks = get_task_queue()
     try:

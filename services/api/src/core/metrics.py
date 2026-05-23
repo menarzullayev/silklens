@@ -149,4 +149,4 @@ def reset_for_tests(registry: CollectorRegistry | None = None) -> None:
         business_heritage_views_total,
         business_revenue_usd_total,
     ):
-        metric._metrics.clear()  # type: ignore[attr-defined]
+        metric._metrics.clear()

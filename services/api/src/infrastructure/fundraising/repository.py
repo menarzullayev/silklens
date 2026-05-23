@@ -6,6 +6,7 @@ Hand-written SQL — migration 0092 owns the canonical schema.
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import text
@@ -153,7 +154,7 @@ class SqlFundraisingRepository:
         self, tenant_id: UUID, status: InvestorStatus | None = None
     ) -> list[InvestorProfile]:
         sql = "SELECT * FROM investor_profiles WHERE tenant_id = :tid"
-        params: dict = {"tid": str(tenant_id)}
+        params: dict[str, Any] = {"tid": str(tenant_id)}
         if status is not None:
             sql += " AND status = :status"
             params["status"] = status.value
@@ -201,14 +202,14 @@ class SqlFundraisingRepository:
     async def update_investor_status(
         self, investor_id: UUID, status: InvestorStatus
     ) -> InvestorProfile:
-        extra: dict = {}
+        extra: dict[str, Any] = {}
         if status == InvestorStatus.CONTACTED:
             extra["contacted_at"] = "now()"
         if status == InvestorStatus.NDA_SIGNED:
             extra["nda_signed_at"] = "now()"
 
         set_clause = "status = :status, updated_at = now()"
-        params: dict = {"status": status.value, "id": str(investor_id)}
+        params: dict[str, Any] = {"status": status.value, "id": str(investor_id)}
 
         if "contacted_at" in extra:
             set_clause += ", contacted_at = now()"
@@ -300,7 +301,7 @@ class SqlFundraisingRepository:
         self, tenant_id: UUID, access_level: AccessLevel | None = None
     ) -> list[DataRoomDocument]:
         sql = "SELECT * FROM data_room_documents WHERE tenant_id = :tid AND is_current = true"
-        params: dict = {"tid": str(tenant_id)}
+        params: dict[str, Any] = {"tid": str(tenant_id)}
         if access_level is not None:
             sql += " AND access_level = :access_level"
             params["access_level"] = access_level.value

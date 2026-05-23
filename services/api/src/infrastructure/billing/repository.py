@@ -12,6 +12,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import text
+from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.billing.entities import (
@@ -84,7 +85,7 @@ class SqlPlanRepository:
         )
         out: list[tuple[Plan, Price | None]] = []
         for row in result.all():
-            m = row._mapping  # type: ignore[attr-defined]
+            m = row._mapping
             plan = Plan(
                 id=m["plan_id"],
                 tenant_id=m["tenant_id"],
@@ -159,7 +160,7 @@ class SqlPlanRepository:
         ).one_or_none()
         if row is None:
             return None
-        m = row._mapping  # type: ignore[attr-defined]
+        m = row._mapping
         return PricingZone(
             id=m["id"],
             slug=m["slug"],
@@ -192,7 +193,7 @@ class SqlPlanRepository:
         ).one_or_none()
         if row is None:
             return None
-        m = row._mapping  # type: ignore[attr-defined]
+        m = row._mapping
         return Price(
             plan_id=m["plan_id"],
             pricing_zone_id=m["pricing_zone_id"],
@@ -219,7 +220,7 @@ class SqlPlanRepository:
                 bool(m["enabled"]),
                 int(m["limit_value"]) if m["limit_value"] is not None else None,
             )
-            for m in (r._mapping for r in result.all())  # type: ignore[attr-defined]
+            for m in (r._mapping for r in result.all())
         )
 
     async def get_features_full(self, plan_id: UUID) -> tuple[PlanFeatures, ...]:
@@ -239,7 +240,7 @@ class SqlPlanRepository:
                 limit_value=int(m["limit_value"]) if m["limit_value"] is not None else None,
                 soft_limit=int(m["soft_limit"]) if m["soft_limit"] is not None else None,
             )
-            for m in (r._mapping for r in result.all())  # type: ignore[attr-defined]
+            for m in (r._mapping for r in result.all())
         )
 
 
@@ -257,8 +258,8 @@ _SUB_COLS = """
 """
 
 
-def _sub_from_row(row: object) -> Subscription:
-    m = row._mapping  # type: ignore[attr-defined]
+def _sub_from_row(row: Row[tuple[object, ...]]) -> Subscription:
+    m = row._mapping
     return Subscription(
         id=m["id"],
         tenant_id=m["tenant_id"],
@@ -359,7 +360,7 @@ class SqlSubscriptionRepository:
                 "trial_end": trial_ends_at,
             },
         )
-        m = result.one()._mapping  # type: ignore[attr-defined]
+        m = result.one()._mapping
 
         # Insert a subscription_item row matching the plan's product.
         await self._s.execute(
@@ -531,8 +532,8 @@ class SqlSubscriptionRepository:
 # ----------------------------------------------------------------------
 
 
-def _intent_from_row(row: object) -> PaymentIntent:
-    m = row._mapping  # type: ignore[attr-defined]
+def _intent_from_row(row: Row[tuple[object, ...]]) -> PaymentIntent:
+    m = row._mapping
     return PaymentIntent(
         id=m["id"],
         tenant_id=m["tenant_id"],
@@ -712,13 +713,20 @@ class SqlPaymentRepository:
         await self._s.commit()
         if row is None:
             # Already existed — return the existing id.
-            return (
-                await self._s.execute(
-                    text("SELECT id FROM payments WHERE provider = :p AND provider_charge_id = :c"),
-                    {"p": provider, "c": provider_charge_id},
+            return UUID(
+                str(
+                    (
+                        await self._s.execute(
+                            text(
+                                "SELECT id FROM payments"
+                                " WHERE provider = :p AND provider_charge_id = :c"
+                            ),
+                            {"p": provider, "c": provider_charge_id},
+                        )
+                    ).scalar_one()
                 )
-            ).scalar_one()
-        return row._mapping["id"]  # type: ignore[attr-defined]
+            )
+        return UUID(str(row._mapping["id"]))  # type: ignore[attr-defined]
 
     async def webhook_event_exists(self, provider: str, provider_event_id: str) -> bool:
         row = (
@@ -762,16 +770,20 @@ class SqlPaymentRepository:
         await self._s.commit()
         row = result.one_or_none()
         if row is None:
-            return (
-                await self._s.execute(
-                    text(
-                        "SELECT id FROM payment_webhook_events "
-                        "WHERE provider = :p AND provider_event_id = :e"
-                    ),
-                    {"p": provider, "e": provider_event_id},
+            return UUID(
+                str(
+                    (
+                        await self._s.execute(
+                            text(
+                                "SELECT id FROM payment_webhook_events "
+                                "WHERE provider = :p AND provider_event_id = :e"
+                            ),
+                            {"p": provider, "e": provider_event_id},
+                        )
+                    ).scalar_one()
                 )
-            ).scalar_one()
-        return row._mapping["id"]  # type: ignore[attr-defined]
+            )
+        return UUID(str(row._mapping["id"]))  # type: ignore[attr-defined]
 
 
 # ----------------------------------------------------------------------
@@ -814,7 +826,7 @@ class SqlInvoiceRepository:
         )
         items: list[Invoice] = []
         for r in result.all():
-            m = r._mapping  # type: ignore[attr-defined]
+            m = r._mapping
             items.append(
                 Invoice(
                     id=m["id"],
@@ -876,7 +888,7 @@ class SqlInvoiceRepository:
             },
         )
         await self._s.commit()
-        m = result.one()._mapping  # type: ignore[attr-defined]
+        m = result.one()._mapping
         return Invoice(
             id=m["id"],
             tenant_id=tenant_id,
@@ -919,7 +931,7 @@ class SqlEntitlementRepository:
         )
         out: list[Entitlement] = []
         for r in result.all():
-            m = r._mapping  # type: ignore[attr-defined]
+            m = r._mapping
             out.append(
                 Entitlement(
                     user_id=m["user_id"],
@@ -952,7 +964,7 @@ class SqlEntitlementRepository:
         ).one_or_none()
         if row is None:
             return None
-        m = row._mapping  # type: ignore[attr-defined]
+        m = row._mapping
         return Entitlement(
             user_id=m["user_id"],
             residency_region=m["residency_region"],

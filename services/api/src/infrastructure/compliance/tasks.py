@@ -202,7 +202,7 @@ async def _collect_user_manifest(
     for label, sql in targets:
         try:
             result = await session.execute(text(sql), {"uid": user_id, "region": residency_region})
-            rows = [dict(r._mapping) for r in result.all()]  # type: ignore[attr-defined]
+            rows = [dict(r._mapping) for r in result.all()]
             sections[label] = rows
             counts[label] = len(rows)
         except Exception as exc:  # pragma: no cover - tolerate missing tables

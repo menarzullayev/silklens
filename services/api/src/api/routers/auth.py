@@ -17,10 +17,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_session
 from src.core.settings import get_settings
 from src.domain.identity.entities import (
+    AuthenticatedSession,
     Credentials,
     OAuthProfile,
     RegistrationRequest,
     ResidencyRegion,
+    User,
 )
 from src.domain.identity.errors import AccountLocked, IdentityError
 from src.domain.identity.service import AuthService
@@ -109,7 +111,7 @@ def _service(session: AsyncSession) -> AuthService:
     )
 
 
-def _user_out(user: object) -> UserOut:  # use object to avoid circular ORM types
+def _user_out(user: User) -> UserOut:
     return UserOut(
         id=user.id,
         pub_id=user.pub_id,
@@ -122,7 +124,7 @@ def _user_out(user: object) -> UserOut:  # use object to avoid circular ORM type
     )
 
 
-def _token_bundle(auth: object, *, ttl: int) -> TokenBundle:
+def _token_bundle(auth: AuthenticatedSession, *, ttl: int) -> TokenBundle:
     return TokenBundle(
         access_token=auth.access_token,
         refresh_token=auth.refresh_token,
@@ -342,7 +344,7 @@ async def _get_provider_id(session: AsyncSession, slug: str) -> UUID:
                 "message": f"OAuth provider '{slug}' not configured",
             },
         )
-    return row[0]
+    return UUID(str(row[0]))
 
 
 @router.post(

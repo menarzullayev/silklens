@@ -447,7 +447,7 @@ class SqlActivityFeedRepository:
         target_kind: str | None = None,
         target_id: UUID | None = None,
         visibility: str = "public",
-        payload: dict | None = None,
+        payload: dict[str, Any] | None = None,
     ) -> UUID:
         row = await self._session.execute(
             text(

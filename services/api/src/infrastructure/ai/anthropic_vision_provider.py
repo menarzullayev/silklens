@@ -18,6 +18,7 @@ import base64
 import json
 import re
 import time
+from typing import Any
 
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -179,7 +180,7 @@ class AnthropicVisionProvider:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _parse_json(raw: str) -> dict:
+    def _parse_json(raw: str) -> dict[str, Any]:
         """Parse JSON, falling back to markdown fence extraction on failure."""
         try:
             return json.loads(raw)

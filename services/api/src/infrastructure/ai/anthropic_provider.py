@@ -58,7 +58,7 @@ class _Usage:
 def _is_retryable(exc: BaseException) -> bool:
     """tenacity predicate — only retry transient Anthropic failures."""
     try:
-        import anthropic  # type: ignore[import-not-found]
+        import anthropic
     except ImportError:  # pragma: no cover — exercised via [ai] extra
         return False
     if isinstance(exc, anthropic.APITimeoutError):
@@ -99,7 +99,7 @@ class AnthropicLlmProvider:
         if not self._api_key:
             raise AiProviderUnavailable("anthropic", "ANTHROPIC_API_KEY missing")
         try:
-            import anthropic  # type: ignore[import-not-found]
+            import anthropic
         except ImportError as exc:  # pragma: no cover — covered by [ai] extra
             raise AiProviderUnavailable(
                 "anthropic", "anthropic SDK not installed (install ai extras)"
@@ -130,7 +130,7 @@ class AnthropicLlmProvider:
 
     def _wrap_exception(self, exc: Exception) -> Exception:
         try:
-            import anthropic  # type: ignore[import-not-found]
+            import anthropic
         except ImportError:  # pragma: no cover
             return AiProviderUnavailable("anthropic", str(exc))
         if isinstance(exc, anthropic.APITimeoutError):

@@ -182,12 +182,17 @@ async def _ai_angle_suggestion(
             f"Include optimal camera angle, time of day, and distance. "
             f"Keep it under 50 words. Return JSON: {json_schema}"
         )
+        from anthropic.types import TextBlock as _TextBlock
+
         resp = await client.messages.create(
             model=settings.anthropic_model_default,
             max_tokens=200,
             messages=[{"role": "user", "content": prompt}],
         )
-        raw = resp.content[0].text.strip()
+        text_blocks = [b for b in resp.content if isinstance(b, _TextBlock)]
+        if not text_blocks:
+            raise ValueError("no text block in response")
+        raw = text_blocks[0].text.strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):

@@ -36,7 +36,7 @@ from src.domain.heritage.entities import (
 from src.domain.heritage.errors import HeritageError
 from src.domain.heritage.service import HeritageService, required_permission
 from src.infrastructure.heritage.repository import SqlHeritageRepository
-from src.middleware.auth import require_permission, require_user
+from src.middleware.auth import AuthContext, require_permission, require_user
 
 router = APIRouter(prefix="/v1/heritage", tags=["heritage"])
 
@@ -276,7 +276,7 @@ async def create_heritage(
     payload: HeritageCreate,
     db: SessionDep,
     ctx: Annotated[
-        object,
+        AuthContext,
         Depends(require_permission("heritage:create")),
     ],
 ) -> HeritageOut:
@@ -308,7 +308,7 @@ async def update_heritage(
     payload: HeritagePatch,
     db: SessionDep,
     ctx: Annotated[
-        object,
+        AuthContext,
         Depends(require_permission("heritage:update")),
     ],
 ) -> HeritageOut:
@@ -355,7 +355,7 @@ async def delete_heritage(
     pub_id: str,
     db: SessionDep,
     ctx: Annotated[
-        object,
+        AuthContext,
         Depends(require_permission("heritage:delete")),
     ],
 ) -> Response:
@@ -376,7 +376,7 @@ async def add_alias(
     payload: HeritageAliasIn,
     db: SessionDep,
     ctx: Annotated[
-        object,
+        AuthContext,
         Depends(require_permission("heritage:update")),
     ],
 ) -> HeritageAliasOut:
@@ -410,7 +410,7 @@ async def list_revisions(
     pub_id: str,
     db: SessionDep,
     _ctx: Annotated[
-        object,
+        AuthContext,
         Depends(require_permission("heritage:read")),
     ],
     limit: LimitQ = 20,
@@ -445,7 +445,7 @@ async def transition_heritage(
     pub_id: str,
     payload: TransitionIn,
     db: SessionDep,
-    ctx: Annotated[object, Depends(require_user)],
+    ctx: Annotated[AuthContext, Depends(require_user)],
 ) -> HeritageOut:
     # Each action requires a different permission — we resolve at call time
     # via the same has_permission SQL function the dependency factory uses.
@@ -469,7 +469,7 @@ async def transition_heritage(
     return _to_out(entity)
 
 
-async def _check_permission(db: AsyncSession, ctx: object, perm: str) -> bool:
+async def _check_permission(db: AsyncSession, ctx: AuthContext, perm: str) -> bool:
     row = await db.execute(
         text("SELECT app.has_permission(:uid, :residency, :perm, :tenant)"),
         {

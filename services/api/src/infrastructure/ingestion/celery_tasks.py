@@ -83,11 +83,11 @@ async def _run_ingest_qid(qid: str, actor: UUID) -> dict[str, Any]:
 
 
 def register_tasks(app: Any) -> None:
-    @app.task(name="silklens.ingestion.ingest_country")
+    @app.task(name="silklens.ingestion.ingest_country")  # type: ignore[untyped-decorator]
     def ingest_country(country_code: str, limit: int, actor: str) -> dict[str, Any]:
         return asyncio.run(_run_ingest_country(country_code, limit, UUID(actor)))
 
-    @app.task(name="silklens.ingestion.ingest_qid")
+    @app.task(name="silklens.ingestion.ingest_qid")  # type: ignore[untyped-decorator]
     def ingest_qid(qid: str, actor: str) -> dict[str, Any]:
         return asyncio.run(_run_ingest_qid(qid, UUID(actor)))
 

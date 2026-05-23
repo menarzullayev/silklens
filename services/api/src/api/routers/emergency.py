@@ -7,7 +7,7 @@ distressed travellers with no account can still reach them.
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
@@ -81,7 +81,7 @@ async def list_emergency_contacts(
     country = country_code.upper()
     lang = language.split("-")[0].lower()
 
-    params: dict = {"country": country, "lang": lang}
+    params: dict[str, Any] = {"country": country, "lang": lang}
     kind_clause = ""
     if kind is not None:
         kind_clause = "AND kind = :kind"

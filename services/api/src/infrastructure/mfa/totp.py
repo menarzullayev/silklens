@@ -22,7 +22,7 @@ class PyOtpTotpAdapter:
 
     def __init__(self) -> None:
         try:
-            import pyotp  # type: ignore[import-untyped]
+            import pyotp
 
             self._pyotp: object | None = pyotp
         except Exception:
