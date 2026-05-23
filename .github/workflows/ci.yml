@@ -234,6 +234,10 @@ jobs:
 
       - name: Publish coverage to job summary
         if: always()
+        # Override the job-level working-directory so this step runs from the
+        # repo root regardless of whether pytest generated coverage data.
+        # Uses an explicit `cd` so coverage.data lookup stays in services/api.
+        working-directory: ${{ github.workspace }}
         # `coverage report` writes a markdown-friendly table; we append it to
         # the GitHub Actions job summary so reviewers see numbers at a glance.
         run: |
@@ -241,7 +245,7 @@ jobs:
             echo "### Coverage"
             echo ""
             echo '```'
-            coverage report --skip-covered || true
+            cd services/api && coverage report --skip-covered 2>/dev/null || echo "(coverage data unavailable)"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -401,7 +405,11 @@ jobs:
 
       - name: Flutter analyze
         if: steps.probe.outputs.present == 'true'
-        run: flutter analyze
+        # --no-fatal-infos: info-level diagnostics (e.g. require_trailing_commas)
+        # are reported but do not cause a non-zero exit code.  This job is
+        # advisory (continue-on-error: true); we surface the messages for
+        # visibility without blocking pushes on style-only hints.
+        run: flutter analyze --no-fatal-infos
 
   # ---------------------------------------------------------------------------
   # Mobile: flutter test — unit + widget tests.
