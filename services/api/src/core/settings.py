@@ -149,21 +149,29 @@ class Settings(BaseSettings):
     # How long a satisfied MFA challenge stays "fresh" for step-up gating.
     mfa_step_up_freshness_seconds: int = 300
 
-    # --- Email (Resend.com) ---
-    # Leave resend_api_key empty in dev to fall back to StubEmailClient.
-    # Sign up at resend.com — free tier: 3 000 emails/month, 100/day.
-    #
-    # Sender address rules:
-    #   • No custom domain yet  → use "SilkLens <onboarding@resend.dev>"
-    #     (Resend shared domain; SPF/DKIM pre-configured; works for all recipients)
-    #   • After silklens.app is verified on Resend (SILK-0010) →
-    #     switch to "SilkLens <no-reply@silklens.app>"
-    #
-    # Default is the shared-domain address so the app works out-of-the-box
-    # with only SILKLENS_RESEND_API_KEY set.  Override via env var in prod.
-    resend_api_key: SecretStr = SecretStr("")
+    # --- Email ---
+    # Provider selector: "resend" | "brevo"
+    # Set SILKLENS_EMAIL_PROVIDER to switch between providers with no code change.
+    # Falls back to StubEmailClient when the selected provider has no credentials.
+    email_provider: str = "resend"
+
+    # Sender display address — used by all providers.
+    # • No custom domain  → "SilkLens <onboarding@resend.dev>"  (Resend shared)
+    #                     → "SilkLens <YOUR_VERIFIED@email.com>" (Brevo)
+    # • After SILK-0010   → "SilkLens <no-reply@silklens.app>"
     email_from: str = "SilkLens <onboarding@resend.dev>"
     email_otp_ttl_seconds: int = 600  # 10 minutes
+
+    # --- Resend (https://resend.com, free: 3 000/mo, 100/day) ---
+    # Leave empty → fall back to StubEmailClient.
+    resend_api_key: SecretStr = SecretStr("")
+
+    # --- Brevo SMTP relay (smtp-relay.brevo.com:587, free: 300/day, 9 000/mo) ---
+    # Credentials from: app.brevo.com → Settings → SMTP & API → SMTP tab.
+    brevo_smtp_host: str = "smtp-relay.brevo.com"
+    brevo_smtp_port: int = 587
+    brevo_smtp_login: str = ""
+    brevo_smtp_password: SecretStr = SecretStr("")
 
     # --- AI ---
     # When true, the provider resolver always returns deterministic mock
