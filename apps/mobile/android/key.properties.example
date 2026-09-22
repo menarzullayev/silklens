@@ -1,0 +1,14 @@
+# android/key.properties.example
+#
+# Copy this file to android/key.properties (it is already in .gitignore)
+# and fill in the values for your release keystore.
+#
+# See SILK-0142 and the comment block in android/app/build.gradle for
+# step-by-step setup instructions.
+#
+# NEVER commit the real key.properties or the .keystore file to version control.
+
+storePassword=YOUR_STORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=silklens
+storeFile=../silklens.keystore

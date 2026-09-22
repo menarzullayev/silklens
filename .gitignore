@@ -1,0 +1,116 @@
+# --- Secrets / env ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+*.p12
+*.jks
+*.keystore
+
+# Google / Firebase / OAuth client credentials — NEVER commit
+client_secret_*.json
+google-services.json
+GoogleService-Info.plist
+firebase-admin-sdk*.json
+service-account*.json
+
+# Cloud provider credentials
+*-credentials.json
+aws-credentials*
+.aws/
+gcloud-credentials*
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+# The Python `env/` rule above would accidentally ignore Flutter source files
+# inside apps/mobile/lib/core/env/ — explicitly un-ignore that Dart directory.
+!apps/mobile/lib/core/env/
+!apps/mobile/lib/core/env/*.dart
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# --- Node / Next.js (admin) ---
+node_modules/
+.next/
+out/
+.turbo/
+.parcel-cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Flutter / Dart (mobile) ---
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+android/.gradle/
+android/local.properties
+*.iml
+
+# --- IDE ---
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# --- Docker / data ---
+**/postgres_data/
+**/redis_data/
+**/minio_data/
+**/elasticsearch_data/
+**/redpanda_data/
+
+# --- Logs / temp ---
+*.log
+*.tmp
+.cache/
+
+# --- Design scratch (AI prompts, zip exports, working analyses) ---
+design/
+finalDesign/
+.claude/worktrees/
+
+# Schemathesis test cache
+.schemathesis/
+logs/schemathesis-junit.xml
+
+# --- Local security scan outputs (`make sbom`, `make api-trivy-image`) ---
+sbom-*.cdx.json
+sbom-*.spdx.json
+trivy-*.sarif
+trivy-*.json
+
+# --- Mutation testing outputs ---
+# mutmut (Python) cache and results
+.mutmut-cache
+.mutmut-results
+# Stryker (admin) HTML report — the artifact is uploaded to CI instead
+apps/admin/reports/mutation/

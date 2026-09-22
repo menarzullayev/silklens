@@ -1,0 +1,122 @@
+{
+  "common": {
+    "appName": "SilkLens Admin",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "create": "Создать",
+    "loading": "Загрузка…",
+    "search": "Поиск",
+    "comingSoon": "Скоро",
+    "language": "Язык",
+    "theme": "Тема",
+    "themeLight": "Светлая",
+    "themeDark": "Тёмная",
+    "themeSystem": "Системная",
+    "signOut": "Выйти",
+    "tenant": "Тенант",
+    "errorTitle": "Бэкенд недоступен"
+  },
+  "nav": {
+    "overview": "Обзор",
+    "heritage": "Памятники",
+    "users": "Пользователи",
+    "moderation": "Модерация",
+    "aiModels": "AI модели",
+    "monetization": "Монетизация",
+    "tenants": "Тенанты",
+    "branding": "Брендинг",
+    "featureFlags": "Feature flags",
+    "analytics": "Аналитика",
+    "emergency": "Экстренная связь",
+    "culturalTips": "Культурные советы",
+    "government": "Государство",
+    "coupons": "Купоны",
+    "settings": "Настройки",
+    "languages": "Языки"
+  },
+  "auth": {
+    "loginTitle": "Войти",
+    "loginSubtitle": "Доступ к панели управления SilkLens.",
+    "email": "Электронная почта",
+    "password": "Пароль",
+    "signIn": "Войти",
+    "signInWithGoogle": "Продолжить с Google",
+    "signInWithApple": "Продолжить с Apple",
+    "signInWithTelegram": "Продолжить с Telegram"
+  },
+  "dashboard": {
+    "title": "Обзор",
+    "subtitle": "Операционный снимок SilkLens.",
+    "metricHeritageTotal": "Всего объектов",
+    "metricHeritagePublished": "Опубликовано",
+    "metricTenants": "Тенанты",
+    "metricAiCalls": "AI-вызовы (24ч)",
+    "recentActivity": "Недавняя активность",
+    "recentActivityHint": "Лента активности появится после публикации мета-эндпоинта.",
+    "aiPerformance": "Производительность моделей",
+    "aiPerformanceHint": "Статистика токенов / задержки / fallback'ов — во вкладке Token Usage."
+  },
+  "heritage": {
+    "title": "Памятники",
+    "subtitle": "Памятники, объекты и AI-описания.",
+    "newEntry": "Новая запись",
+    "createTitle": "Создать объект",
+    "createSubtitle": "Многоязычное имя + описание, тип, страна, период.",
+    "tabOverview": "Обзор",
+    "tabTranslations": "Переводы",
+    "tabAliases": "Алиасы",
+    "tabRevisions": "Ревизии",
+    "tabReviews": "Отзывы"
+  },
+  "tenants": {
+    "title": "Тенанты",
+    "subtitle": "Создание white-label тенантов и управление статусом / тарифом.",
+    "errorTitle": "Не удалось загрузить тенантов"
+  },
+  "branding": {
+    "title": "Брендинг",
+    "subtitle": "Настройка бренда для каждого тенанта — white-label.",
+    "appName": "Название",
+    "logoUrl": "Логотип URL",
+    "primaryColor": "Основной цвет",
+    "splashImage": "Splash URL",
+    "saved": "Брендинг сохранён.",
+    "errorTitle": "Не удалось загрузить брендинг"
+  },
+  "settings": {
+    "title": "Системные настройки",
+    "subtitle": "Tenant-настройки, сгруппированные по префиксу ключа.",
+    "errorTitle": "Не удалось загрузить настройки"
+  },
+  "featureFlags": {
+    "title": "Feature flags",
+    "subtitle": "Переключатели, проценты раскатки, allowlist'ы.",
+    "errorTitle": "Не удалось загрузить флаги"
+  },
+  "aiModels": {
+    "title": "AI модели",
+    "subtitle": "Vision, TTS, перевод, LLM — матрица провайдеров + fallback.",
+    "tabModels": "Модели",
+    "tabChains": "Fallback цепочки",
+    "tabUsage": "Расход токенов",
+    "errorTitle": "Не удалось загрузить модели",
+    "usageHint": "Графики появятся, когда `ai_token_usage` станет доступен здесь."
+  },
+  "moderation": {
+    "title": "Модерация",
+    "subtitle": "Очередь UGC с AI-оценкой.",
+    "placeholderTitle": "Moderation API в следующем спринте",
+    "placeholderHint": "Бэкенд сейчас предоставляет только flag / report; админская очередь — Wave 4."
+  },
+  "rbac": {
+    "denied": "Недостаточно прав для просмотра.",
+    "deniedSubtitle": "Попросите администратора назначить нужную роль."
+  },
+  "dataTable": {
+    "noResults": "Нет результатов.",
+    "columns": "Столбцы",
+    "searchPlaceholder": "Поиск…"
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "uid": "silklens-postgres",
+  "title": "SilkLens — PostgreSQL",
+  "tags": ["silklens", "postgres", "database"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-3h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "datname",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(pg_stat_database_xact_commit, datname)",
+        "includeAll": false,
+        "current": { "value": "silklens", "text": "silklens" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "App pool: in-use vs size",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "silklens_db_pool_in_use", "legendFormat": "in use" },
+        { "expr": "silklens_db_pool_size", "legendFormat": "size" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "title": "Pool utilisation %",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "silklens_db_pool_in_use / clamp_min(silklens_db_pool_size, 1) * 100",
+          "legendFormat": "util"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    },
+    {
+      "id": 3,
+      "title": "Transactions / sec",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "rate(pg_stat_database_xact_commit{datname=\"$datname\"}[1m])", "legendFormat": "commit" },
+        { "expr": "rate(pg_stat_database_xact_rollback{datname=\"$datname\"}[1m])", "legendFormat": "rollback" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+    },
+    {
+      "id": 4,
+      "title": "Active backends",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "pg_stat_database_numbackends{datname=\"$datname\"}", "legendFormat": "backends" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }
+    },
+    {
+      "id": 5,
+      "title": "Slow queries (pg_stat_statements top mean time)",
+      "type": "table",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "topk(10, pg_stat_statements_mean_time_seconds)",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 16 }
+    },
+    {
+      "id": 6,
+      "title": "Wait events (top)",
+      "type": "bargauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "topk(10, sum by (wait_event) (pg_stat_activity_count{state=\"active\"}))",
+          "legendFormat": "{{wait_event}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 }
+    },
+    {
+      "id": 7,
+      "title": "Cache hit ratio",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "pg_stat_database_blks_hit{datname=\"$datname\"} / clamp_min(pg_stat_database_blks_hit{datname=\"$datname\"} + pg_stat_database_blks_read{datname=\"$datname\"}, 1)",
+          "legendFormat": "ratio"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 26 }
+    },
+    {
+      "id": 8,
+      "title": "Deadlocks",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "increase(pg_stat_database_deadlocks{datname=\"$datname\"}[5m])",
+          "legendFormat": "deadlocks/5m"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 26 }
+    },
+    {
+      "id": 9,
+      "title": "Tuples returned vs fetched",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "rate(pg_stat_database_tup_returned{datname=\"$datname\"}[1m])", "legendFormat": "returned" },
+        { "expr": "rate(pg_stat_database_tup_fetched{datname=\"$datname\"}[1m])", "legendFormat": "fetched" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 34 }
+    },
+    {
+      "id": 10,
+      "title": "Disk size (bytes)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "pg_database_size_bytes{datname=\"$datname\"}", "legendFormat": "size" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 34 }
+    }
+  ]
+}

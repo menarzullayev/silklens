@@ -1,0 +1,332 @@
+# =============================================================================
+# SilkLens — Quality gates
+# -----------------------------------------------------------------------------
+# Slow / infrastructure-heavy quality checks that run on a weekly schedule
+# and on manual dispatch.  They are NOT on the critical path for PRs.
+#
+# Jobs:
+#   * mutation-admin  — Stryker mutation testing on admin pure-logic modules.
+#                       Measures test effectiveness (killed mutation rate ≥ 50%).
+#   * mutation-api    — mutmut mutation testing on API domain/ai/errors.py.
+#                       Targeted narrow scope so it completes in < 10 min.
+#   * load-smoke-ci   — k6 smoke test against the full local stack.
+#                       Catches throughput regressions on critical endpoints.
+#
+# SQL linting is fast and runs in ci.yml on every push/PR instead.
+# =============================================================================
+
+name: Quality
+
+on:
+  # Every Sunday at 03:00 UTC — off-peak, avoids the Monday cron rush.
+  schedule:
+    - cron: "0 3 * * 0"
+  # Manual trigger so developers can run on demand without waiting for the schedule.
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "Which job to run (empty = all)"
+        required: false
+        default: "all"
+        type: choice
+        options: [all, mutation-admin, mutation-api, load-smoke-ci]
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.4.30"
+  NODE_VERSION: "20"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Stryker mutation testing — admin pure-logic modules.
+  #
+  # Stryker injects small code mutations (operator swaps, boundary flips, …)
+  # and checks whether the Vitest suite catches them.  A "surviving" mutation
+  # means the test suite didn't cover that behaviour.
+  #
+  # Threshold: break < 50 % killed → workflow failure.
+  # Expected score: ≥ 80 % on the current 5 modules (161 tests).
+  # ---------------------------------------------------------------------------
+  mutation-admin:
+    name: Mutation — Admin (Stryker + Vitest)
+    runs-on: ubuntu-24.04
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' && (
+        inputs.job == 'all' || inputs.job == 'mutation-admin'
+      )
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/admin
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "9.12.0"
+          run_install: false
+
+      - name: Get pnpm store path
+        id: pnpm-store
+        run: echo "dir=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.dir }}
+          key: pnpm-admin-${{ runner.os }}-${{ hashFiles('apps/admin/pnpm-lock.yaml') }}
+          restore-keys: pnpm-admin-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Stryker
+        run: pnpm stryker run
+        env:
+          # Stryker respects CI env to suppress interactive progress bars.
+          CI: "true"
+
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stryker-report-${{ github.sha }}
+          path: apps/admin/reports/mutation/
+          retention-days: 30
+
+      - name: Post mutation summary
+        if: always()
+        run: |
+          {
+            echo "### Stryker mutation score — Admin"
+            echo ""
+            echo "Report uploaded as workflow artefact \`stryker-report-${{ github.sha }}\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
+  # mutmut mutation testing — API domain/ai/errors.py.
+  #
+  # Narrow scope: only the domain error hierarchy is mutated against the two
+  # test files that exercise it.  This completes in < 10 min.
+  #
+  # mutmut exit codes:
+  #   0 — all mutations killed (perfect score)
+  #   1 — some mutations survived (check `mutmut results`)
+  #   2 — test suite itself failed
+  # We accept exit 1 (survived mutations) as advisory; only exit 2 blocks CI.
+  # ---------------------------------------------------------------------------
+  mutation-api:
+    name: Mutation — API domain errors (mutmut)
+    runs-on: ubuntu-24.04
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' && (
+        inputs.job == 'all' || inputs.job == 'mutation-api'
+      )
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: silklens
+          POSTGRES_PASSWORD: silklens_dev
+          POSTGRES_DB: silklens
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd="pg_isready -U silklens -d silklens"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6381:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-retries=10
+    env:
+      SILKLENS_DATABASE_URL: postgresql+psycopg://silklens:silklens_dev@localhost:5434/silklens
+      SILKLENS_DATABASE_URL_TEST: postgresql+psycopg://silklens:silklens_dev@localhost:5434/silklens_test
+      SILKLENS_REDIS_URL: redis://localhost:6381/0
+      SILKLENS_ENV: test
+      SILKLENS_SECRET_KEY: quality-ci-secret-not-for-prod
+      SILKLENS_AUDIT_HMAC_KEY: quality-ci-hmac-not-for-prod
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: services/api/pyproject.toml
+
+      - name: Install uv ${{ env.UV_VERSION }}
+        run: pip install "uv==${{ env.UV_VERSION }}"
+
+      - name: Install API dependencies + mutmut
+        run: |
+          uv pip install --system -e ".[dev]"
+          pip install mutmut
+
+      - name: Install libmagic1
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libmagic1
+
+      - name: Apply DB extensions
+        run: |
+          psql "postgresql://silklens:silklens_dev@localhost:5434/silklens" \
+               -f ../../infra/docker/postgres/init.sql 2>/dev/null || true
+
+      - name: Run Alembic migrations
+        run: alembic upgrade head
+
+      - name: Run mutmut (domain/ai/errors.py)
+        # Accept exit code 1 (surviving mutations) — report as advisory.
+        # Exit code 2 (test suite broken) fails the job.
+        run: |
+          mutmut run \
+            --paths-to-mutate src/domain/ai/errors.py \
+            --runner "python -m pytest tests/test_ai_service.py tests/test_ratelimit.py -x -q --tb=no -p no:randomly" \
+            || MUTMUT_EXIT=$?
+          mutmut results || true
+          {
+            echo "### mutmut results — domain/ai/errors.py"
+            echo '```'
+            mutmut results 2>&1 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          # Fail only if the test runner itself broke (exit 2), not for survivors.
+          [ "${MUTMUT_EXIT:-0}" -eq 2 ] && exit 2 || exit 0
+
+  # ---------------------------------------------------------------------------
+  # k6 smoke test against the full dev stack.
+  #
+  # Boots Postgres + Redis, runs migrations, starts the API, then runs the
+  # smoke test suite (1 VU × 10 iterations, p95 < 2 s).  Catches severe
+  # throughput regressions before they reach production.
+  # ---------------------------------------------------------------------------
+  load-smoke-ci:
+    name: Load — k6 smoke (full stack)
+    runs-on: ubuntu-24.04
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' && (
+        inputs.job == 'all' || inputs.job == 'load-smoke-ci'
+      )
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: silklens
+          POSTGRES_PASSWORD: silklens_dev
+          POSTGRES_DB: silklens
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd="pg_isready -U silklens -d silklens"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6381:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-retries=10
+    env:
+      SILKLENS_DATABASE_URL: postgresql+psycopg://silklens:silklens_dev@localhost:5434/silklens
+      SILKLENS_REDIS_URL: redis://localhost:6381/0
+      SILKLENS_ENV: test
+      SILKLENS_SECRET_KEY: quality-ci-secret-not-for-prod
+      SILKLENS_AUDIT_HMAC_KEY: quality-ci-hmac-not-for-prod
+      SILKLENS_RATE_LIMIT_ENABLED: "false"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: services/api/pyproject.toml
+
+      - name: Install uv + API deps
+        working-directory: services/api
+        run: |
+          pip install "uv==${{ env.UV_VERSION }}"
+          uv pip install --system -e ".[dev]"
+
+      - name: Install libmagic1
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libmagic1
+
+      - name: Apply DB extensions + migrations
+        working-directory: services/api
+        run: |
+          psql "postgresql://silklens:silklens_dev@localhost:5434/silklens" \
+               -f ../../infra/docker/postgres/init.sql 2>/dev/null || true
+          alembic upgrade head
+
+      - name: Start API server (background)
+        working-directory: services/api
+        run: |
+          python -m src &
+          echo $! > /tmp/api.pid
+          # Wait for the health endpoint to respond (up to 30s).
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/health && break
+            echo "Waiting for API ($i/30)…"
+            sleep 1
+          done
+          curl -sf http://localhost:8000/health
+
+      - name: Install k6
+        run: |
+          curl -sfL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6.gpg
+          echo "deb [signed-by=/usr/share/keyrings/k6.gpg] https://dl.k6.io/deb stable main" \
+            | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update && sudo apt-get install -y k6
+
+      - name: Run k6 smoke test
+        run: |
+          k6 run \
+            -e API_BASE=http://localhost:8000 \
+            tests/load/smoke.js
+
+      - name: Stop API server
+        if: always()
+        run: kill $(cat /tmp/api.pid) 2>/dev/null || true
+
+      - name: Post load test summary
+        if: always()
+        run: |
+          {
+            echo "### k6 smoke test completed"
+            echo "- API base: \`http://localhost:8000\`"
+            echo "- Script: \`tests/load/smoke.js\`"
+            echo "- VUs: 1, iterations: 10"
+          } >> "$GITHUB_STEP_SUMMARY"

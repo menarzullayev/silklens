@@ -1,0 +1,26 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignore": [
+    "src/types/api.gen.ts",
+    "src/types/api.ts",
+    "src/components/ui/**"
+  ],
+  "ignoreExportsUsedInFile": true,
+  "tags": ["-public"],
+  "ignoreDependencies": [
+    "@radix-ui/react-popover",
+    "@radix-ui/react-toast",
+    "@radix-ui/react-tooltip",
+    "recharts",
+    "eslint-config-next"
+  ],
+  "next": {
+    "entry": [
+      "next.config.{mjs,js,ts}",
+      "src/lib/i18n/request.ts",
+      "src/middleware.ts",
+      "src/app/**/{page,layout,loading,error,not-found,route,template,default}.{ts,tsx,js,jsx}",
+      "src/app/**/{actions,_actions}.ts"
+    ]
+  }
+}

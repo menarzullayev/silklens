@@ -1,0 +1,127 @@
+{
+  "common": {
+    "appName": "SilkLens Admin",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "delete": "O'chirish",
+    "edit": "Tahrirlash",
+    "create": "Yaratish",
+    "loading": "Yuklanmoqda…",
+    "search": "Qidirish",
+    "comingSoon": "Tez orada",
+    "language": "Til",
+    "theme": "Mavzu",
+    "themeLight": "Yorug'",
+    "themeDark": "Qorong'i",
+    "themeSystem": "Tizim",
+    "signOut": "Chiqish",
+    "tenant": "Ijarachi",
+    "errorTitle": "Backend mavjud emas"
+  },
+  "nav": {
+    "overview": "Bosh sahifa",
+    "heritage": "Obidalar",
+    "users": "Foydalanuvchilar",
+    "moderation": "Moderatsiya",
+    "aiModels": "AI modellar",
+    "monetization": "Monetizatsiya",
+    "tenants": "Tenantlar",
+    "branding": "Brending",
+    "featureFlags": "Xususiyat bayroqlari",
+    "analytics": "Analitika",
+    "emergency": "Favqulodda",
+    "culturalTips": "Madaniy maslahatlar",
+    "government": "Hukumat",
+    "coupons": "Kuponlar",
+    "settings": "Sozlamalar",
+    "languages": "Tillar",
+    "tripsAnalytics": "Sayohat tahlili",
+    "crowdAnalytics": "Tashrif zichligi",
+    "storyteller": "Hikoyachi",
+    "heritagePeople": "Shaxslar va materiallar",
+    "ticketTypes": "Chipta turlari"
+  },
+  "auth": {
+    "loginTitle": "Kirish",
+    "loginSubtitle": "SilkLens boshqaruv paneliga kiring.",
+    "email": "Elektron pochta",
+    "password": "Parol",
+    "signIn": "Kirish",
+    "signInWithGoogle": "Google bilan davom etish",
+    "signInWithApple": "Apple bilan davom etish",
+    "signInWithTelegram": "Telegram bilan davom etish"
+  },
+  "dashboard": {
+    "title": "Bosh sahifa",
+    "subtitle": "SilkLens'ning operatsion ko'rinishi.",
+    "metricHeritageTotal": "Jami obidalar",
+    "metricHeritagePublished": "Nashr etilgan",
+    "metricTenants": "Tenantlar",
+    "metricAiCalls": "AI so'rovlar (24s)",
+    "recentActivity": "So'nggi faollik",
+    "recentActivityHint": "Faollik oqimi events pipeline meta-endpointi ishga tushgandan so'ng paydo bo'ladi.",
+    "aiPerformance": "AI model samaradorligi",
+    "aiPerformanceHint": "Token sarfi + xarajat / kechikish / fallback chastotasi Token Usage bo'limida ko'rsatiladi."
+  },
+  "heritage": {
+    "title": "Obidalar",
+    "subtitle": "Yodgorliklar, ob'ektlar va AI tomonidan yaratilgan tavsiflar.",
+    "newEntry": "Yangi obida",
+    "createTitle": "Obida yaratish",
+    "createSubtitle": "Ko'p tilli nom + xulosa, turi, mamlakat, davr.",
+    "tabOverview": "Umumiy ko'rinish",
+    "tabTranslations": "Tarjimalar",
+    "tabAliases": "Taxalluslar",
+    "tabRevisions": "Tahrirlar",
+    "tabReviews": "Sharhlar"
+  },
+  "tenants": {
+    "title": "Tenantlar",
+    "subtitle": "White-label tenantlarni yaratish va status / tarif rejasini boshqarish.",
+    "errorTitle": "Tenantlarni yuklab bo'lmadi"
+  },
+  "branding": {
+    "title": "Brending",
+    "subtitle": "Har bir tenant uchun brendni sozlang — white-label.",
+    "appName": "Ilova nomi",
+    "logoUrl": "Logotip URL",
+    "primaryColor": "Asosiy rang",
+    "splashImage": "Splash rasm URL",
+    "saved": "Brending saqlandi.",
+    "errorTitle": "Brendingni yuklab bo'lmadi"
+  },
+  "settings": {
+    "title": "Tizim sozlamalari",
+    "subtitle": "Kalit prefiksi bo'yicha guruhlangan tenant konfiguratsiyasi.",
+    "errorTitle": "Sozlamalarni yuklab bo'lmadi"
+  },
+  "featureFlags": {
+    "title": "Xususiyat bayroqlari",
+    "subtitle": "Bayroqlarni almashtirish, bosqichli chiqarish foizlari, ruxsat ro'yxatlari.",
+    "errorTitle": "Xususiyat bayroqlarini yuklab bo'lmadi"
+  },
+  "aiModels": {
+    "title": "AI modellar",
+    "subtitle": "Vision, TTS, tarjima, LLM — provayder matritsasi + fallback zanjirlari.",
+    "tabModels": "Modellar",
+    "tabChains": "Fallback zanjirlari",
+    "tabUsage": "Token sarfi",
+    "errorTitle": "AI modellarni yuklab bo'lmadi",
+    "usageHint": "Har bir tenant uchun token sarfi jadvallari `ai_token_usage` bu paneldan so'ralganda ko'rsatiladi."
+  },
+  "moderation": {
+    "title": "Moderatsiya",
+    "subtitle": "AI-baholangan UGC navbati.",
+    "placeholderTitle": "Moderatsiya API keyingi sprintda",
+    "placeholderHint": "Backend hozirda faqat flag/report endpointlarini taqdim etadi; maxsus admin navbati Wave 4 bilan chiqadi."
+  },
+  "rbac": {
+    "denied": "Bu bo'limni ko'rish uchun ruxsatingiz yo'q.",
+    "deniedSubtitle": "Workspace administratoridan tegishli huquqni so'rang."
+  },
+  "dataTable": {
+    "noResults": "Natija topilmadi.",
+    "columns": "Ustunlar",
+    "searchPlaceholder": "Qidirish…"
+  }
+}

@@ -1,0 +1,122 @@
+name: silklens
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: silklens-postgres
+    environment:
+      POSTGRES_USER: silklens
+      POSTGRES_PASSWORD: silklens_dev
+      POSTGRES_DB: silklens
+      POSTGRES_INITDB_ARGS: "--locale=C.UTF-8 --encoding=UTF8"
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U silklens -d silklens"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    command: >
+      postgres
+      -c shared_preload_libraries=pg_stat_statements
+      -c pg_stat_statements.track=all
+      -c max_connections=200
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c work_mem=8MB
+      -c maintenance_work_mem=128MB
+      -c wal_level=logical
+      -c max_wal_senders=10
+      -c log_min_duration_statement=500
+      -c log_lock_waits=on
+
+  redis:
+    image: redis:7-alpine
+    container_name: silklens-redis
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+
+  minio:
+    image: minio/minio:latest
+    container_name: silklens-minio
+    environment:
+      MINIO_ROOT_USER: silklens
+      MINIO_ROOT_PASSWORD: silklens_dev_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: server /data --console-address ":9001"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    container_name: silklens-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - cluster.routing.allocation.disk.threshold_enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.7
+    container_name: silklens-redpanda
+    command:
+      - redpanda
+      - start
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:19092
+      - --pandaproxy-addr=internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --rpc-addr=redpanda:33145
+      - --advertise-rpc-addr=redpanda:33145
+      - --smp=1
+      - --memory=512M
+      - --reserve-memory=0M
+      - --mode=dev-container
+      - --default-log-level=warn
+    ports:
+      - "19092:19092"
+      - "18082:18082"
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  elasticsearch_data:
+  redpanda_data:

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+  <!-- Compass/explore icon (white) -->
+  <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M100,20 A80,80 0 1,0 100,180 A80,80 0 1,0 100,20 Z"/>
+  <path
+      android:fillColor="#1A3A5C"
+      android:pathData="M100,35 A65,65 0 1,0 100,165 A65,65 0 1,0 100,35 Z"/>
+  <!-- Arrow pointing top-right (white) -->
+  <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M100,55 L130,100 L100,90 L70,100 Z"/>
+  <path
+      android:fillColor="#CCCCCC"
+      android:pathData="M100,145 L130,100 L100,110 L70,100 Z"/>
+</vector>

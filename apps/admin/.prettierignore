@@ -1,0 +1,7 @@
+.next/
+node_modules/
+public/
+pnpm-lock.yaml
+package-lock.json
+tests/.playwright-report/
+tests/test-results/

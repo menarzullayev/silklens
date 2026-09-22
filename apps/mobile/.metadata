@@ -1,0 +1,27 @@
+# This file tracks properties of this Flutter project.
+# Used by Flutter tooling to assist in upgrading your project.
+#
+# This file should be version controlled and should not be manually edited.
+
+version:
+  revision: "auto-generated-on-first-flutter-create"
+  channel: "stable"
+
+project_type: app
+
+migration:
+  platforms:
+    - platform: root
+      create_revision: auto-generated-on-first-flutter-create
+      base_revision: auto-generated-on-first-flutter-create
+    - platform: android
+      create_revision: auto-generated-on-first-flutter-create
+      base_revision: auto-generated-on-first-flutter-create
+    - platform: ios
+      create_revision: auto-generated-on-first-flutter-create
+      base_revision: auto-generated-on-first-flutter-create
+
+# User provided section
+unmanaged_files:
+  - "lib/main.dart"
+  - "ios/Runner.xcodeproj/project.pbxproj"

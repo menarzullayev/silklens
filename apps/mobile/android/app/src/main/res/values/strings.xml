@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Per Project-Decisions §1 ilova nomi admin paneldan dinamik boshqariladi.
+      This string is shown only in the Android launcher / app switcher
+      BEFORE the first Dart frame paints. Everything inside the app reads
+      the runtime localized name (AppLocalizations.appName), which is the
+      authoritative source.
+    -->
+    <string name="app_name">SilkLens</string>
+</resources>
