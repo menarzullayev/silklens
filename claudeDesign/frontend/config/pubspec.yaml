@@ -1,0 +1,116 @@
+name: silklens
+description: SilkLens — AI-powered global cultural heritage platform (Flutter client).
+publish_to: "none"
+
+# Per Project-Decisions §1 ilova nomi admin paneldan dinamik boshqariladi —
+# the user-facing app name comes from the localization key `app_name` /
+# remote tenant branding, never from this manifest at runtime.
+
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management (per Project-Decisions §13 — Clean Architecture seams)
+  hooks_riverpod: ^2.5.0
+  flutter_hooks: ^0.20.5
+
+  # Navigation (per Project-Decisions §23 — Shazam-style camera-centered nav)
+  go_router: ^14.0.0
+
+  # HTTP (retrofit removed — plain dio until retrofit compat resolved in FAZA 6+)
+  dio: ^5.4.0
+  pretty_dio_logger: ^1.4.0
+
+  # Offline DB — Hive for initial device testing (isar_generator conflicts
+  # with retrofit_generator analyzer version; migrate to isar v4 in FAZA 6+)
+  hive_flutter: ^1.1.0
+
+  # Token / secret storage
+  flutter_secure_storage: ^9.0.0
+
+  # Data classes
+
+  # i18n (4 ARB files: uz / en / ru / zh, dynamic per Project-Decisions §8)
+  intl: any
+
+  # Markdown rendering (heritage summary_md / description_md)
+  flutter_markdown: ^0.7.4
+
+  # Config & ops
+  flutter_dotenv: ^5.1.0
+  sentry_flutter: ^8.0.0
+  logger: ^2.0.0
+  path_provider: ^2.1.0
+  package_info_plus: ^8.0.0
+
+  # Connectivity
+  connectivity_plus: ^6.0.0
+
+  # Utility
+  shimmer: ^3.0.0
+  collection: ^1.18.0
+  meta: ^1.12.0
+
+  # FAZA 2 / 3 — Camera + AI recognition + audio guide + maps
+  # (per Project-Decisions §23 / Roadmap FAZA 2 + 3). Pins are deliberately
+  camera: ^0.11.0
+  image_picker: ^1.0.7
+  permission_handler: ^11.3.0
+  geolocator: ^12.0.0
+  just_audio: ^0.9.40
+  flutter_map: ^7.0.0
+  latlong2: ^0.9.1
+  http_parser: ^4.0.0
+  uuid: ^4.4.0
+  shared_preferences: ^2.2.0
+  # flutter_stripe is optional — pulled in by checkout_page only when an API
+  # key is provided. We keep the dependency declared so the project compiles
+  # against the gated import; the package is harmless when unused.
+  flutter_stripe: ^11.0.0
+  google_sign_in: ^6.2.0
+  local_auth: ^2.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+
+  # Linting (strict Very Good Analysis preset)
+  very_good_analysis: ^6.0.0
+
+  # Code generation
+
+  # Testing
+  mocktail: ^1.0.0
+
+  # Native splash screen generation
+  flutter_native_splash: ^2.4.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - assets/.env
+    - assets/branding/
+    - assets/onboarding/
+
+  # Bundled fonts are loaded dynamically once admin panel ships font tokens
+  # (see Project-Decisions §21 Design Token architecture). Keep this block ready.
+  # fonts:
+  #   - family: Inter
+  #     fonts:
+  #       - asset: assets/fonts/Inter-Regular.ttf
+  #       - asset: assets/fonts/Inter-Medium.ttf
+  #         weight: 500
+  #       - asset: assets/fonts/Inter-Bold.ttf
+  #         weight: 700
