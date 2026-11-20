@@ -1,0 +1,63 @@
+{
+  "common": {
+    "appName": "SilkLens Admin",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "delete": "O'chirish",
+    "edit": "Tahrirlash",
+    "loading": "Yuklanmoqda…",
+    "search": "Qidirish",
+    "comingSoon": "Tez orada",
+    "language": "Til",
+    "theme": "Mavzu",
+    "themeLight": "Yorug'",
+    "themeDark": "Qorong'i",
+    "themeSystem": "Tizim",
+    "signOut": "Chiqish",
+    "tenant": "Ijarachi"
+  },
+  "nav": {
+    "overview": "Bosh sahifa",
+    "heritage": "Obidalar",
+    "users": "Foydalanuvchilar",
+    "moderation": "Moderatsiya",
+    "aiModels": "AI modellar",
+    "monetization": "Monetizatsiya",
+    "tenants": "Tenantlar",
+    "branding": "Brending",
+    "analytics": "Analitika",
+    "settings": "Sozlamalar"
+  },
+  "auth": {
+    "loginTitle": "Kirish",
+    "loginSubtitle": "SilkLens boshqaruv paneliga kiring.",
+    "email": "Elektron pochta",
+    "password": "Parol",
+    "signIn": "Kirish",
+    "signInWithGoogle": "Google bilan davom etish",
+    "signInWithApple": "Apple bilan davom etish",
+    "signInWithTelegram": "Telegram bilan davom etish"
+  },
+  "dashboard": {
+    "title": "Bosh sahifa",
+    "subtitle": "SilkLens'ning bugungi operatsion ko'rinishi.",
+    "metricUsers24h": "Faol foydalanuvchilar (24s)",
+    "metricUsers7d": "Faol foydalanuvchilar (7 kun)",
+    "metricHeritageViews": "Obida ko'rishlar (24s)",
+    "metricPremium": "Premium obunachilar",
+    "metricRevenueMtd": "Oylik daromad"
+  },
+  "branding": {
+    "title": "Brending",
+    "subtitle": "Har bir tenant uchun brendni sozlang — white-label.",
+    "appName": "Ilova nomi",
+    "logoUrl": "Logotip URL",
+    "primaryColor": "Asosiy rang",
+    "splashImage": "Splash rasm URL",
+    "saved": "Brending qoralamasi mahalliy saqlandi (backend hali yo'q)."
+  },
+  "rbac": {
+    "denied": "Bu bo'limni ko'rish uchun ruxsatingiz yo'q.",
+    "deniedSubtitle": "Workspace administratoridan tegishli huquqni so'rang."
+  }
+}

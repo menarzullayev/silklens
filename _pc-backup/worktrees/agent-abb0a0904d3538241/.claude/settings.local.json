@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /home/nsn/Workspace/silklens/.claude/agents)"
+    ],
+    "additionalDirectories": [
+      "/home/nsn/Workspace/silklens/.claude"
+    ]
+  }
+}
